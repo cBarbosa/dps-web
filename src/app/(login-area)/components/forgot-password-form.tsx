@@ -42,12 +42,14 @@ import {
 export default function ForgotPasswordForm() {
 	const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
 
+	const [email, setEmail] = useState('')
+
 	return (
 		<div className="flex flex-col items-center gap-4 h-full w-full">
 			<div className="flex w-full items-center justify-center grow">
-				{step === 0 && <SendEmailForm setStep={setStep} />}
-				{step === 1 && <ValidateOTPForm setStep={setStep} />}
-				{step === 2 && <ResetPasswordForm setStep={setStep} />}
+				{step === 0 && <SendEmailForm setStep={setStep} setEmail={setEmail} />}
+				{step === 1 && <ValidateOTPForm setStep={setStep} email={email} />}
+				{step === 2 && <ResetPasswordForm setStep={setStep} email={email} />}
 				{step === 3 && <SuccessMessage />}
 			</div>
 			<div className="p-3 my-3 text-sm text-slate-500">
@@ -71,8 +73,10 @@ type SendEmailSchema = InferInput<typeof sendEmailSchema>
 
 function SendEmailForm({
 	setStep,
+	setEmail,
 }: {
 	setStep: (step: 0 | 1 | 2 | 3) => void
+	setEmail: (email: string) => void
 }) {
 	const {
 		handleSubmit,
@@ -85,6 +89,7 @@ function SendEmailForm({
 
 	async function onSubmit(v: SendEmailSchema) {
 		setStep(1)
+		setEmail(v.email)
 	}
 
 	return (
@@ -153,8 +158,10 @@ type ValidateOTPSchema = InferInput<typeof validateOTPSchema>
 
 function ValidateOTPForm({
 	setStep,
+	email,
 }: {
 	setStep: (step: 0 | 1 | 2 | 3) => void
+	email: string
 }) {
 	const {
 		handleSubmit,
@@ -216,19 +223,18 @@ function ValidateOTPForm({
 }
 
 const InputOTPComp = forwardRef<ElementRef<any>, ComponentPropsWithoutRef<any>>(
-	({ ...props }) => {
-		console.log('InputOTPComp', props)
+	({ className, ...props }, ref) => {
 		return (
-			<InputOTP {...props} maxLength={6}>
+			<InputOTP {...props} maxLength={5}>
 				<InputOTPGroup>
-					<InputOTPSlot className="w-14" index={0} />
-					<InputOTPSlot className="w-14" index={1} />
-					<InputOTPSlot className="w-14" index={2} />
-					<InputOTPSlot className="w-14" index={3} />
+					<InputOTPSlot className={cn('w-14', className)} index={0} />
+					<InputOTPSlot className={cn('w-14', className)} index={1} />
+					<InputOTPSlot className={cn('w-14', className)} index={2} />
+					<InputOTPSlot className={cn('w-14', className)} index={3} />
 				</InputOTPGroup>
 				<InputOTPSeparator />
 				<InputOTPGroup>
-					<InputOTPSlot className="w-14" index={4} />
+					<InputOTPSlot className={cn('w-14', className)} index={4} />
 				</InputOTPGroup>
 			</InputOTP>
 		)
@@ -260,8 +266,10 @@ type ResetPasswordSchema = InferInput<typeof resetPasswordSchema>
 
 function ResetPasswordForm({
 	setStep,
+	email,
 }: {
 	setStep: (step: 0 | 1 | 2 | 3) => void
+	email: string
 }) {
 	const {
 		handleSubmit,
@@ -269,6 +277,7 @@ function ResetPasswordForm({
 		watch,
 		trigger,
 		control,
+		getFieldState,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<ResetPasswordSchema>({
 		resolver: valibotResolver(resetPasswordSchema),
@@ -278,12 +287,12 @@ function ResetPasswordForm({
 	const confirmPwd = watch('confirmPassword')
 
 	useEffect(() => {
-		if (getValues('confirmPassword')) trigger('confirmPassword')
-	}, [newPwd, trigger, getValues])
+		if (getFieldState('confirmPassword').isTouched) trigger('confirmPassword')
+	}, [newPwd, trigger, getFieldState])
 
 	useEffect(() => {
-		trigger('confirmPassword')
-	}, [confirmPwd, trigger])
+		if (getFieldState('confirmPassword').isTouched) trigger('confirmPassword')
+	}, [confirmPwd, trigger, getFieldState])
 
 	async function onSubmit(v: ResetPasswordSchema) {
 		setStep(3)
@@ -300,6 +309,15 @@ function ResetPasswordForm({
 				<p className="text-muted-foreground">Preencha aqui sua nova senha</p>
 			</div>
 
+			<input
+				type="text"
+				name="email"
+				value={email}
+				autoComplete="email"
+				hidden
+				readOnly
+			/>
+
 			<Controller
 				control={control}
 				defaultValue=""
@@ -315,6 +333,7 @@ function ResetPasswordForm({
 								errors?.newPassword &&
 									'border-red-500 focus-visible:border-red-500'
 							)}
+							autoComplete="new-password"
 							disabled={isSubmitting}
 							onChange={onChange}
 							onBlur={onBlur}
@@ -343,9 +362,13 @@ function ResetPasswordForm({
 								errors?.confirmPassword &&
 									'border-red-500 focus-visible:border-red-500'
 							)}
+							autoComplete="confirm-new-password"
 							disabled={isSubmitting}
 							onChange={onChange}
-							onBlur={onBlur}
+							onBlur={e => {
+								trigger('confirmPassword')
+								return onBlur()
+							}}
 							value={value}
 							ref={ref}
 						/>

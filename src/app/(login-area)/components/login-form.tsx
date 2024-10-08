@@ -62,6 +62,7 @@ export default function LoginForm() {
 										formState.errors?.email &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
+									autoComplete="email"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}
@@ -92,6 +93,7 @@ export default function LoginForm() {
 										formState.errors.password &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
+									autoComplete="password"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}
