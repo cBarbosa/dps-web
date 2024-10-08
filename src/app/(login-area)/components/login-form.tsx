@@ -11,6 +11,7 @@ import LabeledSeparator from '@/components/ui/labeled-separator'
 import { signIn } from 'next-auth/react'
 import InputPassword from '@/components/ui/input-password'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 const loginSchema = object({
 	email: pipe(
@@ -36,7 +37,13 @@ export default function LoginForm() {
 		resolver: valibotResolver(loginSchema),
 	})
 
-	async function onSubmit(v: LoginSchema) {}
+	const router = useRouter()
+
+	async function onSubmit(v: LoginSchema) {
+		// simulate a delay
+		await new Promise(resolve => setTimeout(resolve, 1500))
+		router.push('/dashboard')
+	}
 
 	return (
 		<div className="flex flex-col items-center gap-4 h-full w-full">
