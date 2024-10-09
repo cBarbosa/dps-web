@@ -11,7 +11,9 @@ import LabeledSeparator from '@/components/ui/labeled-separator'
 import { signIn } from 'next-auth/react'
 import InputPassword from '@/components/ui/input-password'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import DialogAlertComp from '@/components/ui/alert-dialog-comp'
 
 const loginSchema = object({
 	email: pipe(
@@ -39,10 +41,55 @@ export default function LoginForm() {
 
 	const router = useRouter()
 
+	const params = useSearchParams()
+
+	const [dialogState, setDialogState] = useState({
+		open: false,
+		message: '',
+		title: '',
+	})
+
 	async function onSubmit(v: LoginSchema) {
-		// simulate a delay
-		await new Promise(resolve => setTimeout(resolve, 1500))
-		router.push('/dashboard')
+		const result = await signIn('credentials', {
+			email: v.email,
+			password: v.password,
+			redirect: false,
+			callbackUrl: '/dashboard',
+		})
+
+		if (result === undefined) {
+			setDialogState({
+				open: true,
+				title: 'Ocorreu um erro ao autenticar',
+				message: 'Tente novamente.',
+			})
+
+			return
+		}
+
+		if (result.status === 401) {
+			console.log('NÃO AUTENTICADO')
+			setDialogState({
+				open: true,
+				title: 'Login inválido',
+				message: result.error || 'Email ou senha inválido',
+			})
+			return
+		}
+
+		if (!result.ok) {
+			console.log('ERRO AO AUTENTICAR')
+
+			setDialogState({
+				open: true,
+				title: 'Ocorreu um erro ao autenticar',
+				message: 'Tente novamente.',
+			})
+			return
+		}
+
+		const redirectPath = params.get('callbackUrl') || '/dashboard'
+		router.push(redirectPath)
 	}
 
 	return (
@@ -133,7 +180,7 @@ export default function LoginForm() {
 						className="py-6 font-semibold"
 					>
 						<Image
-							src={'/icons/ic_google_logo.svg'}
+							src={'/static/icons/ic_google_logo.svg'}
 							width={24}
 							height={24}
 							alt="Google logo"
@@ -148,6 +195,14 @@ export default function LoginForm() {
 				<Link href="/">Política de privacidade</Link> e{' '}
 				<Link href={'/'}>Termos de uso</Link>
 			</div>
+
+			<DialogAlertComp
+				open={dialogState.open}
+				title={dialogState.title}
+				onOpenChange={open => setDialogState(prev => ({ ...prev, open: open }))}
+			>
+				{dialogState.message}
+			</DialogAlertComp>
 		</div>
 	)
 }

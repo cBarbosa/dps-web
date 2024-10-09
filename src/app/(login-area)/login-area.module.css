@@ -1,5 +1,5 @@
 .display {
-	background-image: url('/images/login-display-img.jpeg');
+	background-image: url('/static/images/login-display-img.jpeg');
 	background-size: cover;
 	background-position: center;
 }

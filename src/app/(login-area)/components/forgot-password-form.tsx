@@ -10,8 +10,6 @@ import {
 	pipe,
 	InferInput,
 	maxLength,
-	custom,
-	ValiError,
 	nonEmpty,
 	forward,
 	partialCheck,
@@ -20,10 +18,6 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import LabeledSeparator from '@/components/ui/labeled-separator'
-import { signIn } from 'next-auth/react'
-import InputPassword from '@/components/ui/input-password'
-import Image from 'next/image'
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -31,7 +25,6 @@ import {
 	InputOTPSlot,
 } from '@/components/ui/input-otp'
 import {
-	ChangeEvent,
 	ComponentPropsWithoutRef,
 	ElementRef,
 	forwardRef,

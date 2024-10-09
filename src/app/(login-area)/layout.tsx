@@ -1,7 +1,7 @@
 import s from './login-area.module.css'
 import Image from 'next/image'
 
-export default function LoginAreaLayout({
+export default async function LoginAreaLayout({
 	children,
 }: {
 	children: React.ReactNode
@@ -16,7 +16,7 @@ export default function LoginAreaLayout({
 				>
 					<div>
 						<Image
-							src="/images/app-logo-white.png"
+							src="/static/images/app-logo-white.png"
 							width="272"
 							height="81"
 							alt="Logo"

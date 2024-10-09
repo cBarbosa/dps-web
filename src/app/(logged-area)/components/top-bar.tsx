@@ -1,4 +1,3 @@
-import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -6,11 +5,27 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover'
-import { AvatarFallback } from '@radix-ui/react-avatar'
 import { BellIcon, MessageSquareTextIcon, SearchIcon } from 'lucide-react'
 import React, { ReactNode } from 'react'
+import { Session } from 'next-auth'
+import AccountSection from './top-bar-account-section'
+import { redirect } from 'next/navigation'
 
-export function TopBar() {
+export type UserData = {
+	name: string
+	email: string
+	image?: string | null
+}
+
+export function TopBar({ session }: { session: Session | null }) {
+	if (!session) return // redirect('/login')
+
+	const userData: UserData = {
+		name: session.user!.name!,
+		email: session.user!.email!,
+		image: session.user!.image,
+	}
+
 	const notifications = [
 		{
 			title: 'Notificação 1',
@@ -28,7 +43,7 @@ export function TopBar() {
 		<div className="flex h-[90px] w-full px-5 py-2 gap-8 justify-between items-center">
 			<div className="basis-auto">
 				<div className="text-xl font-black text-primary-dark">
-					Bom dia, Fulana
+					Bom dia, {userData.name}
 				</div>
 				<div className="text-sm text-muted-foreground capitalize">
 					{new Date()
@@ -52,7 +67,7 @@ export function TopBar() {
 			<div className="basis-auto flex gap-3">
 				<NewsButton icon={<BellIcon />} newsList={notifications} />
 				<NewsButton icon={<MessageSquareTextIcon />} newsList={notifications} />
-				<AccountSection />
+				<AccountSection userData={userData} />
 			</div>
 		</div>
 	)
@@ -113,41 +128,6 @@ function NewsButton({
 					) : (
 						'Sem notificações'
 					)}
-				</PopoverContent>
-			</Popover>
-		</div>
-	)
-}
-
-function AccountSection() {
-	return (
-		<div className="flex ml-10 gap-3 items-center">
-			<div className="text-right">
-				<div className="text-sm font-bold text-primary-dark">
-					Fulana da Silva
-				</div>
-				<div className="text-xs text-muted-foreground">Super Admin</div>
-			</div>
-			<Popover>
-				<PopoverTrigger asChild>
-					<Button
-						variant="ghost"
-						className="p-0 hover:cursor-pointer hover:ring-2 hover:ring-ring"
-						asChild
-					>
-						<Avatar className="h-12 w-12 rounded-xl">
-							<AvatarImage src="/images/avatar-pic.jpg" />
-							<AvatarFallback>FS</AvatarFallback>
-						</Avatar>
-					</Button>
-				</PopoverTrigger>
-
-				<PopoverContent
-					className="py-1 px-1.5 rounded-lg"
-					sideOffset={10}
-					collisionPadding={10}
-				>
-					Account menu
 				</PopoverContent>
 			</Popover>
 		</div>

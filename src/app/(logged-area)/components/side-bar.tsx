@@ -6,7 +6,6 @@ import {
 } from '@/components/ui/accordion'
 import {
 	ArrowLeftFromLineIcon,
-	ArrowRightFromLineIcon,
 	FileTextIcon,
 	LayoutDashboardIcon,
 	NotebookPenIcon,
@@ -23,7 +22,7 @@ export default function SideBar() {
 			<div>
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
-						src="/images/app-logo.png"
+						src="/static/images/app-logo.png"
 						width="153"
 						height="45"
 						alt="DPS Inteligente Logo"

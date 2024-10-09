@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import LoginForm from '../components/login-form'
+import checkAuth from '@/lib/checkAuth'
 
-export default function LoginPage() {
+export default async function LoginPage() {
+	await checkAuth()
 	return (
 		<>
 			<div className="w-full flex justify-end text-sm">
