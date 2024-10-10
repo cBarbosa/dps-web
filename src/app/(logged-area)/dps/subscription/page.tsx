@@ -1,9 +1,9 @@
 import { Input } from '@/components/ui/input'
-import DpsDataTable, { DPS } from '../components/dps-data-table'
+import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { ListFilterIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function DashboardPage() {
+export default function SubscriptionPage() {
 	const data: DPS[] = [
 		{
 			codigo: 'INV-10022024-001',
@@ -45,6 +45,12 @@ export default function DashboardPage() {
 	return (
 		<div className="p-5">
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<div className="flex justify-start items-center gap-6 mt-2 mb-7">
+					<h2 className="text-xl text-primary">Painel de subscrição</h2>
+					<span className="text-muted-foreground text-sm">
+						Aqui listamos todas as DPS&apos;s preenchidas em nossa plataforma.
+					</span>
+				</div>
 				<div className="mb-3 flex gap-5 items-center">
 					<Input
 						placeholder="Código DPS"

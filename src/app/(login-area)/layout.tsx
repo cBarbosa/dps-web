@@ -27,7 +27,7 @@ export default async function LoginAreaLayout({
 					</h2>
 				</div>
 			</div>
-			<div className="grow basis-2/3 p-5">{children}</div>
+			<main className="grow basis-2/3 p-5">{children}</main>
 		</div>
 	)
 }

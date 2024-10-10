@@ -2,6 +2,9 @@ import Link from 'next/link'
 import LoginForm from '../components/login-form'
 import checkAuth from '@/lib/checkAuth'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function LoginPage() {
 	await checkAuth()
 	return (

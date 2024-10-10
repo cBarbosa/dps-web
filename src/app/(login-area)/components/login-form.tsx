@@ -12,7 +12,7 @@ import { signIn } from 'next-auth/react'
 import InputPassword from '@/components/ui/input-password'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import DialogAlertComp from '@/components/ui/alert-dialog-comp'
 
 const loginSchema = object({
@@ -48,6 +48,10 @@ export default function LoginForm() {
 		message: '',
 		title: '',
 	})
+
+	useEffect(() => {
+		router.refresh()
+	}, [router])
 
 	async function onSubmit(v: LoginSchema) {
 		const result = await signIn('credentials', {

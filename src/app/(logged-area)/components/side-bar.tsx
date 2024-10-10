@@ -1,3 +1,4 @@
+'use client'
 import {
 	Accordion,
 	AccordionContent,
@@ -13,8 +14,10 @@ import {
 	SettingsIcon,
 } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 import React from 'react'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function SideBar() {
 	return (
@@ -40,8 +43,8 @@ export default function SideBar() {
 							Dashboard
 						</MenuItem>
 						<MenuSection title="DPS" Icon={FileTextIcon}>
-							<MenuItem href="/">Preencher DPS</MenuItem>
-							<MenuItem href="/">Subscrição</MenuItem>
+							<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
+							<MenuItem href="/dps/subscription">Subscrição</MenuItem>
 						</MenuSection>
 						<MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
@@ -98,11 +101,18 @@ function MenuItem({
 	children: React.ReactNode
 	Icon?: React.FC<any>
 }) {
+	const path = usePathname()
+
+	const isActive = href.startsWith(path)
+
 	return (
 		<li className="my-1">
 			<Link
 				href={href}
-				className="inline-flex items-center justify-start gap-2 w-full py-2 px-4 rounded-3xl text-base font-normal text-primary hover:bg-muted"
+				className={cn(
+					'inline-flex items-center justify-start gap-2 w-full py-2 px-4 rounded-3xl text-base font-normal text-primary hover:bg-muted',
+					isActive ? 'bg-primary/10' : ''
+				)}
 			>
 				{Icon && <Icon size={20} />}
 				{children}

@@ -26,13 +26,14 @@ body {
 		--primary: 169 14% 53%;
 		--primary-foreground: 0 0% 100%;
 		--primary-dark: 169 44% 17%;
-		--secondary: 210 40% 96.1%;
+		--primary-light: 169 82% 30%;
+		--secondary: 220 14% 96%;
 		--secondary-foreground: 222.2 47.4% 11.2%;
 		--muted: 210 40% 96.1%;
 		--muted-foreground: 215 11% 65%;
 		--accent: 210 40% 96.1%;
 		--accent-foreground: 222.2 47.4% 11.2%;
-		--destructive: 0 84.2% 60.2%;
+		--destructive: 0 77% 71%;
 		--destructive-foreground: 210 40% 98%;
 		--border: 214.3 31.8% 91.4%;
 		--input: 0 0% 86%;
@@ -43,7 +44,7 @@ body {
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
 		--radius: 0.5rem;
-		/* color: hsl(215, 11%, 55%); */
+		/* color: hsla(169, 82%, 30%, 0.5); */
 	}
 }
 

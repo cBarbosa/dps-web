@@ -31,11 +31,18 @@ import {
 	useEffect,
 	useState,
 } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordForm() {
 	const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
 
 	const [email, setEmail] = useState('')
+
+	const router = useRouter()
+
+	useEffect(() => {
+		router.refresh()
+	}, [router])
 
 	return (
 		<div className="flex flex-col items-center gap-4 h-full w-full">

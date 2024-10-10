@@ -9,7 +9,6 @@ import { BellIcon, MessageSquareTextIcon, SearchIcon } from 'lucide-react'
 import React, { ReactNode } from 'react'
 import { Session } from 'next-auth'
 import AccountSection from './top-bar-account-section'
-import { redirect } from 'next/navigation'
 
 export type UserData = {
 	name: string
@@ -36,6 +35,11 @@ export function TopBar({ session }: { session: Session | null }) {
 			title: 'Notificação 2',
 			date: new Date(),
 			description: 'Descrição da notificação 2',
+		},
+		{
+			title: 'Notificação 3',
+			date: new Date(),
+			description: 'Descrição da notificação 3',
 		},
 	]
 
@@ -101,17 +105,17 @@ function NewsButton({
 						<span className="sr-only">View notifications</span>
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent
-					className="py-1 px-1.5 rounded-lg"
-					collisionPadding={10}
-				>
+				<PopoverContent className="p-1 rounded-lg" collisionPadding={10}>
 					{newsList != null && newsList.length > 0 ? (
 						<ul className="divide-y">
 							{newsList.map((n, i) => (
-								<li key={i + n.title + n.date.toString()}>
+								<li
+									key={i + n.title + n.date.toString()}
+									className=" *:first:rounded-t-md *:last:rounded-b-md"
+								>
 									<Button
 										variant="ghost"
-										className="w-full h-auto py-1 px-2 my-0.5 active:ring-1 active:ring-primary/20"
+										className="w-full h-auto p-1 rounded-none active:ring-1 active:ring-primary/20"
 									>
 										<div className="w-full text-left">
 											<div className="font-semibold text-primary-dark">
