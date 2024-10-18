@@ -44,7 +44,7 @@ export function TopBar({ session }: { session: Session | null }) {
 	]
 
 	return (
-		<div className="flex h-[90px] w-full px-5 py-2 gap-8 justify-between items-center">
+		<div className="relative flex h-[90px] w-full px-5 py-2 gap-8 justify-between items-center">
 			<div className="basis-auto">
 				<div className="text-xl font-black text-primary-dark">
 					Bom dia, {userData.name}

@@ -19,7 +19,7 @@ export default async function AppLayout({
 			</div>
 
 			<div className="relative grow pt-[90px]">
-				<div className="sticky -mt-[90px] top-0 left-0 h-[90px] bg-white w-full shadow-sm">
+				<div className="sticky -mt-[90px] top-0 left-0 h-[90px] bg-white w-full shadow-sm z-50">
 					<TopBar session={session} />
 				</div>
 				<div className="min-h-full min-w-full overflow-auto bg-[#F7F7F7]">

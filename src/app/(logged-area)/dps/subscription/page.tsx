@@ -10,35 +10,50 @@ export default function SubscriptionPage() {
 			cpf: '875.896.857-89',
 			dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
 			tipoDoc: 'simples',
-			status: 'assinada',
+			status: {
+				code: 1,
+				description: 'Aguardando análise',
+			},
 		},
 		{
 			codigo: 'INV-10022024-002',
 			cpf: '123.252.548-89',
 			dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
 			tipoDoc: 'simples',
-			status: 'analise',
+			status: {
+				code: 1,
+				description: 'Aguardando análise',
+			},
 		},
 		{
 			codigo: 'INV-10022024-003',
 			cpf: '123.252.857-89',
 			dataCadastro: new Date('2024-08-11T00:00:00-03:00'),
 			tipoDoc: 'completa',
-			status: 'aceita',
+			status: {
+				code: 1,
+				description: 'Aguardando análise',
+			},
 		},
 		{
 			codigo: 'INV-10022024-004',
 			cpf: '000.252.548-89',
 			dataCadastro: new Date('2024-05-01T00:00:00-03:00'),
 			tipoDoc: 'completa',
-			status: 'anexar',
+			status: {
+				code: 1,
+				description: 'Aguardando análise',
+			},
 		},
 		{
 			codigo: 'INV-10022024-009',
 			cpf: '123.087.548-89',
 			dataCadastro: new Date('2024-10-15T00:00:00-03:00'),
 			tipoDoc: 'completa',
-			status: 'pendente',
+			status: {
+				code: 1,
+				description: 'Aguardando análise',
+			},
 		},
 	]
 
@@ -65,7 +80,7 @@ export default function SubscriptionPage() {
 						<ListFilterIcon size={20} />
 					</Button>
 				</div>
-				<DpsDataTable data={data} />
+				<DpsDataTable data={data} currentPage={1} pageAmount={1} />
 			</div>
 		</div>
 	)
