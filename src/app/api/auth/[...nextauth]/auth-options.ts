@@ -19,16 +19,19 @@ export const authOptions: NextAuthOptions = {
 					password: string
 				}
 
-				const response = await fetch(process.env.API_BASE_URL + 'v1/Auth', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						userName: email,
-						password: password,
-					}),
-				})
+				const response = await fetch(
+					process.env.NEXT_PUBLIC_API_BASE_URL + 'v1/Auth',
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							userName: email,
+							password: password,
+						}),
+					}
+				)
 
 				if (response.status === 401) {
 					console.log('NÃO AUTENTICADO')

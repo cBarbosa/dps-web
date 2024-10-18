@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -16,7 +18,10 @@ export type DPS = {
 	status: DpsStatus
 }
 
-type DpsStatus = 'pendente' | 'assinada' | 'analise' | 'aceita' | 'anexar'
+type DpsStatus = {
+	code: number
+	description: string
+}
 
 export const columns: ColumnDef<DPS>[] = [
 	{
@@ -68,10 +73,18 @@ export const columns: ColumnDef<DPS>[] = [
 						variant="ghost"
 						size="iconSm"
 						className="rounded-full bg-white"
+						asChild
 					>
-						<InfoIcon size={20} className="text-foreground" />
+						<Link href={`/dps/details/${codigo}`}>
+							<InfoIcon size={20} className="text-foreground" />
+						</Link>
 					</Button>
-					<Button variant="destructive" size="iconSm" className="rounded-full">
+					<Button
+						type="button"
+						variant="destructive"
+						size="iconSm"
+						className="rounded-full"
+					>
 						<Trash2Icon size={20} className="text-foreground p-0.5" />
 					</Button>
 				</div>
@@ -80,45 +93,74 @@ export const columns: ColumnDef<DPS>[] = [
 	},
 ]
 
-export default function DpsDataTable({ data }: { data: DPS[] }) {
+export default function DpsDataTable({
+	data,
+	currentPage,
+	pageAmount,
+}: {
+	data: DPS[]
+	currentPage: number
+	pageAmount: number
+}) {
+	// const router = useRouter()
+
 	return (
 		<div>
-			<DataTable columns={columns} data={data} />
+			<DataTable
+				columns={columns}
+				data={data}
+				currentPage={currentPage}
+				pageAmount={pageAmount}
+				getPageUrl={page => {
+					const url = new URL(window.location.href)
+					url.searchParams.set('page', page.toString())
+					console.log('>', url.toString())
+					return url.toString()
+				}}
+			/>
 		</div>
 	)
 }
 
 export function StatusBadge({ status }: { status: DpsStatus }) {
-	switch (status) {
-		case 'pendente':
-			return (
-				<Badge className="rounded-full font-normal shadow-none text-black bg-yellow-500 hover:bg-yellow-500/80">
-					Pend. Assinatura
-				</Badge>
-			)
-		case 'assinada':
-			return (
-				<Badge className="rounded-full font-normal shadow-none text-black bg-yellow-500 hover:bg-yellow-500/80">
-					DPS Assinada
-				</Badge>
-			)
-		case 'analise':
-			return (
-				<Badge className="rounded-full font-normal shadow-none text-black bg-primary hover:bg-primary/80">
-					Em Análise
-				</Badge>
-			)
-		case 'aceita':
-			return (
-				<Badge className="rounded-full font-normal shadow-none text-black bg-green-300 hover:bg-green-300/80">
-					DPS Aceita
-				</Badge>
-			)
-		case 'anexar':
-			return (
-				<Badge className="rounded-full font-normal shadow-none text-black bg-destructive hover:bg-destructive/80">
-					Anexar Documentação
-				</Badge>
-			)
+	const badgeProps: {
+		variant:
+			| 'success'
+			| 'warn'
+			| 'destructive'
+			| 'default'
+			| 'secondary'
+			| 'outline'
+			| null
+		className: string
+	} = { variant: null, className: 'font-normal text-black' }
+
+	switch (status.code) {
+		case 1:
+			badgeProps.variant = 'warn'
+			break
+		case 2:
+			badgeProps.variant = 'warn'
+			break
+		case 3:
+			badgeProps.variant = 'warn'
+			break
+		case 4:
+			badgeProps.variant = 'destructive'
+			break
+		case 5:
+			badgeProps.variant = 'success'
+			break
+		default:
 	}
+
+	return (
+		<Badge
+			variant={badgeProps.variant}
+			shape="pill"
+			className={badgeProps.className}
+		>
+			{status.description}
+		</Badge>
+	)
 }
