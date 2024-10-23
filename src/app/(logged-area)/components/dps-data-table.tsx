@@ -102,6 +102,7 @@ export default function DpsDataTable({
 	currentPage: number
 	pageAmount: number
 }) {
+	'use client'
 	// const router = useRouter()
 
 	return (
