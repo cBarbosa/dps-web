@@ -7,16 +7,13 @@ export default withAuth({
 		signIn: '/login',
 	},
 
-	callbacks: {
-		// Called when the user is authenticated
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		authorized: ({ token, req }) => {
-			console.log(token)
-			console.log('^^^^^^^^Authorized')
-			console.log(req)
-			return true
-		},
-	},
+	// callbacks: {
+	// 	// Called when the user is authenticated
+	// 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	// 	authorized: ({ token, req }) => {
+	// 		return true
+	// 	},
+	// },
 })
 
 export const config = {
