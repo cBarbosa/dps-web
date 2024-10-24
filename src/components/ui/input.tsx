@@ -1,4 +1,6 @@
+'use client'
 import * as React from 'react'
+import InputMask from 'react-input-mask'
 
 import { cn } from '@/lib/utils'
 
@@ -6,11 +8,24 @@ export interface InputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {
 	icon?: React.ReactNode
 	iconOffset?: number
+	mask?: string
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-	({ className, type, icon, iconOffset = 0, ...props }, ref) => {
-		const InputComp = (
+	({ className, type, icon, iconOffset = 0, mask, ...props }, ref) => {
+		const InputComp = mask ? (
+			<InputMask
+				mask={mask}
+				maskPlaceholder=""
+				className={cn(
+					'flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-base transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+					className
+				)}
+				style={icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined}
+				ref={ref}
+				{...props}
+			/>
+		) : (
 			<input
 				type={type}
 				className={cn(

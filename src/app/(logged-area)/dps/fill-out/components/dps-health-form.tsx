@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
+import { useRouter } from 'next/navigation'
 import React from 'react'
 import { Control, Controller, FormState, useForm } from 'react-hook-form'
 import {
@@ -70,6 +71,38 @@ const healthForm = object({
 		has: string(),
 		description: string(),
 	}),
+	lupus: object({
+		has: string(),
+		description: string(),
+	}),
+	neurologicas: object({
+		has: string(),
+		description: string(),
+	}),
+	parkinson: object({
+		has: string(),
+		description: string(),
+	}),
+	renal: object({
+		has: string(),
+		description: string(),
+	}),
+	sequelas: object({
+		has: string(),
+		description: string(),
+	}),
+	shistosomose: object({
+		has: string(),
+		description: string(),
+	}),
+	tireoide: object({
+		has: string(),
+		description: string(),
+	}),
+	tumores: object({
+		has: string(),
+		description: string(),
+	}),
 })
 
 export type HealthForm = InferInput<typeof healthForm>
@@ -87,13 +120,16 @@ const DpsHealthForm = ({
 		control,
 		reset,
 		watch,
-		formState: { isSubmitting, isSubmitted, ...formState },
+		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
 	})
 
+	const router = useRouter()
+
 	async function onSubmit(v: HealthForm) {
 		onSubmitProp(v)
+		router.push('/dashboard')
 	}
 
 	return (
@@ -113,7 +149,7 @@ const DpsHealthForm = ({
 					label="Acidente Vascular Cerebral"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -122,7 +158,7 @@ const DpsHealthForm = ({
 					label="AIDS"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -131,7 +167,7 @@ const DpsHealthForm = ({
 					label="Alzheimer"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -140,7 +176,7 @@ const DpsHealthForm = ({
 					label="Arteriais Crônicas"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -149,7 +185,7 @@ const DpsHealthForm = ({
 					label="Chagas"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -158,7 +194,7 @@ const DpsHealthForm = ({
 					label="Cirrose Hepática e Varizes de Estômago"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -167,7 +203,7 @@ const DpsHealthForm = ({
 					label="Diabetes com complicações"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -176,7 +212,7 @@ const DpsHealthForm = ({
 					label="Enfisema Pulmonar e Asma"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -185,7 +221,7 @@ const DpsHealthForm = ({
 					label="Esclerose Múltipla"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -194,7 +230,7 @@ const DpsHealthForm = ({
 					label="Espondilose Anquilosante"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -203,7 +239,7 @@ const DpsHealthForm = ({
 					label="Hipertensão, Infarto do Miocárdio ou outras doenças cardiocirculatórias"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -212,7 +248,7 @@ const DpsHealthForm = ({
 					label="Insuficiência Coronariana"
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 
@@ -221,7 +257,81 @@ const DpsHealthForm = ({
 					label="L.E.R."
 					control={control}
 					watch={watch}
-					formState={formState}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="lupus"
+					label="Lúpus"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="neurologicas"
+					label="Neurológicas ou Psiquiátricas - (vertigem, desmaio, convulsão, dificuldade de fala,
+doenças ou alterações mentais ou de nervos)
+"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="parkinson"
+					label="Parkinson"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="renal"
+					label="Renal Crônica (com ou sem hemodiálise)"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="sequelas"
+					label="Sequelas de Acidente Vascular Celebral"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="shistosomose"
+					label="Shistosomose"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="tireoide"
+					label="Tireóide ou outras Doenças Endócrinas com complicações"
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting}
+				/>
+
+				<DiseaseField
+					name="tumores"
+					label="Tumores Malignos e Câncer"
+					control={control}
+					watch={watch}
+					errors={errors}
 					isSubmitting={isSubmitting}
 				/>
 			</div>
@@ -240,16 +350,18 @@ function DiseaseField({
 	label,
 	control,
 	watch,
-	formState,
+	errors,
 	isSubmitting,
 }: {
 	name: keyof HealthForm
 	label: string
 	control: Control<HealthForm>
 	watch: any
-	formState: Omit<FormState<HealthForm>, 'isSubmitting' | 'isSubmitted'>
+	errors: FormState<HealthForm>['errors']
 	isSubmitting: boolean
 }) {
+	const has = watch(`${name}.has`)
+
 	return (
 		<ShareLine className="py-4">
 			<Controller
@@ -262,21 +374,21 @@ function DiseaseField({
 						<Input
 							id={name}
 							type="text"
-							placeholder={watch(`${name}.has`) === 'yes' ? 'Descreva' : ''}
+							placeholder={has === 'yes' ? 'Descreva' : ''}
 							className={cn(
 								'w-full px-4 py-6 rounded-lg',
-								formState.errors?.[name]?.description &&
+								errors?.[name]?.description &&
 									'border-red-500 focus-visible:border-red-500'
 							)}
 							autoComplete={name}
-							disabled={isSubmitting || watch(`${name}.has`) !== 'yes'}
+							disabled={isSubmitting || has !== 'yes'}
 							onChange={onChange}
 							onBlur={onBlur}
 							value={value}
 							ref={ref}
 						/>
 						<div className="text-xs text-red-500">
-							{formState.errors?.[name]?.description?.message}
+							{errors?.[name]?.description?.message}
 						</div>
 					</label>
 				)}
