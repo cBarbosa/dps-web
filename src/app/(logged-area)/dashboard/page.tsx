@@ -18,14 +18,13 @@ export default async function DashboardPage({
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
 	const data = await getProposals(token, currentPage)
-	console.log('||||||||->>', data?.items)
+	console.log('||||||||->>', data)
 
 	const pageAmount = Math.ceil(data?.totalItems / 10)
 
-	if (
-		data === null ||
-		(searchParams?.page && +searchParams.page > pageAmount)
-	) {
+	if (data === null) return redirect('/dashboard')
+
+	if (searchParams?.page && +searchParams.page > pageAmount) {
 		return redirect('/dashboard')
 	}
 
