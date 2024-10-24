@@ -1,5 +1,7 @@
 'use server'
+import { signOut } from 'next-auth/react'
 import axios from '../../../lib/axios'
+import { redirect } from 'next/navigation'
 
 export async function getProposals(token: string, page = 1, size = 10) {
 	try {
@@ -12,7 +14,6 @@ export async function getProposals(token: string, page = 1, size = 10) {
 				Authorization: `Bearer ${token}`,
 			},
 		})
-		console.log('--->>', response.data)
 
 		if (response.data) {
 			return response.data
@@ -21,6 +22,10 @@ export async function getProposals(token: string, page = 1, size = 10) {
 		}
 	} catch (err) {
 		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
 	}
 
 	return null

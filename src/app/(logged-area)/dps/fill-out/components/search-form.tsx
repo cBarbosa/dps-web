@@ -8,6 +8,9 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { SearchIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
+import DpsProfileForm, { ProfileForm } from './dps-profile-form'
+import { useState } from 'react'
+import DpsHealthForm, { HealthForm } from './dps-health-form'
 
 const searchSchema = object({
 	cpf: string(),
@@ -33,6 +36,16 @@ export default function SearchForm() {
 	const params = useSearchParams()
 	const router = useRouter()
 
+	const [dpsData, setDpsData] = useState<{
+		profile: ProfileForm | null
+		health: HealthForm | null
+	}>({
+		profile: null,
+		health: null,
+	})
+
+	const [step, setStep] = useState('profile')
+
 	const options = [
 		{ value: '1', label: 'Opção 1' },
 		{ value: '2', label: 'Opção 2' },
@@ -50,71 +63,90 @@ export default function SearchForm() {
 
 		router.push(`/dps/fill-out?${searchParams.toString()}`)
 	}
+
+	function handleProfileSubmit(v: ProfileForm) {
+		setDpsData(prev => ({ ...prev, profile: v }))
+		setStep('health')
+	}
+	function handleHealthSubmit(v: HealthForm) {
+		setDpsData(prev => ({ ...prev, health: v }))
+	}
+
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
-			<div className="mt-7 flex flex-row justify-between items-center gap-5">
-				<div>
-					<h3 className="text-primary font-semibold">Pesquisar CPF</h3>
-					<span className="text-sm text-muted-foreground">
-						Buscar dados do proponente
-					</span>
+		<>
+			<form onSubmit={handleSubmit(onSubmit)}>
+				<div className="mt-7 flex flex-row justify-between items-center gap-5">
+					<div>
+						<h3 className="text-primary font-semibold">Pesquisar CPF</h3>
+						<span className="text-sm text-muted-foreground">
+							Buscar dados do proponente
+						</span>
+					</div>
+					<Controller
+						control={control}
+						defaultValue=""
+						name="cpf"
+						render={({ field: { onChange, onBlur, value, ref } }) => (
+							<Input
+								placeholder="000.000.000-00"
+								className="max-w-72 p-4 border-none rounded-xl"
+								disabled={isSubmitting}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+							/>
+						)}
+					/>
+
+					<Controller
+						control={control}
+						defaultValue=""
+						name="produto"
+						render={({ field: { onChange, value } }) => (
+							<SelectComp
+								placeholder="Produto"
+								options={options}
+								allowClear
+								triggerClassName="w-40 border-none rounded-xl"
+								disabled={isSubmitting}
+								onValueChange={onChange}
+								defaultValue={value}
+							/>
+						)}
+					/>
+
+					<Controller
+						control={control}
+						defaultValue=""
+						name="lmi"
+						render={({ field: { onChange, value } }) => (
+							<SelectComp
+								placeholder="LMI"
+								options={options}
+								allowClear
+								triggerClassName="w-40 border-none rounded-xl"
+								disabled={isSubmitting}
+								onValueChange={onChange}
+								defaultValue={value}
+							/>
+						)}
+					/>
+
+					<Button type="submit" className="w-full max-w-32 p-4 rounded-xl">
+						<SearchIcon size={18} className="mr-2" />
+						Buscar
+					</Button>
 				</div>
-				<Controller
-					control={control}
-					defaultValue=""
-					name="cpf"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<Input
-							placeholder="000.000.000-00"
-							className="max-w-72 p-4 border-none rounded-xl"
-							disabled={isSubmitting}
-							onChange={onChange}
-							onBlur={onBlur}
-							value={value}
-							ref={ref}
-						/>
-					)}
-				/>
+			</form>
 
-				<Controller
-					control={control}
-					defaultValue=""
-					name="produto"
-					render={({ field: { onChange, value } }) => (
-						<SelectComp
-							placeholder="Produto"
-							options={options}
-							allowClear
-							triggerClassName="w-40 border-none rounded-xl"
-							disabled={isSubmitting}
-							onValueChange={onChange}
-							defaultValue={value}
-						/>
-					)}
-				/>
-
-				<Controller
-					control={control}
-					defaultValue=""
-					name="lmi"
-					render={({ field: { onChange, value } }) => (
-						<SelectComp
-							placeholder="LMI"
-							options={options}
-							allowClear
-							triggerClassName="w-40 border-none rounded-xl"
-							disabled={isSubmitting}
-							onValueChange={onChange}
-							defaultValue={value}
-						/>
-					)}
-				/>
-
-				<Button type="submit" className="w-full max-w-32 p-4 rounded-xl">
-					<SearchIcon size={18} className="mr-2" />
-					Buscar
-				</Button>
+			<div className="p-5 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				{step === 'profile' ? (
+					<DpsProfileForm onSubmit={handleProfileSubmit} />
+				) : (
+					<DpsHealthForm onSubmit={handleHealthSubmit} />
+				)}
 			</div>
-		</form>
+		</>
 	)
 }
