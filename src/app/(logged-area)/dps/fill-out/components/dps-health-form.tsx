@@ -1,108 +1,318 @@
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import FileInput from '@/components/ui/file-input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
 import React from 'react'
-import { Control, Controller, FormState, useForm } from 'react-hook-form'
 import {
-	boolean,
-	email,
-	InferInput,
-	nonEmpty,
-	object,
-	pipe,
-	string,
-} from 'valibot'
+	Control,
+	Controller,
+	FormState,
+	useForm,
+	UseFormResetField,
+	UseFormSetValue,
+	UseFormTrigger,
+} from 'react-hook-form'
+import { file, InferInput, literal, undefined_, object, variant } from 'valibot'
 
 const healthForm = object({
-	avc: object({
-		has: string(),
-		description: string(),
-	}),
+	avc: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
 
-	aids: object({
-		has: string(),
-		description: string(),
-	}),
-	alzheimer: object({
-		has: string(),
-		description: string(),
-	}),
-	arteriais: object({
-		has: string(),
-		description: string(),
-	}),
-	chagas: object({
-		has: string(),
-		description: string(),
-	}),
-	cirrose: object({
-		has: string(),
-		description: string(),
-	}),
-	diabetes: object({
-		has: string(),
-		description: string(),
-	}),
-	enfisema: object({
-		has: string(),
-		description: string(),
-	}),
-	esclerose: object({
-		has: string(),
-		description: string(),
-	}),
-	espondilose: object({
-		has: string(),
-		description: string(),
-	}),
-	hipertensao: object({
-		has: string(),
-		description: string(),
-	}),
-	insuficiencia: object({
-		has: string(),
-		description: string(),
-	}),
-	ler: object({
-		has: string(),
-		description: string(),
-	}),
-	lupus: object({
-		has: string(),
-		description: string(),
-	}),
-	neurologicas: object({
-		has: string(),
-		description: string(),
-	}),
-	parkinson: object({
-		has: string(),
-		description: string(),
-	}),
-	renal: object({
-		has: string(),
-		description: string(),
-	}),
-	sequelas: object({
-		has: string(),
-		description: string(),
-	}),
-	shistosomose: object({
-		has: string(),
-		description: string(),
-	}),
-	tireoide: object({
-		has: string(),
-		description: string(),
-	}),
-	tumores: object({
-		has: string(),
-		description: string(),
-	}),
+	aids: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	alzheimer: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	arteriais: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	chagas: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	cirrose: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	diabetes: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	enfisema: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	esclerose: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	espondilose: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	hipertensao: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	insuficiencia: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	ler: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	lupus: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	neurologicas: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	parkinson: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	renal: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	sequelas: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	shistosomose: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	tireoide: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
+	tumores: variant(
+		'has',
+		[
+			object({
+				has: literal('yes'),
+				attachment: file('Arquivo inválido.'),
+			}),
+			object({
+				has: literal('no'),
+				attachment: undefined_(),
+			}),
+		],
+		'Campo obrigatório'
+	),
 })
 
 export type HealthForm = InferInput<typeof healthForm>
@@ -118,7 +328,6 @@ const DpsHealthForm = ({
 		trigger,
 		setValue,
 		control,
-		reset,
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm>({
@@ -151,7 +360,10 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
+				{watch('avc.has')}
 
 				<DiseaseField
 					name="aids"
@@ -160,6 +372,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -169,6 +383,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -178,6 +394,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -187,6 +405,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -196,6 +416,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -205,6 +427,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -214,6 +438,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -223,6 +449,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -232,6 +460,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -241,6 +471,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -250,6 +482,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -259,6 +493,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -268,6 +504,8 @@ const DpsHealthForm = ({
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -279,6 +517,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -288,6 +528,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -297,6 +539,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -306,6 +550,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -315,6 +561,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -324,6 +572,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 
 				<DiseaseField
@@ -333,6 +583,8 @@ doenças ou alterações mentais ou de nervos)
 					watch={watch}
 					errors={errors}
 					isSubmitting={isSubmitting}
+					trigger={trigger}
+					setValue={setValue}
 				/>
 			</div>
 
@@ -352,6 +604,8 @@ function DiseaseField({
 	watch,
 	errors,
 	isSubmitting,
+	trigger,
+	setValue,
 }: {
 	name: keyof HealthForm
 	label: string
@@ -359,38 +613,37 @@ function DiseaseField({
 	watch: any
 	errors: FormState<HealthForm>['errors']
 	isSubmitting: boolean
+	trigger: UseFormTrigger<HealthForm>
+	setValue: UseFormSetValue<HealthForm>
 }) {
 	const has = watch(`${name}.has`)
 
 	return (
-		<ShareLine className="py-4">
+		<ShareLine className="py-4 px-4 hover:bg-gray-50">
 			<Controller
 				control={control}
-				defaultValue=""
-				name={`${name}.description`}
+				defaultValue={undefined}
+				name={`${name}.attachment`}
 				render={({ field: { onChange, onBlur, value, ref } }) => (
-					<label>
+					<div>
 						<div className="text-gray-500">{label}</div>
-						<Input
+						<FileInput
 							id={name}
-							type="text"
-							placeholder={has === 'yes' ? 'Descreva' : ''}
+							label="Anexar laudo"
 							className={cn(
-								'w-full px-4 py-6 rounded-lg',
-								errors?.[name]?.description &&
+								'w-full mt-3 rounded-lg',
+								errors?.[name]?.attachment &&
 									'border-red-500 focus-visible:border-red-500'
 							)}
-							autoComplete={name}
 							disabled={isSubmitting || has !== 'yes'}
 							onChange={onChange}
 							onBlur={onBlur}
 							value={value}
-							ref={ref}
 						/>
 						<div className="text-xs text-red-500">
-							{errors?.[name]?.description?.message}
+							{errors?.[name]?.attachment?.message}
 						</div>
-					</label>
+					</div>
 				)}
 			/>
 
@@ -398,22 +651,45 @@ function DiseaseField({
 				control={control}
 				defaultValue={undefined}
 				name={`${name}.has`}
-				render={({ field: { onChange, onBlur, value, ref } }) => (
-					<RadioGroup
-						onValueChange={onChange}
-						defaultValue={value}
-						className="flex flex-row justify-end items-start gap-5"
-					>
-						<div>
-							<RadioGroupItem value="yes" id={`${name}-yes`} className="mr-1" />
-							<label htmlFor={`${name}-yes`}>Sim</label>
-						</div>
-						<div>
-							<RadioGroupItem value="no" id={`${name}-no`} className="mr-1" />
-							<label htmlFor={`${name}-no`}>Não</label>
-						</div>
-					</RadioGroup>
-				)}
+				render={({ field: { onChange, onBlur, value, ref, ...field } }) => {
+					function handleChange(v: 'yes' | 'no') {
+						onChange(v)
+						requestAnimationFrame(() => {
+							trigger(`${name}.attachment`)
+						})
+
+						if (v === 'no') setValue(`${name}.attachment`, undefined)
+					}
+
+					return (
+						<RadioGroup
+							onValueChange={handleChange}
+							defaultValue={value}
+							className="flex flex-row justify-end items-start gap-5"
+						>
+							<div className={errors?.[name]?.has && 'text-red-500'}>
+								<RadioGroupItem
+									value="yes"
+									id={`${name}-yes`}
+									className={errors?.[name]?.has && 'border-red-500'}
+								/>
+								<label htmlFor={`${name}-yes`} className="pl-2 cursor-pointer">
+									Sim
+								</label>
+							</div>
+							<div className={errors?.[name]?.has && 'text-red-500'}>
+								<RadioGroupItem
+									value="no"
+									id={`${name}-no`}
+									className={errors?.[name]?.has && 'border-red-500'}
+								/>
+								<label htmlFor={`${name}-no`} className="pl-2 cursor-pointer">
+									Não
+								</label>
+							</div>
+						</RadioGroup>
+					)
+				}}
 			/>
 		</ShareLine>
 	)
