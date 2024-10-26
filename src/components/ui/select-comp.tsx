@@ -8,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from './select'
+import { cn } from '@/lib/utils'
 
 export type SelectProps = React.ComponentProps<typeof Select> & {
 	placeholder: string
@@ -51,7 +52,12 @@ function SelectUi({
 }: SelectUiProps) {
 	return (
 		<Select {...props}>
-			<SelectTrigger className={triggerClassName}>
+			<SelectTrigger
+				className={cn(
+					triggerClassName,
+					'[&[data-placeholder]]:text-muted-foreground'
+				)}
+			>
 				<SelectValue placeholder={placeholder} />
 			</SelectTrigger>
 			<SelectContent>

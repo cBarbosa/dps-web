@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
+import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
@@ -8,20 +9,32 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import React from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
+	custom,
+	date,
 	email,
 	InferInput,
-	minLength,
+	maxValue,
 	nonEmpty,
+	nonNullish,
+	nonOptional,
 	object,
 	pipe,
 	string,
 } from 'valibot'
+import validateCpf from 'validar-cpf'
 
 const profileForm = object({
-	cpf: pipe(string(), nonEmpty('Campo obrigatório.')),
+	cpf: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(v => validateCpf(v as string), 'CPF inválido.')
+	),
 	name: pipe(string(), nonEmpty('Campo obrigatório.')),
 	socialName: pipe(string(), nonEmpty('Campo obrigatório.')),
-	birthdate: pipe(string(), nonEmpty('Campo obrigatório.')),
+	birthdate: pipe(
+		date('Data inválida.'),
+		maxValue(new Date(), 'Idade inválida 2.')
+	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(
 		string(),
@@ -50,7 +63,7 @@ const DpsProfileForm = ({
 		setValue,
 		control,
 		reset,
-		formState: { isSubmitting, isSubmitted, ...formState },
+		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<ProfileForm>({
 		resolver: valibotResolver(profileForm),
 	})
@@ -77,10 +90,10 @@ const DpsProfileForm = ({
 								id="cpf"
 								type="text"
 								placeholder="999.999.999-99"
+								mask="999.999.999-99"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.cpf &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.cpf && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="cpf"
 								disabled={isSubmitting}
@@ -89,27 +102,25 @@ const DpsProfileForm = ({
 								value={value}
 								ref={ref}
 							/>
-							<div className="text-xs text-red-500">
-								{formState.errors?.cpf?.message}
-							</div>
+							<div className="text-xs text-red-500">{errors?.cpf?.message}</div>
 						</label>
 					)}
 				/>
 
 				<Controller
 					control={control}
-					defaultValue=""
 					name="birthdate"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Data de Nascimento</div>
-							<Input
+							{/* <Input
 								id="birthdate"
 								type="text"
 								placeholder="01/01/1999"
+								mask="99/99/9999"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.birthdate &&
+									errors?.birthdate &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="birthdate"
@@ -118,9 +129,24 @@ const DpsProfileForm = ({
 								onBlur={onBlur}
 								value={value}
 								ref={ref}
+							/> */}
+
+							<DatePicker
+								id="birthdate"
+								placeholder="01/01/1999"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.birthdate &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								disabled={isSubmitting}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.birthdate?.message}
+								{errors?.birthdate?.message}
 							</div>
 						</label>
 					)}
@@ -141,8 +167,7 @@ const DpsProfileForm = ({
 								placeholder="Nome do proponente"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.name &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.name && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="name"
 								disabled={isSubmitting}
@@ -152,7 +177,7 @@ const DpsProfileForm = ({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.name?.message}
+								{errors?.name?.message}
 							</div>
 						</label>
 					)}
@@ -171,7 +196,7 @@ const DpsProfileForm = ({
 								placeholder="Nome social do proponente"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.socialName &&
+									errors?.socialName &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="socialName"
@@ -182,7 +207,7 @@ const DpsProfileForm = ({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.socialName?.message}
+								{errors?.socialName?.message}
 							</div>
 						</label>
 					)}
@@ -206,7 +231,7 @@ const DpsProfileForm = ({
 								defaultValue={value}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.profession?.message}
+								{errors?.profession?.message}
 							</div>
 						</label>
 					)}
@@ -225,8 +250,7 @@ const DpsProfileForm = ({
 								placeholder="exemplo@email.com"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.email &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.email && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="email"
 								disabled={isSubmitting}
@@ -236,7 +260,7 @@ const DpsProfileForm = ({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.email?.message}
+								{errors?.email?.message}
 							</div>
 						</label>
 					)}
@@ -255,10 +279,10 @@ const DpsProfileForm = ({
 								id="phone"
 								type="text"
 								placeholder="(99) 99999-9999"
+								mask="(99) 99999-9999"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									formState.errors?.phone &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.phone && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="phone"
 								disabled={isSubmitting}
@@ -268,7 +292,7 @@ const DpsProfileForm = ({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{formState.errors?.phone?.message}
+								{errors?.phone?.message}
 							</div>
 						</label>
 					)}
