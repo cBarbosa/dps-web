@@ -5,7 +5,7 @@ import SelectComp from '@/components/ui/select-comp'
 import { InferInput, minLength, nonEmpty, object, pipe, string } from 'valibot'
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { SearchIcon } from 'lucide-react'
+import { SearchIcon, UserIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import DpsProfileForm, { ProfileForm } from './dps-profile-form'
@@ -89,6 +89,7 @@ export default function SearchForm() {
 						render={({ field: { onChange, onBlur, value, ref } }) => (
 							<Input
 								placeholder="000.000.000-00"
+								mask="999.999.999-99"
 								className="max-w-72 p-4 border-none rounded-xl"
 								disabled={isSubmitting}
 								onChange={onChange}
@@ -140,13 +141,46 @@ export default function SearchForm() {
 				</div>
 			</form>
 
-			<div className="p-5 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				{step === 'profile' ? (
-					<DpsProfileForm onSubmit={handleProfileSubmit} />
+			{params.get('cpf') &&
+				params.get('cpf') != '' &&
+				(step === 'profile' ? (
+					<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+						<DpsProfileForm onSubmit={handleProfileSubmit} />
+					</div>
 				) : (
-					<DpsHealthForm onSubmit={handleHealthSubmit} />
-				)}
-			</div>
+					<>
+						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+							<DpsProfileData data={dpsData.profile!} />
+						</div>
+						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+							<DpsHealthForm onSubmit={handleHealthSubmit} />
+						</div>
+					</>
+				))}
 		</>
+	)
+}
+
+function DpsProfileData({ data }: { data: ProfileForm }) {
+	return (
+		<div className="px-3">
+			<h3 className="text-primary text-lg">Dados do Proponente</h3>
+
+			<div className="flex gap-4 my-4">
+				<UserIcon size={48} className="grow-0 mr-2 text-primary" />
+				<div className="grow">
+					<div className="flex gap-5 text-muted-foreground text-sm">
+						<span>CPF: {data.cpf}</span>
+						<span>
+							Nascimento: {data.birthdate.toLocaleDateString('pt-BR')}
+						</span>
+					</div>
+					<span className="text-lg font-semibold">{data.name}</span>
+				</div>
+				<span className="grow-0 text-xs text-muted-foreground">
+					*dados recuperados automaticamente
+				</span>
+			</div>
+		</div>
 	)
 }
