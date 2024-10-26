@@ -33,7 +33,7 @@ const profileForm = object({
 	socialName: pipe(string(), nonEmpty('Campo obrigatório.')),
 	birthdate: pipe(
 		date('Data inválida.'),
-		maxValue(new Date(), 'Idade inválida 2.')
+		maxValue(new Date(), 'Idade inválida.')
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(

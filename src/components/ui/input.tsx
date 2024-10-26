@@ -22,7 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					className
 				)}
 				style={icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined}
-				ref={ref}
+				inputRef={ref}
 				{...props}
 			/>
 		) : (
