@@ -2,18 +2,17 @@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import SelectComp from '@/components/ui/select-comp'
-import { InferInput, minLength, nonEmpty, object, pipe, string } from 'valibot'
+import { InferInput, object, pipe, string, transform } from 'valibot'
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { SearchIcon, UserIcon } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { SearchIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import DpsProfileForm, { ProfileForm } from './dps-profile-form'
-import { useState } from 'react'
-import DpsHealthForm, { HealthForm } from './dps-health-form'
 
 const searchSchema = object({
-	cpf: string(),
+	cpf: pipe(
+		string(),
+		transform(input => input.replace(/\D/g, ''))
+	),
 	produto: string(),
 	lmi: string(),
 })
@@ -33,18 +32,7 @@ export default function SearchForm() {
 		resolver: valibotResolver(searchSchema),
 	})
 
-	const params = useSearchParams()
 	const router = useRouter()
-
-	const [dpsData, setDpsData] = useState<{
-		profile: ProfileForm | null
-		health: HealthForm | null
-	}>({
-		profile: null,
-		health: null,
-	})
-
-	const [step, setStep] = useState('profile')
 
 	const options = [
 		{ value: '1', label: 'Opção 1' },
@@ -62,14 +50,6 @@ export default function SearchForm() {
 		})
 
 		router.push(`/dps/fill-out?${searchParams.toString()}`)
-	}
-
-	function handleProfileSubmit(v: ProfileForm) {
-		setDpsData(prev => ({ ...prev, profile: v }))
-		setStep('health')
-	}
-	function handleHealthSubmit(v: HealthForm) {
-		setDpsData(prev => ({ ...prev, health: v }))
 	}
 
 	return (
@@ -140,47 +120,6 @@ export default function SearchForm() {
 					</Button>
 				</div>
 			</form>
-
-			{params.get('cpf') &&
-				params.get('cpf') != '' &&
-				(step === 'profile' ? (
-					<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-						<DpsProfileForm onSubmit={handleProfileSubmit} />
-					</div>
-				) : (
-					<>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsProfileData data={dpsData.profile!} />
-						</div>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsHealthForm onSubmit={handleHealthSubmit} />
-						</div>
-					</>
-				))}
 		</>
-	)
-}
-
-function DpsProfileData({ data }: { data: ProfileForm }) {
-	return (
-		<div className="px-3">
-			<h3 className="text-primary text-lg">Dados do Proponente</h3>
-
-			<div className="flex gap-4 my-4">
-				<UserIcon size={48} className="grow-0 mr-2 text-primary" />
-				<div className="grow">
-					<div className="flex gap-5 text-muted-foreground text-sm">
-						<span>CPF: {data.cpf}</span>
-						<span>
-							Nascimento: {data.birthdate.toLocaleDateString('pt-BR')}
-						</span>
-					</div>
-					<span className="text-lg font-semibold">{data.name}</span>
-				</div>
-				<span className="grow-0 text-xs text-muted-foreground">
-					*dados recuperados automaticamente
-				</span>
-			</div>
-		</div>
 	)
 }

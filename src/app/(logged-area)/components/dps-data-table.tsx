@@ -6,7 +6,6 @@ import { DataTable } from '@/components/ui/data-table'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -37,7 +36,7 @@ export const columns: ColumnDef<DPS>[] = [
 		header: 'Data do Cadastro',
 		cell: ({ getValue }) => {
 			const date = getValue<Date>()
-			return date.toLocaleDateString('pt-BR', {
+			return date?.toLocaleDateString('pt-BR', {
 				day: '2-digit',
 				month: '2-digit',
 				year: 'numeric',

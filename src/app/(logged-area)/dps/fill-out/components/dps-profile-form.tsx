@@ -6,6 +6,7 @@ import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
+import { useSession } from 'next-auth/react'
 import React from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
@@ -20,6 +21,7 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
+import { postProposal } from '../actions'
 
 const profileForm = object({
 	cpf: pipe(
@@ -51,9 +53,14 @@ const professionOptions = [
 
 const DpsProfileForm = ({
 	onSubmit: onSubmitProp,
+	data,
 }: {
 	onSubmit: (v: ProfileForm) => void
+	data?: Partial<ProfileForm>
 }) => {
+	const session = useSession()
+	const token = (session.data as any)?.accessToken
+
 	const {
 		handleSubmit,
 		getValues,
@@ -64,10 +71,36 @@ const DpsProfileForm = ({
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<ProfileForm>({
 		resolver: valibotResolver(profileForm),
+		defaultValues: {
+			cpf: data?.cpf,
+		},
 	})
 
 	async function onSubmit(v: ProfileForm) {
-		onSubmitProp(v)
+		const postData = {
+			document: v.cpf,
+			name: v.name,
+			socialName: v.socialName,
+			email: v.email,
+			birthDate: v.birthdate.toISOString(),
+			productId: '1',
+			typeId: '1',
+			lmiRange: '1',
+		}
+		console.log('submitting', token, postData)
+
+		const response = await postProposal(token, postData)
+
+		console.log('post proposal', response)
+
+		if (response) {
+			reset()
+			if (response.success) {
+				onSubmitProp(v)
+			} else {
+				console.error(response.message)
+			}
+		}
 	}
 
 	return (
