@@ -10,8 +10,9 @@ import {
 } from '../../actions'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
+import { redirect, useRouter } from 'next/navigation'
 import { formatCpf } from '@/lib/utils'
+import { GoBackButton } from '@/components/ui/go-back-button'
 
 export default async function DetailPage({
 	params: { uid },
@@ -49,10 +50,10 @@ export default async function DetailPage({
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<Button variant="link">
+				<GoBackButton>
 					<Undo2Icon className="mr-2" />
 					Voltar
-				</Button>
+				</GoBackButton>
 				<div className="mx-5 my-3 flex gap-6 justify-between items-center">
 					<div>
 						<h4 className="text-lg text-primary">Detalhes da DPS</h4>
@@ -78,7 +79,8 @@ export default async function DetailPage({
 				</div>
 			</div>{' '}
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<Interactions />
+				<h4 className="text-lg text-primary">Interações</h4>
+				<Interactions data={proposalData.history ?? []} />
 			</div>
 		</div>
 	)
