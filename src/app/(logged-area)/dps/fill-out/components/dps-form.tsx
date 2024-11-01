@@ -4,9 +4,40 @@ import DpsProfileForm, { ProfileForm } from './dps-profile-form'
 import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
+import DpsAttachmentsForm, {
+	DpsAttachmentsFormSchema,
+} from './dps-attachments-form'
+
+export const diseaseNames = {
+	avc: 'Acidente Vascular Cerebral',
+	aids: 'AIDS',
+	alzheimer: 'Alzheimer',
+	arteriais: 'Arteriais Crônicas',
+	chagas: 'Chagas',
+	cirrose: 'Cirrose Hepática e Varizes de Estômago',
+	diabetes: 'Diabetes com complicações',
+	enfisema: 'Enfisema Pulmonar e Asma',
+	esclerose: 'Esclerose Múltipla',
+	espondilose: 'Espondilose Anquilosante',
+	hipertensao:
+		'Hipertensão, Infarto do Miocárdio ou outras doenças cardiocirculatórias',
+	insuficiencia: 'Insuficiência Coronariana',
+	ler: 'L.E.R.',
+	lupus: 'Lúpus',
+	neurologicas:
+		'Neurológicas ou Psiquiátricas - (vertigem, desmaio, convulsão, dificuldade de fala, doenças ou alterações mentais ou de nervos)',
+	parkinson: 'Parkinson',
+	renal: 'Renal Crônica (com ou sem hemodiálise)',
+	sequelas: 'Sequelas de Acidente Vascular Celebral',
+	shistosomose: 'Shistosomose',
+	tireoide: 'Tireóide ou outras Doenças Endócrinas com complicações',
+	tumores: 'Tumores Malignos e Câncer',
+}
 
 const DpsForm = ({
 	initialProposalData,
+	lmiOptions,
+	productOptions,
 }: {
 	initialProposalData?: {
 		uid: string
@@ -33,60 +64,27 @@ const DpsForm = ({
 			description: string
 		}
 	} | null
+	lmiOptions: { value: string; label: string }[]
+	productOptions: { value: string; label: string }[]
 }) => {
 	const params = useSearchParams()
 	const cpf = params.get('cpf') ?? ''
 	const lmi = params.get('lmi') ?? ''
 	const produto = params.get('produto') ?? ''
 
-	// const [step, setStep] = useState(
-	// 	initialProposalData === null ? 'profile' : 'health'
-	// )
-
-	// useEffect(() => {
-	// 	console.log('effect', [token, cpf, lmi, produto, initialProposalData])
-	// 	if (initialProposalData && initialProposalData.customer.document === cpf) {
-	// 		return
-	// 	}
-	// 	if (cpf && cpf.length >= 11) {
-	// 		console.log('SEARCHING PROPOSALS')
-	// 		getProposals(token, cpf, lmi, produto, 1, 10)
-	// 			.then(response => {
-	// 				console.log('response', response)
-
-	// 				const customer = response.items[0]?.customer
-
-	// 				if (customer)
-	// 					setDpsData(prev => ({
-	// 						...prev,
-	// 						profile: {
-	// 							cpf: customer.document,
-	// 							name: customer.name,
-	// 							socialName: customer.name,
-	// 							birthdate: new Date(customer.birthdate),
-	// 							profession: '',
-	// 							email: customer.email,
-	// 							phone: '',
-	// 						},
-	// 					}))
-	// 				else setDpsData(prev => ({ ...prev, profile: null }))
-	// 			})
-	// 			.catch(err => {
-	// 				setDpsData(prev => ({
-	// 					...prev,
-	// 					profile: undefined,
-	// 				}))
-	// 				console.log(err)
-	// 			})
-	// 	}
-	// }, [token, cpf, lmi, produto, initialProposalData])
+	const [step, setStep] = useState<'profile' | 'health' | 'attachments'>(
+		initialProposalData ? 'health' : 'profile'
+	)
 
 	const [dpsData, setDpsData] = useState<{
 		profile: ProfileForm | null | undefined
 		health: HealthForm | null | undefined
+		attachments: DpsAttachmentsFormSchema | null | undefined
 	}>({
 		profile: initialProposalData?.customer
 			? {
+					produto: initialProposalData.product.uid,
+					lmi: '9',
 					cpf: initialProposalData.customer.document,
 					name: initialProposalData.customer.name,
 					socialName: initialProposalData.customer.socialName ?? '',
@@ -97,6 +95,7 @@ const DpsForm = ({
 			  }
 			: undefined,
 		health: undefined,
+		attachments: undefined,
 	})
 
 	useEffect(() => {
@@ -105,6 +104,8 @@ const DpsForm = ({
 				setDpsData(prev => ({
 					...prev,
 					profile: {
+						produto: initialProposalData.product.uid,
+						lmi: initialProposalData.lmi.description,
 						cpf: initialProposalData.customer.document,
 						name: initialProposalData.customer.name,
 						socialName: initialProposalData.customer.name,
@@ -118,41 +119,93 @@ const DpsForm = ({
 		} else setDpsData(prev => ({ ...prev, profile: undefined }))
 	}, [initialProposalData])
 
+	const diseaseList = dpsData.health
+		? Object.entries(dpsData.health)
+				.filter(([key, value]) => value.has === 'yes')
+				.reduce(
+					(acc, [currKey, currValue]) => ({
+						...acc,
+						[currKey]: {
+							has: currValue.has === 'yes',
+							description: currValue.description ?? '',
+						},
+					}),
+					{}
+				)
+		: []
+
+	// {
+	// 	chagas: { has: true, description: 'teste' },
+	// 	ler: { has: true, description: 'teste' },
+	// 	neurologicas: { has: true, description: 'teste' },
+	// 	tireoide: { has: true, description: 'teste' },
+	// }
+
 	function handleProfileSubmit(v: ProfileForm) {
 		setDpsData(prev => ({ ...prev, profile: v }))
-		// setStep('health')
+		setStep('health')
 	}
 	function handleHealthSubmit(v: HealthForm) {
 		setDpsData(prev => ({ ...prev, health: v }))
+		setStep('attachments')
+	}
+	function handleAttachmentsSubmit(v: DpsAttachmentsFormSchema) {
+		setDpsData(prev => ({ ...prev, attachments: v }))
+	}
+
+	let formToDisplay
+
+	if (!dpsData.profile) {
+		formToDisplay = (
+			<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<DpsProfileForm
+					data={{
+						cpf: cpf,
+						lmi: lmi,
+						produto: produto,
+					}}
+					lmiOptions={lmiOptions}
+					productOptions={productOptions}
+					onSubmit={handleProfileSubmit}
+				/>
+			</div>
+		)
+	} else if (step === 'health') {
+		formToDisplay = (
+			<>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<DpsProfileData data={dpsData.profile} />
+				</div>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<DpsHealthForm onSubmit={handleHealthSubmit} />
+				</div>
+			</>
+		)
+	} else if (step === 'attachments') {
+		formToDisplay = (
+			<>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<DpsProfileData data={dpsData.profile} />
+				</div>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<DpsAttachmentsForm
+						onSubmit={handleAttachmentsSubmit}
+						setStep={setStep}
+						diseaseList={diseaseList}
+					/>
+				</div>
+			</>
+		)
 	}
 
 	return (
-		<div>
-			{dpsData.profile === undefined
+		<div className="p-5">
+			{/* {dpsData.profile === undefined
 				? 'undefined'
 				: dpsData.profile === null
 				? 'null'
-				: 'value'}
-			{dpsData.profile !== undefined &&
-				(dpsData.profile === null ? (
-					<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-						<DpsProfileForm
-							data={{
-								cpf: cpf,
-							}}
-							onSubmit={handleProfileSubmit}
-						/>
-					</div>
-				) : (
-					<>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsProfileData data={dpsData.profile} />
-						</div>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsHealthForm onSubmit={handleHealthSubmit} />
-						</div>
-					</>
-				))}
+				: 'value'} */}
+			{formToDisplay}
 		</div>
 	)
 }

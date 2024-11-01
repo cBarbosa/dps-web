@@ -29,6 +29,7 @@ import {
 	string,
 	optional,
 } from 'valibot'
+import { diseaseNames } from './dps-form'
 
 const diseaseSchema = variant(
 	'has',
@@ -36,12 +37,12 @@ const diseaseSchema = variant(
 		object({
 			has: literal('yes'),
 			description: pipe(string(), nonEmpty('Campo obrigatório.')),
-			attachment: nonOptional(file('Arquivo inválido.'), 'Campo obrigatório.'),
+			// attachment: nonOptional(file('Arquivo inválido.'), 'Campo obrigatório.'),
 		}),
 		object({
 			has: literal('no'),
 			description: optional(string(), 'Não é necessário preencher.'),
-			attachment: undefined_('Não é necessário um arquivo.'),
+			// attachment: undefined_('Não é necessário um arquivo.'),
 		}),
 	],
 	'Campo obrigatório'
@@ -73,32 +74,6 @@ const healthForm = object({
 
 export type HealthForm = InferInput<typeof healthForm>
 
-const diseaseNames: Record<keyof HealthForm, string> = {
-	avc: 'Acidente Vascular Cerebral',
-	aids: 'AIDS',
-	alzheimer: 'Alzheimer',
-	arteriais: 'Arteriais Crônicas',
-	chagas: 'Chagas',
-	cirrose: 'Cirrose Hepática e Varizes de Estômago',
-	diabetes: 'Diabetes com complicações',
-	enfisema: 'Enfisema Pulmonar e Asma',
-	esclerose: 'Esclerose Múltipla',
-	espondilose: 'Espondilose Anquilosante',
-	hipertensao:
-		'Hipertensão, Infarto do Miocárdio ou outras doenças cardiocirculatórias',
-	insuficiencia: 'Insuficiência Coronariana',
-	ler: 'L.E.R.',
-	lupus: 'Lúpus',
-	neurologicas:
-		'Neurológicas ou Psiquiátricas - (vertigem, desmaio, convulsão, dificuldade de fala, doenças ou alterações mentais ou de nervos)',
-	parkinson: 'Parkinson',
-	renal: 'Renal Crônica (com ou sem hemodiálise)',
-	sequelas: 'Sequelas de Acidente Vascular Celebral',
-	shistosomose: 'Shistosomose',
-	tireoide: 'Tireóide ou outras Doenças Endócrinas com complicações',
-	tumores: 'Tumores Malignos e Câncer',
-}
-
 const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
 }: {
@@ -121,7 +96,7 @@ const DpsHealthForm = ({
 	async function onSubmit(v: HealthForm) {
 		onSubmitProp(v)
 		console.log('saudetop', v)
-		router.push('/dashboard')
+		// router.push('/dashboard')
 	}
 
 	return (
@@ -182,9 +157,9 @@ function DiseaseField({
 }) {
 	const has = watch(`${name}.has`)
 
-	const handleAttachmentAfterChange = useCallback(() => {
-		trigger(`${name}.attachment`)
-	}, [trigger, name])
+	// const handleAttachmentAfterChange = useCallback(() => {
+	// 	trigger(`${name}.attachment`)
+	// }, [trigger, name])
 
 	const handleDescriptionChange = useCallback(() => {
 		trigger(`${name}.description`)
@@ -194,34 +169,6 @@ function DiseaseField({
 		<ShareLine className="py-4 px-4 hover:bg-gray-50">
 			<div>
 				<div className="text-gray-500">{label}</div>
-				<Controller
-					control={control}
-					defaultValue={undefined}
-					name={`${name}.attachment`}
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<>
-							<FileInput
-								id={name}
-								label="Anexar laudo"
-								className={cn(
-									'w-full mt-3 rounded-lg',
-									errors?.[name]?.attachment &&
-										'border-red-500 focus-visible:border-red-500'
-								)}
-								accept="application/pdf"
-								disabled={isSubmitting || has !== 'yes'}
-								onChange={onChange}
-								afterChange={handleAttachmentAfterChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.[name]?.attachment?.message}
-							</div>
-						</>
-					)}
-				/>
 				<Controller
 					control={control}
 					defaultValue={''}
@@ -261,11 +208,8 @@ function DiseaseField({
 					function handleChange(v: 'yes' | 'no') {
 						onChange(v)
 						requestAnimationFrame(() => {
-							trigger(`${name}.attachment`)
 							trigger(`${name}.description`)
 						})
-
-						if (v === 'no') setValue(`${name}.attachment`, undefined)
 					}
 
 					return (

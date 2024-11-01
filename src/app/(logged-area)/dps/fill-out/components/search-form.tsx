@@ -2,24 +2,60 @@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import SelectComp from '@/components/ui/select-comp'
-import { InferInput, object, pipe, string, transform } from 'valibot'
+import {
+	InferInput,
+	literal,
+	minLength,
+	nonEmpty,
+	object,
+	pipe,
+	string,
+	transform,
+	union,
+} from 'valibot'
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { SearchIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
-const searchSchema = object({
-	cpf: pipe(
-		string(),
-		transform(input => input.replace(/\D/g, ''))
-	),
-	produto: string(),
-	lmi: string(),
-})
+const searchSchema = union(
+	[
+		object({
+			cpf: pipe(
+				string(),
+				transform(input => input.replace(/\D/g, '')),
+				nonEmpty('Campo obrigatório.')
+			),
+			produto: pipe(
+				string(),
+				nonEmpty('Campo obrigatório.'),
+				minLength(1, 'Campo obrigesimal.')
+			),
+			lmi: pipe(
+				string(),
+				nonEmpty('Campo obrigatório.'),
+				minLength(1, 'Campo obrigatório.')
+			),
+		}),
+		object({
+			cpf: literal(''),
+			produto: literal(''),
+			lmi: literal(''),
+		}),
+	],
+	'Invalid search schema'
+)
 
 type SearchSchema = InferInput<typeof searchSchema>
 
-export default function SearchForm() {
+export default function SearchForm({
+	lmiOptions,
+	productOptions,
+}: {
+	lmiOptions: { value: string; label: string }[]
+	productOptions: { value: string; label: string }[]
+}) {
 	const {
 		handleSubmit,
 		getValues,
@@ -27,21 +63,29 @@ export default function SearchForm() {
 		setValue,
 		control,
 		reset,
-		formState: { isSubmitting, isSubmitted, ...formState },
+		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<SearchSchema>({
 		resolver: valibotResolver(searchSchema),
+		defaultValues: {
+			cpf: '',
+			produto: '',
+			lmi: '',
+		},
 	})
+
+	console.log(errors)
+	console.log(getValues())
 
 	const router = useRouter()
 
-	const options = [
-		{ value: '1', label: 'Opção 1' },
-		{ value: '2', label: 'Opção 2' },
-		{ value: '3', label: 'Opção 3' },
-	]
-
 	function onSubmit(v: SearchSchema) {
-		console.log(v)
+		console.log('submit', v)
+
+		trigger()
+
+		if (!v.cpf) {
+			return
+		}
 
 		const searchParams = new URLSearchParams({
 			cpf: v.cpf,
@@ -49,7 +93,7 @@ export default function SearchForm() {
 			lmi: v.lmi,
 		})
 
-		router.push(`/dps/fill-out?${searchParams.toString()}`)
+		router.push(`/dps/fill-out/form?${searchParams.toString()}`)
 	}
 
 	return (
@@ -70,7 +114,11 @@ export default function SearchForm() {
 							<Input
 								placeholder="000.000.000-00"
 								mask="999.999.999-99"
-								className="max-w-72 p-4 border-none rounded-xl"
+								className={cn(
+									'max-w-72 p-4 border-none rounded-xl',
+									errors?.cpf &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -87,9 +135,13 @@ export default function SearchForm() {
 						render={({ field: { onChange, value } }) => (
 							<SelectComp
 								placeholder="Produto"
-								options={options}
+								options={productOptions}
 								allowClear
-								triggerClassName="w-40 border-none rounded-xl"
+								triggerClassName={cn(
+									'w-40 border-none rounded-xl',
+									errors?.produto &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onValueChange={onChange}
 								defaultValue={value}
@@ -104,9 +156,13 @@ export default function SearchForm() {
 						render={({ field: { onChange, value } }) => (
 							<SelectComp
 								placeholder="LMI"
-								options={options}
+								options={lmiOptions}
 								allowClear
-								triggerClassName="w-40 border-none rounded-xl"
+								triggerClassName={cn(
+									'w-40 border-none rounded-xl',
+									errors?.lmi &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onValueChange={onChange}
 								defaultValue={value}

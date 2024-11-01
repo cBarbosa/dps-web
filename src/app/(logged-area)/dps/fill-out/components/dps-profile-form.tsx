@@ -21,9 +21,11 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import { postProposal } from '../actions'
+import { postProposal } from '../../actions'
 
 const profileForm = object({
+	produto: pipe(string(), nonEmpty('Campo obrigatório.')),
+	lmi: pipe(string(), nonEmpty('Campo obrigatório.')),
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -54,9 +56,13 @@ const professionOptions = [
 const DpsProfileForm = ({
 	onSubmit: onSubmitProp,
 	data,
+	lmiOptions,
+	productOptions,
 }: {
 	onSubmit: (v: ProfileForm) => void
 	data?: Partial<ProfileForm>
+	lmiOptions: { value: string; label: string }[]
+	productOptions: { value: string; label: string }[]
 }) => {
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
@@ -73,6 +79,8 @@ const DpsProfileForm = ({
 		resolver: valibotResolver(profileForm),
 		defaultValues: {
 			cpf: data?.cpf,
+			lmi: data?.lmi,
+			produto: data?.produto,
 		},
 	})
 
@@ -85,7 +93,7 @@ const DpsProfileForm = ({
 			birthDate: v.birthdate.toISOString(),
 			productId: '1',
 			typeId: '1',
-			lmiRange: '1',
+			lmiRangeId: '1',
 		}
 		console.log('submitting', token, postData)
 
@@ -109,6 +117,49 @@ const DpsProfileForm = ({
 			className="flex flex-col gap-6 w-full"
 		>
 			<h3 className="text-primary text-lg">Dados do Proponente</h3>
+			<ShareLine>
+				<Controller
+					control={control}
+					defaultValue=""
+					name="produto"
+					render={({ field: { onChange, value } }) => (
+						<label>
+							<div className="text-gray-500">Produto</div>
+							<SelectComp
+								placeholder="Produto"
+								options={productOptions}
+								triggerClassName="p-4 h-12 rounded-lg"
+								disabled={isSubmitting}
+								onValueChange={onChange}
+								defaultValue={value}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.produto?.message}
+							</div>
+						</label>
+					)}
+				/>
+
+				<Controller
+					control={control}
+					defaultValue=""
+					name="lmi"
+					render={({ field: { onChange, value } }) => (
+						<label>
+							<div className="text-gray-500">LMI</div>
+							<SelectComp
+								placeholder="LMI"
+								options={lmiOptions}
+								triggerClassName="p-4 h-12 rounded-lg"
+								disabled={isSubmitting}
+								onValueChange={onChange}
+								defaultValue={value}
+							/>
+							<div className="text-xs text-red-500">{errors?.lmi?.message}</div>
+						</label>
+					)}
+				/>
+			</ShareLine>
 			<ShareLine>
 				<Controller
 					control={control}

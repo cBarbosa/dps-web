@@ -10,6 +10,7 @@ import Link from 'next/link'
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 export type DPS = {
+	uid: string
 	codigo: string
 	cpf: string
 	dataCadastro: Date
@@ -64,7 +65,7 @@ export const columns: ColumnDef<DPS>[] = [
 		accessorKey: 'actions',
 		header: 'Ações',
 		cell: ({ row }) => {
-			const codigo = row.getValue('codigo')
+			const codigo = row.original.uid
 
 			return (
 				<div className="flex gap-2">

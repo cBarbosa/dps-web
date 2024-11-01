@@ -6,8 +6,10 @@ import axios from '../../../../lib/axios'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
-import { getProposals } from './actions'
+import { getLmiOptions, getProductList, getProposals } from '../actions'
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 export default async function FillOutPage({
 	searchParams,
@@ -18,14 +20,41 @@ export default async function FillOutPage({
 	const token = (session as any)?.accessToken
 
 	const cpf = searchParams.cpf
-	const lmi = searchParams.lmi
+	const lmi =
+		searchParams.lmi?.length > 0
+			? isNaN(+searchParams.lmi)
+				? undefined
+				: +searchParams.lmi
+			: undefined
 	const produto = searchParams.produto
+
+	const urlParams = new URLSearchParams({
+		cpf: cpf,
+		produto: produto,
+		lmi: lmi?.toString() ?? '',
+	})
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
-	const data = await getProposals(token, cpf, lmi, produto, currentPage)
+	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
+		getProposals(token, cpf, lmi, produto, currentPage),
+		getLmiOptions(token),
+		getProductList(token),
+	])
 	console.log('||||||||->>')
 	console.dir(data, { depth: Infinity })
+
+	const lmiOptions =
+		lmiOptionsRaw?.data.map(item => ({
+			value: item.id.toString(),
+			label: item.description,
+		})) ?? []
+
+	const productOptions =
+		productListRaw?.data.map(item => ({
+			value: item.uid,
+			label: item.name,
+		})) ?? []
 
 	const pageAmount = Math.ceil(data?.totalItems / 10)
 
@@ -37,6 +66,7 @@ export default async function FillOutPage({
 
 	const tableRowsData: DPS[] = data?.items.map((item: any) => {
 		return {
+			uid: item.uid,
 			codigo: item.code,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
@@ -68,7 +98,7 @@ export default async function FillOutPage({
 					</AlertDescription>
 				</Alert>
 
-				<SearchForm />
+				<SearchForm lmiOptions={lmiOptions} productOptions={productOptions} />
 
 				{data.totalItems > 0 ? (
 					<div className="mt-7 p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -79,7 +109,17 @@ export default async function FillOutPage({
 						/>
 					</div>
 				) : (
-					<DpsForm initialProposalData={proposalData} />
+					<div className="flex justify-between items-center mt-7 p-5 rounded-lg bg-white">
+						Nenhum proponente encontrado com os filtros informados.
+						<Button variant="default" asChild>
+							<Link
+								href={'/dps/fill-out/form?' + urlParams.toString()}
+								className="hover:text-white"
+							>
+								Novo Proponente
+							</Link>
+						</Button>
+					</div>
 				)}
 			</div>
 		</div>
