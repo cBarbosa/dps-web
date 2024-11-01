@@ -7,11 +7,12 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getProposals } from './actions'
+import DpsDataTable, { DPS } from '../../components/dps-data-table'
 
 export default async function FillOutPage({
 	searchParams,
 }: {
-	searchParams: { cpf: string; lmi: string; produto: string }
+	searchParams: { page: string; cpf: string; lmi: string; produto: string }
 }) {
 	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken
@@ -20,41 +21,36 @@ export default async function FillOutPage({
 	const lmi = searchParams.lmi
 	const produto = searchParams.produto
 
+	const currentPage = searchParams?.page ? +searchParams.page : 1
+
+	const data = await getProposals(token, cpf, lmi, produto, currentPage)
+	console.log('||||||||->>')
+	console.dir(data, { depth: Infinity })
+
+	const pageAmount = Math.ceil(data?.totalItems / 10)
+
+	if (data === null) return redirect('/dashboard')
+
+	if (searchParams?.page && +searchParams.page > pageAmount) {
+		return redirect('/dashboard')
+	}
+
+	const tableRowsData: DPS[] = data?.items.map((item: any) => {
+		return {
+			codigo: item.code,
+			cpf: item.customer.document,
+			dataCadastro: item?.created && new Date(item.created),
+			tipoDoc: item.type?.description,
+			status: item.status,
+		}
+	})
+
 	let proposalData
 
 	if (cpf && cpf.length >= 11) {
-		const proposals = await getProposals(token, cpf, lmi, produto)
-
-		if (proposals) {
-			proposalData = proposals.totalItems > 0 ? proposals.items?.[0] : null
+		if (data) {
+			proposalData = data.totalItems > 0 ? data.items?.[0] : null
 		}
-
-		// try {
-		// 	const response = await axios.get('v1/Proposal/all', {
-		// 		params: {
-		// 			page: 1,
-		// 			size: 10,
-		// 			document: cpf,
-		// 			lmiRange: lmi,
-		// 			productUid: produto,
-		// 		},
-		// 		headers: {
-		// 			Authorization: `Bearer ${token}`,
-		// 		},
-		// 	})
-		// 	if (response.data) {
-		// 		proposalData =
-		// 			response.data.totalItems > 0 ? response.data.items?.[0] : null
-		// 	} else {
-		// 		throw new Error('Unsuccessful request')
-		// 	}
-		// } catch (err) {
-		// 	console.log(err)
-
-		// 	if ((err as any)?.status === 401) {
-		// 		redirect('/logout')
-		// 	}
-		// }
 	}
 
 	console.log('proposalData', proposalData)
@@ -74,7 +70,17 @@ export default async function FillOutPage({
 
 				<SearchForm />
 
-				<DpsForm initialProposalData={proposalData} />
+				{data.totalItems > 0 ? (
+					<div className="mt-7 p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+						<DpsDataTable
+							data={tableRowsData}
+							currentPage={currentPage}
+							pageAmount={pageAmount}
+						/>
+					</div>
+				) : (
+					<DpsForm initialProposalData={proposalData} />
+				)}
 			</div>
 		</div>
 	)
