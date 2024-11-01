@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
@@ -31,6 +32,10 @@ export const columns: ColumnDef<DPS>[] = [
 	{
 		accessorKey: 'cpf',
 		header: 'CPF Proponente',
+		cell: ({ getValue }) => {
+			const cpf = getValue<string>()
+			return formatCpf(cpf)
+		},
 	},
 	{
 		accessorKey: 'dataCadastro',

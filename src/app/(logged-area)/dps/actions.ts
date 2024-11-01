@@ -104,6 +104,62 @@ export async function getLmiOptions(token: string): Promise<{
 	return null
 }
 
+export async function getProposalSituations(token: string): Promise<{
+	success: boolean
+	message: string
+	data: { id: number; description: string }[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Domain/group/SituacaoProposta', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function getProposalTypes(token: string): Promise<{
+	success: boolean
+	message: string
+	data: { id: number; description: string }[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Domain/group/TipoProposta', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
 export async function getProductList(token: string): Promise<{
 	success: boolean
 	message: string
@@ -115,6 +171,55 @@ export async function getProductList(token: string): Promise<{
 } | null> {
 	try {
 		const response = await axios.get('v1/Product/all', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function getProposalByUid(
+	token: string,
+	uid: string
+): Promise<{
+	success: boolean
+	message: string
+	data: {
+		uid: string
+		code: string
+		customer: {
+			uid: string
+			document: string
+			name: string
+			email: string
+			birthdate: string
+		}
+		product: {
+			uid: string
+			name: string
+		}
+		type: { id: number; description: string }
+		lmi: { id: number; description: string }
+		created: string
+		history: any[]
+	}
+} | null> {
+	try {
+		const response = await axios.get('v1/Proposal/' + uid, {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
