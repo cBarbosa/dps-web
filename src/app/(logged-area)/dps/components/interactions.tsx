@@ -17,29 +17,40 @@ export type Interaction = {
 export default function Interactions({ data }: { data: Interaction[] }) {
 	const date = new Date()
 
-	return (
-		<ul>
-			{data.map((interaction, index) => (
-				<li
-					key={index}
-					className="w-full flex justify-between items-center p-2 border rounded-xl"
-				>
-					<div className="grow-0 basis-10">
-						<Badge variant="outline">{index + 1}</Badge>
-					</div>
-					<div className="pl-5 grow basis-1 text-left">
-						{interaction.description}
-					</div>
+	console.log(data)
+	if (!data) return null
 
-					<div className="grow-0 px-3">
-						<Badge variant="warn" shape="pill">
-							{interaction.status.description}
-						</Badge>
-					</div>
-					<div className="grow-0 px-3">{formatDate(interaction.created)}</div>
-				</li>
-			))}
+	return data.length > 0 ? (
+		<ul>
+			{data.map((interaction, index) => {
+				if (!interaction.description) return null
+
+				return (
+					<li
+						key={index}
+						className="w-full flex justify-between items-center p-2 border rounded-xl"
+					>
+						<div className="grow-0 basis-10">
+							<Badge variant="outline">{index + 1}</Badge>
+						</div>
+						<div className="pl-5 grow basis-1 text-left">
+							{interaction?.description}
+						</div>
+
+						<div className="grow-0 px-3">
+							<Badge variant="warn" shape="pill">
+								{interaction?.status?.description}
+							</Badge>
+						</div>
+						<div className="grow-0 px-3">
+							{formatDate(interaction?.created)}
+						</div>
+					</li>
+				)
+			})}
 		</ul>
+	) : (
+		<div className="text-muted-foreground">Nenhuma interação registrada</div>
 	)
 
 	// return (
@@ -75,6 +86,7 @@ export default function Interactions({ data }: { data: Interaction[] }) {
 }
 
 function formatDate(date: Date | string) {
+	if (!date) return null
 	if (typeof date === 'string') {
 		date = new Date(date)
 	}

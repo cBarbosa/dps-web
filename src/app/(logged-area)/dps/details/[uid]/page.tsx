@@ -79,7 +79,7 @@ export default async function DetailPage({
 				</div>
 			</div>{' '}
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<h4 className="text-lg text-primary">Interações</h4>
+				<h4 className="text-lg text-primary mb-2">Interações</h4>
 				<Interactions data={proposalData.history ?? []} />
 			</div>
 		</div>
