@@ -86,20 +86,22 @@ function DatePicker(
 	return (
 		<Popover onOpenChange={handleOpen}>
 			<PopoverTrigger asChild>
-				<Input
-					id={id}
-					mask="99/99/9999"
-					value={inputValue}
-					onChange={handleInputChange}
-					onBlur={handleInputBlur}
-					placeholder={placeholder}
-					// value={date ? date.toLocaleDateString('pt-BR') : ''}
-					icon={<CalendarIcon size={16} className="text-muted-foreground" />}
-					iconOffset={4}
-					className={className}
-					ref={inputRef}
-					disabled={disabled}
-				/>
+				<>
+					<Input
+						id={id}
+						mask="99/99/9999"
+						value={inputValue}
+						onChange={handleInputChange}
+						onBlur={handleInputBlur}
+						placeholder={placeholder}
+						// value={date ? date.toLocaleDateString('pt-BR') : ''}
+						icon={<CalendarIcon size={16} className="text-muted-foreground" />}
+						iconOffset={4}
+						className={className}
+						ref={inputRef}
+						disabled={disabled}
+					/>
+				</>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-0" align="start">
 				<Calendar

@@ -2,25 +2,64 @@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import SelectComp from '@/components/ui/select-comp'
-import { InferInput, minLength, nonEmpty, object, pipe, string } from 'valibot'
+import {
+	InferInput,
+	literal,
+	minLength,
+	nonEmpty,
+	object,
+	pipe,
+	string,
+	transform,
+	union,
+} from 'valibot'
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { SearchIcon, UserIcon } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { useRouter } from 'next/navigation'
-import DpsProfileForm, { ProfileForm } from './dps-profile-form'
-import { useState } from 'react'
-import DpsHealthForm, { HealthForm } from './dps-health-form'
+import { SearchIcon } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
-const searchSchema = object({
-	cpf: string(),
-	produto: string(),
-	lmi: string(),
-})
+const searchSchema =
+	// union(
+	// [
+	object({
+		cpf: pipe(
+			string(),
+			transform(input => input.replace(/\D/g, ''))
+			// nonEmpty('Campo obrigatório.')
+		),
+		produto:
+			// pipe(
+			string(),
+		// nonEmpty('Campo obrigatório.'),
+		// ),
+		lmi:
+			// pipe(
+			string(),
+		// nonEmpty('Campo obrigatório.'),
+		// ),
+	})
+// ,
+// object({
+// cpf: literal(''),
+// produto: literal(''),
+// lmi: literal(''),
+// }),
+// ],
+// 'Invalid search schema'
+// )
 
 type SearchSchema = InferInput<typeof searchSchema>
 
-export default function SearchForm() {
+export default function SearchForm({
+	lmiOptions,
+	productOptions,
+}: {
+	lmiOptions: { value: string; label: string }[]
+	productOptions: { value: string; label: string }[]
+}) {
+	const params = useSearchParams()
+
 	const {
 		handleSubmit,
 		getValues,
@@ -28,32 +67,29 @@ export default function SearchForm() {
 		setValue,
 		control,
 		reset,
-		formState: { isSubmitting, isSubmitted, ...formState },
+		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<SearchSchema>({
 		resolver: valibotResolver(searchSchema),
+		defaultValues: {
+			cpf: params.get('cpf') ?? '',
+			produto: params.get('produto') ?? '',
+			lmi: params.get('lmi') ?? '',
+		},
 	})
 
-	const params = useSearchParams()
+	console.log(errors)
+	console.log(getValues())
+
 	const router = useRouter()
 
-	const [dpsData, setDpsData] = useState<{
-		profile: ProfileForm | null
-		health: HealthForm | null
-	}>({
-		profile: null,
-		health: null,
-	})
-
-	const [step, setStep] = useState('profile')
-
-	const options = [
-		{ value: '1', label: 'Opção 1' },
-		{ value: '2', label: 'Opção 2' },
-		{ value: '3', label: 'Opção 3' },
-	]
-
 	function onSubmit(v: SearchSchema) {
-		console.log(v)
+		console.log('submit', v)
+
+		trigger()
+
+		// if (!v.cpf) {
+		// 	return
+		// }
 
 		const searchParams = new URLSearchParams({
 			cpf: v.cpf,
@@ -62,14 +98,6 @@ export default function SearchForm() {
 		})
 
 		router.push(`/dps/fill-out?${searchParams.toString()}`)
-	}
-
-	function handleProfileSubmit(v: ProfileForm) {
-		setDpsData(prev => ({ ...prev, profile: v }))
-		setStep('health')
-	}
-	function handleHealthSubmit(v: HealthForm) {
-		setDpsData(prev => ({ ...prev, health: v }))
 	}
 
 	return (
@@ -90,7 +118,11 @@ export default function SearchForm() {
 							<Input
 								placeholder="000.000.000-00"
 								mask="999.999.999-99"
-								className="max-w-72 p-4 border-none rounded-xl"
+								className={cn(
+									'max-w-72 p-4 border-none rounded-xl',
+									errors?.cpf &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -107,9 +139,13 @@ export default function SearchForm() {
 						render={({ field: { onChange, value } }) => (
 							<SelectComp
 								placeholder="Produto"
-								options={options}
+								options={productOptions}
 								allowClear
-								triggerClassName="w-40 border-none rounded-xl"
+								triggerClassName={cn(
+									'w-40 border-none rounded-xl',
+									errors?.produto &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onValueChange={onChange}
 								defaultValue={value}
@@ -124,9 +160,13 @@ export default function SearchForm() {
 						render={({ field: { onChange, value } }) => (
 							<SelectComp
 								placeholder="LMI"
-								options={options}
+								options={lmiOptions}
 								allowClear
-								triggerClassName="w-40 border-none rounded-xl"
+								triggerClassName={cn(
+									'w-40 border-none rounded-xl',
+									errors?.lmi &&
+										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+								)}
 								disabled={isSubmitting}
 								onValueChange={onChange}
 								defaultValue={value}
@@ -140,47 +180,6 @@ export default function SearchForm() {
 					</Button>
 				</div>
 			</form>
-
-			{params.get('cpf') &&
-				params.get('cpf') != '' &&
-				(step === 'profile' ? (
-					<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-						<DpsProfileForm onSubmit={handleProfileSubmit} />
-					</div>
-				) : (
-					<>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsProfileData data={dpsData.profile!} />
-						</div>
-						<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-							<DpsHealthForm onSubmit={handleHealthSubmit} />
-						</div>
-					</>
-				))}
 		</>
-	)
-}
-
-function DpsProfileData({ data }: { data: ProfileForm }) {
-	return (
-		<div className="px-3">
-			<h3 className="text-primary text-lg">Dados do Proponente</h3>
-
-			<div className="flex gap-4 my-4">
-				<UserIcon size={48} className="grow-0 mr-2 text-primary" />
-				<div className="grow">
-					<div className="flex gap-5 text-muted-foreground text-sm">
-						<span>CPF: {data.cpf}</span>
-						<span>
-							Nascimento: {data.birthdate.toLocaleDateString('pt-BR')}
-						</span>
-					</div>
-					<span className="text-lg font-semibold">{data.name}</span>
-				</div>
-				<span className="grow-0 text-xs text-muted-foreground">
-					*dados recuperados automaticamente
-				</span>
-			</div>
-		</div>
 	)
 }

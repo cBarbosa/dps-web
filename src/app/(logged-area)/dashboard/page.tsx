@@ -18,7 +18,8 @@ export default async function DashboardPage({
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
 	const data = await getProposals(token, currentPage)
-	console.log('||||||||->>', data)
+	console.log('||||||||->>')
+	console.dir(data, { depth: Infinity })
 
 	const pageAmount = Math.ceil(data?.totalItems / 10)
 
@@ -30,9 +31,10 @@ export default async function DashboardPage({
 
 	const tableRowsData: DPS[] = data?.items.map((item: any) => {
 		return {
-			codigo: item.uid,
+			uid: item.uid,
+			codigo: item.code,
 			cpf: item.customer.document,
-			dataCadastro: item?.createdAt && new Date(item.createdAt),
+			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
 			status: item.status,
 		}

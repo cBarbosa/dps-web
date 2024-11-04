@@ -27,8 +27,8 @@ export const authOptions: NextAuthOptions = {
 							'Content-Type': 'application/json',
 						},
 						body: JSON.stringify({
-							userName: email,
-							password: password,
+							UserName: email,
+							Password: password,
 						}),
 					}
 				)

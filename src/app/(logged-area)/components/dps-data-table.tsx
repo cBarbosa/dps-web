@@ -3,14 +3,15 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 export type DPS = {
+	uid: string
 	codigo: string
 	cpf: string
 	dataCadastro: Date
@@ -31,13 +32,17 @@ export const columns: ColumnDef<DPS>[] = [
 	{
 		accessorKey: 'cpf',
 		header: 'CPF Proponente',
+		cell: ({ getValue }) => {
+			const cpf = getValue<string>()
+			return formatCpf(cpf)
+		},
 	},
 	{
 		accessorKey: 'dataCadastro',
 		header: 'Data do Cadastro',
 		cell: ({ getValue }) => {
 			const date = getValue<Date>()
-			return date.toLocaleDateString('pt-BR', {
+			return date?.toLocaleDateString('pt-BR', {
 				day: '2-digit',
 				month: '2-digit',
 				year: 'numeric',
@@ -65,7 +70,7 @@ export const columns: ColumnDef<DPS>[] = [
 		accessorKey: 'actions',
 		header: 'Ações',
 		cell: ({ row }) => {
-			const codigo = row.getValue('codigo')
+			const codigo = row.original.uid
 
 			return (
 				<div className="flex gap-2">
