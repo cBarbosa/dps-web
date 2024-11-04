@@ -297,7 +297,7 @@ function AttachmentField({
 			stringBase64: fileBase64,
 		}
 
-		console.log('submitting', token, postData)
+		console.log('submitting', postData)
 
 		const response = await postAttachmentFile(token, proposalUid, postData)
 
