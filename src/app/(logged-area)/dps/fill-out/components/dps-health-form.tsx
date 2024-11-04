@@ -1,344 +1,173 @@
 import { Button } from '@/components/ui/button'
 import FileInput from '@/components/ui/file-input'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import {
 	Control,
 	Controller,
 	FormState,
 	useForm,
-	UseFormResetField,
 	UseFormSetValue,
 	UseFormTrigger,
 } from 'react-hook-form'
-import { file, InferInput, literal, undefined_, object, variant } from 'valibot'
+import {
+	InferInput,
+	literal,
+	object,
+	variant,
+	nonNullish,
+	pipe,
+	nonOptional,
+	nonEmpty,
+	string,
+	optional,
+} from 'valibot'
+import { diseaseNames } from './dps-form'
+import { getProposals, postHealthDataByUid } from '../../actions'
+import { useSession } from 'next-auth/react'
+import { ProfileForm } from './dps-profile-form'
+
+const diseaseSchema = variant(
+	'has',
+	[
+		object({
+			has: literal('yes'),
+			description: pipe(string(), nonEmpty('Campo obrigatório.')),
+			// attachment: nonOptional(file('Arquivo inválido.'), 'Campo obrigatório.'),
+		}),
+		object({
+			has: literal('no'),
+			description: optional(string(), 'Não é necessário preencher.'),
+			// attachment: undefined_('Não é necessário um arquivo.'),
+		}),
+	],
+	'Campo obrigatório'
+)
 
 const healthForm = object({
-	avc: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-
-	aids: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	alzheimer: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	arteriais: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	chagas: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	cirrose: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	diabetes: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	enfisema: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	esclerose: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	espondilose: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	hipertensao: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	insuficiencia: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	ler: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	lupus: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	neurologicas: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	parkinson: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	renal: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	sequelas: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	shistosomose: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	tireoide: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
-	tumores: variant(
-		'has',
-		[
-			object({
-				has: literal('yes'),
-				attachment: file('Arquivo inválido.'),
-			}),
-			object({
-				has: literal('no'),
-				attachment: undefined_(),
-			}),
-		],
-		'Campo obrigatório'
-	),
+	'1': diseaseSchema,
+	'2': diseaseSchema,
+	'3': diseaseSchema,
+	'4': diseaseSchema,
+	'5': diseaseSchema,
+	'6': diseaseSchema,
+	'7': diseaseSchema,
+	'8': diseaseSchema,
+	'9': diseaseSchema,
+	'10': diseaseSchema,
+	'11': diseaseSchema,
+	'12': diseaseSchema,
+	'13': diseaseSchema,
+	'14': diseaseSchema,
+	'15': diseaseSchema,
+	'16': diseaseSchema,
+	'17': diseaseSchema,
+	'18': diseaseSchema,
+	'19': diseaseSchema,
+	'20': diseaseSchema,
+	'21': diseaseSchema,
 })
 
 export type HealthForm = InferInput<typeof healthForm>
 
 const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
+	proposalUid: proposalUidProp,
+	dpsProfileData,
+	initialHealthData,
 }: {
 	onSubmit: (v: HealthForm) => void
+	proposalUid?: string
+	dpsProfileData: ProfileForm
+	initialHealthData?: HealthForm | null
 }) => {
+	const session = useSession()
+	const token = (session.data as any)?.accessToken
+
+	console.log('>>>initialHealthData', initialHealthData)
+
+	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
+		proposalUidProp
+	)
+
+	useEffect(() => {
+		if (!proposalUid) {
+			getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+		}
+	}, [
+		token,
+		proposalUid,
+		dpsProfileData.cpf,
+		dpsProfileData.lmi,
+		dpsProfileData.produto,
+	])
+
 	const {
 		handleSubmit,
 		getValues,
 		trigger,
 		setValue,
 		control,
+		reset,
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
+		defaultValues: initialHealthData ?? undefined,
 	})
 
 	const router = useRouter()
 
 	async function onSubmit(v: HealthForm) {
+		if (!proposalUid) {
+			await getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+
+			return
+		}
+
+		const postData = Object.entries(v).map(([key, value], i) => ({
+			code: key,
+			question: diseaseNames[key as keyof typeof diseaseNames],
+			exists: value.has === 'yes',
+			created: new Date().toISOString(),
+		}))
+
+		console.log('submitting', token, postData)
+
+		const response = await postHealthDataByUid(token, proposalUid, postData)
+
+		console.log('post proposal', response)
+
+		if (response) {
+			reset()
+			if (response.success) {
+				onSubmitProp(v)
+			} else {
+				console.error(response.message)
+			}
+		}
 		onSubmitProp(v)
-		router.push('/dashboard')
+		console.log('saudetop', v)
+		// router.push('/dashboard')
 	}
 
 	return (
@@ -351,241 +180,22 @@ const DpsHealthForm = ({
 				Sofreu nos últimos cinco anos ou sofre atualmente de uma das doenças
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
-
 			<div className="divide-y">
-				<DiseaseField
-					name="avc"
-					label="Acidente Vascular Cerebral"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-				{watch('avc.has')}
-
-				<DiseaseField
-					name="aids"
-					label="AIDS"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="alzheimer"
-					label="Alzheimer"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="arteriais"
-					label="Arteriais Crônicas"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="chagas"
-					label="Chagas"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="cirrose"
-					label="Cirrose Hepática e Varizes de Estômago"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="diabetes"
-					label="Diabetes com complicações"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="enfisema"
-					label="Enfisema Pulmonar e Asma"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="esclerose"
-					label="Esclerose Múltipla"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="espondilose"
-					label="Espondilose Anquilosante"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="hipertensao"
-					label="Hipertensão, Infarto do Miocárdio ou outras doenças cardiocirculatórias"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="insuficiencia"
-					label="Insuficiência Coronariana"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="ler"
-					label="L.E.R."
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="lupus"
-					label="Lúpus"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="neurologicas"
-					label="Neurológicas ou Psiquiátricas - (vertigem, desmaio, convulsão, dificuldade de fala,
-doenças ou alterações mentais ou de nervos)
-"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="parkinson"
-					label="Parkinson"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="renal"
-					label="Renal Crônica (com ou sem hemodiálise)"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="sequelas"
-					label="Sequelas de Acidente Vascular Celebral"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="shistosomose"
-					label="Shistosomose"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="tireoide"
-					label="Tireóide ou outras Doenças Endócrinas com complicações"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
-
-				<DiseaseField
-					name="tumores"
-					label="Tumores Malignos e Câncer"
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting}
-					trigger={trigger}
-					setValue={setValue}
-				/>
+				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(
+					(key, i) => (
+						<DiseaseField
+							name={key}
+							label={diseaseNames[key]}
+							control={control}
+							watch={watch}
+							errors={errors}
+							isSubmitting={isSubmitting}
+							trigger={trigger}
+							setValue={setValue}
+							key={key}
+						/>
+					)
+				)}
 			</div>
 
 			<Button type="submit" className="w-40">
@@ -618,34 +228,48 @@ function DiseaseField({
 }) {
 	const has = watch(`${name}.has`)
 
+	// const handleAttachmentAfterChange = useCallback(() => {
+	// 	trigger(`${name}.attachment`)
+	// }, [trigger, name])
+
+	const handleDescriptionChange = useCallback(() => {
+		trigger(`${name}.description`)
+	}, [trigger, name])
+
 	return (
 		<ShareLine className="py-4 px-4 hover:bg-gray-50">
-			<Controller
-				control={control}
-				defaultValue={undefined}
-				name={`${name}.attachment`}
-				render={({ field: { onChange, onBlur, value, ref } }) => (
-					<div>
-						<div className="text-gray-500">{label}</div>
-						<FileInput
-							id={name}
-							label="Anexar laudo"
-							className={cn(
-								'w-full mt-3 rounded-lg',
-								errors?.[name]?.attachment &&
-									'border-red-500 focus-visible:border-red-500'
-							)}
-							disabled={isSubmitting || has !== 'yes'}
-							onChange={onChange}
-							onBlur={onBlur}
-							value={value}
-						/>
-						<div className="text-xs text-red-500">
-							{errors?.[name]?.attachment?.message}
-						</div>
-					</div>
-				)}
-			/>
+			<div>
+				<div className="text-gray-500">{label}</div>
+				<Controller
+					control={control}
+					defaultValue={''}
+					name={`${name}.description`}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<>
+							<Input
+								id={name}
+								placeholder="Descreva"
+								className={cn(
+									'w-full p-4 h-12 mt-3 rounded-lg',
+									errors?.[name]?.description &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								disabled={isSubmitting || has !== 'yes'}
+								onChange={e => {
+									handleDescriptionChange()
+									onChange(e)
+								}}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.[name]?.description?.message}
+							</div>
+						</>
+					)}
+				/>
+			</div>
 
 			<Controller
 				control={control}
@@ -655,10 +279,8 @@ function DiseaseField({
 					function handleChange(v: 'yes' | 'no') {
 						onChange(v)
 						requestAnimationFrame(() => {
-							trigger(`${name}.attachment`)
+							trigger(`${name}.description`)
 						})
-
-						if (v === 'no') setValue(`${name}.attachment`, undefined)
 					}
 
 					return (
