@@ -16,36 +16,38 @@ import {
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { SearchIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-const searchSchema = union(
-	[
-		object({
-			cpf: pipe(
-				string(),
-				transform(input => input.replace(/\D/g, '')),
-				nonEmpty('Campo obrigatório.')
-			),
-			produto: pipe(
-				string(),
-				nonEmpty('Campo obrigatório.'),
-				minLength(1, 'Campo obrigesimal.')
-			),
-			lmi: pipe(
-				string(),
-				nonEmpty('Campo obrigatório.'),
-				minLength(1, 'Campo obrigatório.')
-			),
-		}),
-		object({
-			cpf: literal(''),
-			produto: literal(''),
-			lmi: literal(''),
-		}),
-	],
-	'Invalid search schema'
-)
+const searchSchema =
+	// union(
+	// [
+	object({
+		cpf: pipe(
+			string(),
+			transform(input => input.replace(/\D/g, ''))
+			// nonEmpty('Campo obrigatório.')
+		),
+		produto:
+			// pipe(
+			string(),
+		// nonEmpty('Campo obrigatório.'),
+		// ),
+		lmi:
+			// pipe(
+			string(),
+		// nonEmpty('Campo obrigatório.'),
+		// ),
+	})
+// ,
+// object({
+// cpf: literal(''),
+// produto: literal(''),
+// lmi: literal(''),
+// }),
+// ],
+// 'Invalid search schema'
+// )
 
 type SearchSchema = InferInput<typeof searchSchema>
 
@@ -56,6 +58,8 @@ export default function SearchForm({
 	lmiOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
 }) {
+	const params = useSearchParams()
+
 	const {
 		handleSubmit,
 		getValues,
@@ -67,9 +71,9 @@ export default function SearchForm({
 	} = useForm<SearchSchema>({
 		resolver: valibotResolver(searchSchema),
 		defaultValues: {
-			cpf: '',
-			produto: '',
-			lmi: '',
+			cpf: params.get('cpf') ?? '',
+			produto: params.get('produto') ?? '',
+			lmi: params.get('lmi') ?? '',
 		},
 	})
 
@@ -83,9 +87,9 @@ export default function SearchForm({
 
 		trigger()
 
-		if (!v.cpf) {
-			return
-		}
+		// if (!v.cpf) {
+		// 	return
+		// }
 
 		const searchParams = new URLSearchParams({
 			cpf: v.cpf,
@@ -93,7 +97,7 @@ export default function SearchForm({
 			lmi: v.lmi,
 		})
 
-		router.push(`/dps/fill-out/form?${searchParams.toString()}`)
+		router.push(`/dps/fill-out?${searchParams.toString()}`)
 	}
 
 	return (

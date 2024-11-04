@@ -6,7 +6,7 @@ import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import {
 	Control,
 	Controller,
@@ -16,10 +16,8 @@ import {
 	UseFormTrigger,
 } from 'react-hook-form'
 import {
-	file,
 	InferInput,
 	literal,
-	undefined_,
 	object,
 	variant,
 	nonNullish,
@@ -30,6 +28,9 @@ import {
 	optional,
 } from 'valibot'
 import { diseaseNames } from './dps-form'
+import { getProposals, postHealthDataByUid } from '../../actions'
+import { useSession } from 'next-auth/react'
+import { ProfileForm } from './dps-profile-form'
 
 const diseaseSchema = variant(
 	'has',
@@ -49,51 +50,121 @@ const diseaseSchema = variant(
 )
 
 const healthForm = object({
-	avc: diseaseSchema,
-	aids: diseaseSchema,
-	alzheimer: diseaseSchema,
-	arteriais: diseaseSchema,
-	chagas: diseaseSchema,
-	cirrose: diseaseSchema,
-	diabetes: diseaseSchema,
-	enfisema: diseaseSchema,
-	esclerose: diseaseSchema,
-	espondilose: diseaseSchema,
-	hipertensao: diseaseSchema,
-	insuficiencia: diseaseSchema,
-	ler: diseaseSchema,
-	lupus: diseaseSchema,
-	neurologicas: diseaseSchema,
-	parkinson: diseaseSchema,
-	renal: diseaseSchema,
-	sequelas: diseaseSchema,
-	shistosomose: diseaseSchema,
-	tireoide: diseaseSchema,
-	tumores: diseaseSchema,
+	'1': diseaseSchema,
+	'2': diseaseSchema,
+	'3': diseaseSchema,
+	'4': diseaseSchema,
+	'5': diseaseSchema,
+	'6': diseaseSchema,
+	'7': diseaseSchema,
+	'8': diseaseSchema,
+	'9': diseaseSchema,
+	'10': diseaseSchema,
+	'11': diseaseSchema,
+	'12': diseaseSchema,
+	'13': diseaseSchema,
+	'14': diseaseSchema,
+	'15': diseaseSchema,
+	'16': diseaseSchema,
+	'17': diseaseSchema,
+	'18': diseaseSchema,
+	'19': diseaseSchema,
+	'20': diseaseSchema,
+	'21': diseaseSchema,
 })
 
 export type HealthForm = InferInput<typeof healthForm>
 
 const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
+	proposalUid: proposalUidProp,
+	dpsProfileData,
+	initialHealthData,
 }: {
 	onSubmit: (v: HealthForm) => void
+	proposalUid?: string
+	dpsProfileData: ProfileForm
+	initialHealthData?: HealthForm | null
 }) => {
+	const session = useSession()
+	const token = (session.data as any)?.accessToken
+
+	console.log('>>>initialHealthData', initialHealthData)
+
+	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
+		proposalUidProp
+	)
+
+	useEffect(() => {
+		if (!proposalUid) {
+			getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+		}
+	}, [
+		token,
+		proposalUid,
+		dpsProfileData.cpf,
+		dpsProfileData.lmi,
+		dpsProfileData.produto,
+	])
+
 	const {
 		handleSubmit,
 		getValues,
 		trigger,
 		setValue,
 		control,
+		reset,
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
+		defaultValues: initialHealthData ?? undefined,
 	})
 
 	const router = useRouter()
 
 	async function onSubmit(v: HealthForm) {
+		if (!proposalUid) {
+			await getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+
+			return
+		}
+
+		const postData = Object.entries(v).map(([key, value], i) => ({
+			code: key,
+			question: diseaseNames[key as keyof typeof diseaseNames],
+			exists: value.has === 'yes',
+			created: new Date().toISOString(),
+		}))
+
+		console.log('submitting', token, postData)
+
+		const response = await postHealthDataByUid(token, proposalUid, postData)
+
+		console.log('post proposal', response)
+
+		if (response) {
+			reset()
+			if (response.success) {
+				onSubmitProp(v)
+			} else {
+				console.error(response.message)
+			}
+		}
 		onSubmitProp(v)
 		console.log('saudetop', v)
 		// router.push('/dashboard')

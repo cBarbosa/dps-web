@@ -17,3 +17,11 @@ export function formatCpf(cpf?: string) {
 
 	return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 }
+
+export const getBase64 = (file: File) =>
+	new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.readAsDataURL(file)
+		reader.onload = () => resolve(reader.result as string)
+		reader.onerror = reject
+	})

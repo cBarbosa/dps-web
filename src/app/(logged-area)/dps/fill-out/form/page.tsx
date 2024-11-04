@@ -2,7 +2,12 @@ import React from 'react'
 import DpsForm from '../components/dps-form'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
-import { getLmiOptions, getProductList, getProposals } from '../../actions'
+import {
+	getHealthDataByUid,
+	getLmiOptions,
+	getProductList,
+	getProposals,
+} from '../../actions'
 import { redirect } from 'next/navigation'
 
 export default async function DpsFormPage({
@@ -39,16 +44,17 @@ export default async function DpsFormPage({
 
 	let proposalData
 
-	if (cpf && cpf.length >= 11) {
-		if (data) {
-			proposalData = data.totalItems > 0 ? data.items?.[0] : null
-		}
+	if (cpf && cpf.length >= 11 && data) {
+		proposalData = data.totalItems > 0 ? data.items?.[0] : null
 	}
 	console.log('proposalData', proposalData)
+
+	const healthData = await getHealthDataByUid(token, proposalData?.uid ?? '')
 
 	return (
 		<DpsForm
 			initialProposalData={proposalData}
+			initialHealthData={healthData?.data}
 			lmiOptions={lmiOptions}
 			productOptions={productOptions}
 		/>

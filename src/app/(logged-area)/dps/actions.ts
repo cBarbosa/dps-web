@@ -25,7 +25,39 @@ export async function getProposals(
 		})
 
 		if (response.data) {
-			return response.data
+			return response.data as {
+				totalItems: number
+				page: number
+				size: number
+				items: {
+					uid: string
+					code: string
+					customer: {
+						uid: string
+						document: string
+						name: string
+						email: string
+						birthdate: string
+					}
+					product: {
+						uid: string
+						name: string
+					}
+					type: {
+						code: number
+						description: string
+					}
+					status: {
+						code: number
+						description: string
+					}
+					lmi: {
+						code: number
+						description: string
+					}
+					createdAt: string
+				}[]
+			}
 		} else {
 			throw new Error('Unsuccessful request')
 		}
@@ -227,6 +259,112 @@ export async function getProposalByUid(
 
 		if (response.data) {
 			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function getHealthDataByUid(
+	token: string,
+	uid: string
+): Promise<{
+	message: string
+	success: boolean
+	data: {
+		code: string
+		question: string
+		exists: boolean
+		created: string
+		updated: string
+	}[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Proposal/' + uid + '/questions', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function postHealthDataByUid(
+	token: string,
+	uid: string,
+	data: {
+		code: string
+		question: string
+		exists: boolean
+		created: string
+	}[]
+) {
+	try {
+		const response = await axios.post(`v1/Proposal/${uid}/questions`, data, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function postAttachmentFile(
+	token: string,
+	uid: string,
+	data: {
+		documentName: string
+		description: string
+		stringBase64: string
+	}
+) {
+	try {
+		const response = await axios.post(`v1/Proposal/${uid}/document`, data, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data as {
+				message: string
+				success: boolean
+				data: number
+			}
 		} else {
 			throw new Error('Unsuccessful request')
 		}

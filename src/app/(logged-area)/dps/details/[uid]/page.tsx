@@ -13,6 +13,7 @@ import { getServerSession } from 'next-auth'
 import { redirect, useRouter } from 'next/navigation'
 import { formatCpf } from '@/lib/utils'
 import { GoBackButton } from '@/components/ui/go-back-button'
+import Link from 'next/link'
 
 export default async function DetailPage({
 	params: { uid },
@@ -47,6 +48,15 @@ export default async function DetailPage({
 
 	if (!proposalData) redirect('/dashboard')
 
+	const lastSituation: {
+		id: number
+		description: string
+	} | null = proposalData.history?.at(-1)?.status ?? null
+
+	const showAlert: boolean =
+		// lastSituation?.id === 3 ||
+		lastSituation?.id === 5 || lastSituation?.id === 10
+
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -77,7 +87,27 @@ export default async function DetailPage({
 					</div>
 					<Button>Visualizar DPS</Button>
 				</div>
-			</div>{' '}
+			</div>
+			{showAlert && (
+				<div className="flex flex-row justify-between items-center gap-5 p-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-3xl">
+					<div>
+						<h4 className="text-lg text-orange-600 mb-2">Ações pendentes</h4>
+						<p className="ml-3 text-base text-orange-400">
+							{lastSituation?.description}
+						</p>
+					</div>
+					<Button
+						className="bg-orange-600 hover:bg-orange-500 hover:text-white"
+						asChild
+					>
+						<Link
+							href={`/dps/fill-out/form?cpf=${proposalData.customer.document}&produto=${proposalData.product.uid}&lmi=${proposalData.lmi.id}`}
+						>
+							Preencher
+						</Link>
+					</Button>
+				</div>
+			)}
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<h4 className="text-lg text-primary mb-2">Interações</h4>
 				<Interactions data={proposalData.history ?? []} />

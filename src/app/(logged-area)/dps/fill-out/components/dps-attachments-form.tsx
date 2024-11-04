@@ -3,15 +3,18 @@ import FileInput from '@/components/ui/file-input'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
-import { cn } from '@/lib/utils'
+import { cn, getBase64 } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
 	Control,
 	Controller,
 	FormState,
 	useForm,
+	UseFormGetValues,
+	UseFormReset,
+	UseFormResetField,
 	UseFormSetValue,
 	UseFormTrigger,
 } from 'react-hook-form'
@@ -33,67 +36,130 @@ import {
 	NonOptionalSchema,
 	FileSchema,
 } from 'valibot'
-import { diseaseNames } from './dps-form'
+import { DiseaseKeys, diseaseNames } from './dps-form'
+import { MultiSelect } from 'react-multi-select-component'
+import { useSession } from 'next-auth/react'
+import { ProfileForm } from './dps-profile-form'
+import { getProposals, postAttachmentFile } from '../../actions'
 
-const diseaseAttachmentSchema = nonOptional(
-	file('Arquivo inválido.'),
-	'Campo obrigatório.'
-)
+const attachmentsForm = object({
+	attachments: array(
+		object({
+			diseaseList: array(pipe(string(), nonEmpty('Campo obrigatório.'))),
+			file: nonOptional(file(), 'Campo obrigatório.'),
+		})
+	),
+})
 
-type DiseaseKeys = keyof typeof diseaseNames
-
-type DiseaseAttachmentSchema = InferInput<typeof diseaseAttachmentSchema>
-
-export type DpsAttachmentsFormSchema = Partial<Record<DiseaseKeys, File>>
+export type AttachmentsForm = InferInput<typeof attachmentsForm>
 
 const DpsAttachmentsForm = ({
 	onSubmit: onSubmitProp,
 	setStep,
-	diseaseList,
+	proposalUid: proposalUidProp,
+	dpsProfileData,
+	diseaseList: diseaseListProp,
 }: {
-	onSubmit: (v: DpsAttachmentsFormSchema) => void
+	onSubmit: (v: AttachmentsForm) => void
+	proposalUid?: string
+	dpsProfileData: ProfileForm
 	setStep: (step: 'profile' | 'health' | 'attachments') => void
 	diseaseList: Partial<
 		Record<DiseaseKeys, { has: boolean; description: string }>
 	>
 }) => {
-	const attachmentsSchema = useMemo<
-		ObjectSchema<
-			Partial<Record<DiseaseKeys, typeof diseaseAttachmentSchema>>,
-			undefined
-		>
-	>(() => {
-		const obj: Partial<Record<DiseaseKeys, typeof diseaseAttachmentSchema>> = {}
+	const session = useSession()
+	const token = (session.data as any)?.accessToken
 
-		Object.keys(diseaseNames).forEach(key => {
-			if (diseaseList[key as DiseaseKeys]?.has)
-				obj[key as DiseaseKeys] = diseaseAttachmentSchema
-		})
+	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
+		proposalUidProp
+	)
 
-		return object(obj)
-	}, [diseaseList])
+	useEffect(() => {
+		if (!proposalUid) {
+			getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+		}
+	}, [
+		token,
+		proposalUid,
+		dpsProfileData.cpf,
+		dpsProfileData.lmi,
+		dpsProfileData.produto,
+	])
 
-	// type AttachmentsForm = InferInput<typeof attachmentsSchema>
+	const [pickedDiseasesRaw, setPickedDiseases] = useState<
+		{ key: string; arr: DiseaseKeys[] }[]
+	>([{ key: '1', arr: [] }])
+	const pickedDiseases = pickedDiseasesRaw.map(v => v.arr)
+
+	const diseaseList = useMemo(() => {
+		return Object.entries(diseaseListProp).reduce((acc, [key, value]) => {
+			if (value.has) {
+				acc.push(key as DiseaseKeys)
+			}
+			return acc
+		}, [] as Array<DiseaseKeys>)
+	}, [diseaseListProp])
 
 	const {
 		handleSubmit,
 		getValues,
 		trigger,
-		setValue,
+		resetField,
 		control,
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
-	} = useForm<DpsAttachmentsFormSchema>({
-		resolver: valibotResolver(attachmentsSchema as any), //TODO
+	} = useForm<AttachmentsForm>({
+		resolver: valibotResolver(attachmentsForm),
 	})
 
 	const router = useRouter()
 
-	async function onSubmit(v: DpsAttachmentsFormSchema) {
-		onSubmitProp(v) //TODO
+	async function onSubmit(v: AttachmentsForm) {
+		// onSubmitProp(v) //TODO
 		console.log('saudetop', v)
-		router.push('/dashboard')
+
+		// router.push('/dashboard')
 	}
+
+	const setPickedDiseasesByKey = useCallback(
+		(key: string, diseases: DiseaseKeys[]) => {
+			setPickedDiseases(prev => {
+				return [
+					...prev.filter(v => v.key !== key),
+					{
+						key: key,
+						arr: diseases,
+					},
+				]
+			})
+		},
+		[setPickedDiseases]
+	)
+
+	const addFileInput = useCallback(() => {
+		setPickedDiseases(prev => [
+			...prev,
+			{ key: new Date().getTime().toString(), arr: [] },
+		])
+	}, [setPickedDiseases])
+
+	const removeFileInput = useCallback(
+		(index: number) => {
+			if (pickedDiseasesRaw.length === 1) return
+			setPickedDiseases(prev => {
+				return prev.toSpliced(index, 1)
+			})
+		},
+		[setPickedDiseases, pickedDiseasesRaw]
+	)
 
 	return (
 		<form
@@ -102,27 +168,47 @@ const DpsAttachmentsForm = ({
 		>
 			<h3 className="text-primary text-lg">Anexar laudos</h3>
 			<div>Faça upload dos laudos das doenças especificadas.</div>
+			<Button className="w-64" onClick={addFileInput}>
+				Adicionar novo arquivo
+			</Button>
+
 			{Object.keys(diseaseList).length > 0 ? (
-				<div className="divide-y">
-					{(
-						Object.entries(diseaseList) as [
-							keyof typeof diseaseList,
-							{ has: boolean; description: string }
-						][]
+				pickedDiseasesRaw.map((pickedObj, i) => {
+					function setFileDiseases(diseases: DiseaseKeys[]) {
+						// setPickedDiseases(prev => {
+						// 	return [...prev.slice(0, i), diseases, ...prev.slice(i + 1)]
+						// })
+						setPickedDiseasesByKey(pickedObj.key, diseases)
+					}
+
+					const options = diseaseList
+						.filter(disease => {
+							return !pickedDiseases.toSpliced(i, 1).flat().includes(disease)
+						})
+						.map(disease => ({
+							label: diseaseNames[disease],
+							value: disease,
+						}))
+
+					return (
+						<AttachmentField
+							token={token}
+							setProposalUid={setProposalUid}
+							dpsProfileData={dpsProfileData}
+							proposalUid={proposalUid}
+							key={pickedObj.key}
+							getValues={getValues}
+							options={options}
+							inputIndex={i}
+							resetField={resetField}
+							removeField={removeFileInput}
+							setPickedDiseases={setFileDiseases}
+							control={control}
+							errors={errors}
+							isSubmitting={isSubmitting}
+						/>
 					)
-						.filter(([, value]) => value)
-						.map(([key, { description }]) => (
-							<AttachmentField
-								name={key}
-								label={diseaseNames[key]}
-								control={control}
-								errors={errors}
-								isSubmitting={isSubmitting}
-								description={description}
-								key={key}
-							/>
-						))}
-				</div>
+				})
 			) : (
 				<div className="py-4 px-4 border border-gray-200 rounded-lg">
 					<div className="text-gray-500">Não é necessário anexar arquivos.</div>
@@ -148,45 +234,142 @@ const DpsAttachmentsForm = ({
 DpsAttachmentsForm.displayName = 'DpsAttachmentsForm'
 
 function AttachmentField({
-	name,
-	label,
-	description,
+	token,
+	proposalUid,
+	setProposalUid,
+	options,
+	dpsProfileData,
+	setPickedDiseases,
+	removeField,
+	inputIndex,
 	control,
+	getValues,
 	errors,
+	resetField,
 	isSubmitting,
 }: {
-	name: DiseaseKeys
-	label: string
-	description: string
-	control: Control<DpsAttachmentsFormSchema>
-	errors: FormState<DpsAttachmentsFormSchema>['errors']
+	token: string
+	proposalUid?: string
+	setProposalUid: (v: string) => void
+	dpsProfileData: ProfileForm
+	options: { label: string; value: string }[]
+	setPickedDiseases: (v: DiseaseKeys[]) => void
+	removeField: (i: number) => void
+	inputIndex: number
+	getValues: UseFormGetValues<AttachmentsForm>
+	resetField: UseFormResetField<AttachmentsForm>
+	control: Control<AttachmentsForm>
+	errors: FormState<AttachmentsForm>['errors']
 	isSubmitting: boolean
 }) {
-	// const handleAttachmentAfterChange = useCallback(() => {
-	// 	trigger(`${name}`)
-	// }, [trigger, name])
+	const [selected, setSelected] = useState<
+		{ label: string; value: DiseaseKeys }[]
+	>([])
+
+	const [isUploaded, setIsUploaded] = useState(false)
+
+	async function uploadFile() {
+		const fileBase64 = (await getBase64(
+			getValues(`attachments.${inputIndex}.file`)
+		)) as string
+
+		const diseaseList = getValues(`attachments.${inputIndex}.diseaseList`)
+
+		console.log('uploading')
+		if (!fileBase64) return
+
+		if (!proposalUid) {
+			await getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				if (res?.items[0]?.uid) setProposalUid(res?.items[0]?.uid)
+			})
+
+			return
+		}
+
+		const postData = {
+			documentName: diseaseList.join('-'),
+			description: diseaseList.join(', '),
+			stringBase64: fileBase64,
+		}
+
+		console.log('submitting', token, postData)
+
+		const response = await postAttachmentFile(token, proposalUid, postData)
+
+		console.log('post upload', response)
+
+		if (response) {
+			// reset()
+			if (response.success) {
+				setIsUploaded(true)
+				// onSubmitProp(v)
+			} else {
+				console.error(response.message)
+			}
+		}
+		// onSubmitProp(v)
+		// console.log('saudetop', v)
+	}
 
 	return (
 		<div className="py-4 px-4 hover:bg-gray-50">
-			<div className="text-gray-500">{label}</div>
-			<p className="text-sm text-muted-foreground">{description}</p>
 			<div className="flex justify-start gap-5">
 				<Controller
 					control={control}
 					defaultValue={undefined}
-					name={`${name}`}
+					name={`attachments.${inputIndex}.diseaseList`}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<>
+							<MultiSelect
+								className="basis-1/2"
+								options={options}
+								value={selected}
+								onChange={(v: { label: string; value: DiseaseKeys }[]) => {
+									setSelected(v)
+									setPickedDiseases(v.map(v => v.value))
+									onChange(v.map(v => v.value))
+								}}
+								labelledBy="Selecione as doenças deste laudo"
+							/>
+
+							<Button
+								variant="outline"
+								onClick={() => {
+									removeField(inputIndex)
+									onChange(undefined)
+									resetField(`attachments.${inputIndex}.diseaseList`)
+									resetField(`attachments.${inputIndex}.file`)
+								}}
+							>
+								Remover
+							</Button>
+						</>
+					)}
+				/>
+			</div>
+
+			<div className="flex justify-start gap-5">
+				<Controller
+					control={control}
+					defaultValue={undefined}
+					name={`attachments.${inputIndex}.file`}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<div className="basis-1/2">
 							<FileInput
-								id={name}
+								id={`attachments.${inputIndex}.file`}
 								label="Anexar laudo"
 								className={cn(
 									'w-full mt-3 rounded-lg',
-									errors?.[name] &&
+									errors?.attachments?.[inputIndex]?.file &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								accept="application/pdf"
-								disabled={isSubmitting}
+								disabled={isSubmitting || isUploaded}
 								onChange={onChange}
 								// afterChange={handleAttachmentAfterChange}
 								onBlur={onBlur}
@@ -194,12 +377,14 @@ function AttachmentField({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{errors?.[name]?.message}
+								{errors?.attachments?.[inputIndex]?.file?.message}
 							</div>
 						</div>
 					)}
 				/>
-				<Button className="h-12 mt-3.5">Anexar</Button>
+				<Button className="h-12 mt-3.5" onClick={uploadFile}>
+					Fazer upload
+				</Button>
 			</div>
 		</div>
 	)

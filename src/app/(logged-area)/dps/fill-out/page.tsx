@@ -19,18 +19,19 @@ export default async function FillOutPage({
 	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken
 
-	const cpf = searchParams.cpf
+	const cpf = searchParams.cpf?.length > 0 ? searchParams.cpf : undefined
 	const lmi =
 		searchParams.lmi?.length > 0
 			? isNaN(+searchParams.lmi)
 				? undefined
 				: +searchParams.lmi
 			: undefined
-	const produto = searchParams.produto
+	const produto =
+		searchParams.produto?.length > 0 ? searchParams.produto : undefined
 
 	const urlParams = new URLSearchParams({
-		cpf: cpf,
-		produto: produto,
+		cpf: cpf ?? '',
+		produto: produto ?? '',
 		lmi: lmi?.toString() ?? '',
 	})
 
@@ -56,7 +57,7 @@ export default async function FillOutPage({
 			label: item.name,
 		})) ?? []
 
-	const pageAmount = Math.ceil(data?.totalItems / 10)
+	const pageAmount = data?.totalItems ? Math.ceil(data?.totalItems / 10) : 1
 
 	if (data === null) return redirect('/dashboard')
 

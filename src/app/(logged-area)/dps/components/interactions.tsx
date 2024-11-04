@@ -28,7 +28,7 @@ export default function Interactions({ data }: { data: Interaction[] }) {
 				return (
 					<li
 						key={index}
-						className="w-full flex justify-between items-center p-2 border rounded-xl"
+						className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
 					>
 						<div className="grow-0 basis-10">
 							<Badge variant="outline">{index + 1}</Badge>
