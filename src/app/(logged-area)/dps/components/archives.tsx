@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { getProposalDocumentsByUid } from '../actions'
+import { CloudDownloadIcon } from 'lucide-react';
 
 export type DocumentType = {
 	uid: string
@@ -22,6 +23,17 @@ export const formatDate = (date: Date | string) => {
 		.getMinutes()
 		.toString()
 		.padStart(2, '0')} - ${date.toLocaleDateString('pt-BR')}`
+};
+
+export const downloadItem = (data: string, filename: string = 'archive.pdf'):void => {
+
+    const link = document.createElement('a');
+
+    link.href = `data:application/pdf;base64,${data}`;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
 };
 
 export default function Archives({
@@ -89,18 +101,26 @@ export default function Archives({
 							key={index}
 							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
 						>
-							<div className="grow-0 basis-10">
-								<Badge variant="outline">{index + 1}</Badge>
-							</div>
+							{document.documentName && (
+								<div className="grow-0 basis-10">
+									{/* <Badge variant="outline">{index + 1}</Badge> */}
+									<CloudDownloadIcon
+										className='m-2 cursor-pointer text-teal-900 hover:text-teal-600'
+									/>
+								</div>
+							)}
+							
 							<div className="pl-5 grow basis-1 text-left">
 								{document?.description}
 							</div>
 
-							<div className="grow-0 px-3">
-								<Badge variant="warn" shape="pill">
-									{document.documentName}
-								</Badge>
-							</div>
+							{document.documentName && (
+								<div className="grow-0 px-3">
+									<Badge variant="warn" shape="pill">
+										{document.documentName}
+									</Badge>
+								</div>
+							)}
 							<div className="grow-0 px-3">
 								{formatDate(document?.created)}
 							</div>

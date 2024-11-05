@@ -58,7 +58,10 @@ const DetailsPresent = ({
 	const lastSituation: {
 		id: number
 		description: string
-	} | null = proposalData.history?.at(0)?.status ?? null
+	} | null = proposalData.history?.at(0)?.status ?? {
+		id: 10,
+		description: 'Aguardando Preenchimento do DPS'
+	};
 
 	const showAlert: boolean =
 		// lastSituation?.id === 3 ||
