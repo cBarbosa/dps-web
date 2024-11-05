@@ -47,7 +47,7 @@ const UploadComplement = ({
 		setIsLoading(true)
 
 		const postMessageData = {
-			statusId: 6,
+			statusId: 4,
 			Description: 'Complemento: ' + interactionDescription + '. \n' + message,
 		}
 
