@@ -2,60 +2,97 @@ import { Input } from '@/components/ui/input'
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { ListFilterIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getProposals } from '../actions'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
+import { redirect } from 'next/navigation'
 
-export default function SubscriptionPage() {
-	const data: DPS[] = [
-		{
-			codigo: 'INV-10022024-001',
-			cpf: '875.896.857-89',
-			dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
-			tipoDoc: 'simples',
-			status: {
-				code: 1,
-				description: 'Aguardando análise',
-			},
-		},
-		{
-			codigo: 'INV-10022024-002',
-			cpf: '123.252.548-89',
-			dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
-			tipoDoc: 'simples',
-			status: {
-				code: 1,
-				description: 'Aguardando análise',
-			},
-		},
-		{
-			codigo: 'INV-10022024-003',
-			cpf: '123.252.857-89',
-			dataCadastro: new Date('2024-08-11T00:00:00-03:00'),
-			tipoDoc: 'completa',
-			status: {
-				code: 1,
-				description: 'Aguardando análise',
-			},
-		},
-		{
-			codigo: 'INV-10022024-004',
-			cpf: '000.252.548-89',
-			dataCadastro: new Date('2024-05-01T00:00:00-03:00'),
-			tipoDoc: 'completa',
-			status: {
-				code: 1,
-				description: 'Aguardando análise',
-			},
-		},
-		{
-			codigo: 'INV-10022024-009',
-			cpf: '123.087.548-89',
-			dataCadastro: new Date('2024-10-15T00:00:00-03:00'),
-			tipoDoc: 'completa',
-			status: {
-				code: 1,
-				description: 'Aguardando análise',
-			},
-		},
-	]
+export default async function SubscriptionPage({
+	searchParams,
+}: {
+	searchParams: { page: string }
+}) {
+	const session = await getServerSession(authOptions)
+	const token = (session as any)?.accessToken
+
+	// const data: DPS[] = [
+	// 	{
+	// 		codigo: 'INV-10022024-001',
+	// 		cpf: '875.896.857-89',
+	// 		dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
+	// 		tipoDoc: 'simples',
+	// 		status: {
+	// 			code: 1,
+	// 			description: 'Aguardando análise',
+	// 		},
+	// 	},
+	// 	{
+	// 		codigo: 'INV-10022024-002',
+	// 		cpf: '123.252.548-89',
+	// 		dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
+	// 		tipoDoc: 'simples',
+	// 		status: {
+	// 			code: 1,
+	// 			description: 'Aguardando análise',
+	// 		},
+	// 	},
+	// 	{
+	// 		codigo: 'INV-10022024-003',
+	// 		cpf: '123.252.857-89',
+	// 		dataCadastro: new Date('2024-08-11T00:00:00-03:00'),
+	// 		tipoDoc: 'completa',
+	// 		status: {
+	// 			code: 1,
+	// 			description: 'Aguardando análise',
+	// 		},
+	// 	},
+	// 	{
+	// 		codigo: 'INV-10022024-004',
+	// 		cpf: '000.252.548-89',
+	// 		dataCadastro: new Date('2024-05-01T00:00:00-03:00'),
+	// 		tipoDoc: 'completa',
+	// 		status: {
+	// 			code: 1,
+	// 			description: 'Aguardando análise',
+	// 		},
+	// 	},
+	// 	{
+	// 		codigo: 'INV-10022024-009',
+	// 		cpf: '123.087.548-89',
+	// 		dataCadastro: new Date('2024-10-15T00:00:00-03:00'),
+	// 		tipoDoc: 'completa',
+	// 		status: {
+	// 			code: 1,
+	// 			description: 'Aguardando análise',
+	// 		},
+	// 	},
+	// ]
+
+	const currentPage = searchParams?.page ? +searchParams.page : 1
+
+	const dataRaw = await getProposals(
+		token,
+		undefined,
+		undefined,
+		undefined,
+		4,
+		currentPage
+	)
+
+	if (!dataRaw) return redirect('/dashboard')
+
+	console.log('~~~~dataRaw', dataRaw)
+
+	const data: DPS[] = dataRaw.items?.map((item: any) => {
+		return {
+			uid: item.uid,
+			codigo: item.code,
+			cpf: item.customer.document,
+			dataCadastro: item?.created && new Date(item.created),
+			tipoDoc: item.type?.description,
+			status: item.status,
+		}
+	})
 
 	return (
 		<div className="p-5">
