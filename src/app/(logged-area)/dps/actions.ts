@@ -448,3 +448,41 @@ export async function postStatus(
 
 	return null
 }
+
+export async function getProposalDocumentsByUid(
+	token: string,
+	uid: string
+): Promise<Promise<{
+	message: string
+	success: boolean
+	data: {
+		uid: string
+		documentName: string
+		documentUrl: string
+		description: string
+		created: Date | string
+		updated?: Date | string
+	}[]
+} | null>> {
+	try {
+		const response = await axios.get(`v1/Proposal/${uid}/document`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null;
+};
