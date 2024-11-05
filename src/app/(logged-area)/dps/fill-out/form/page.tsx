@@ -49,6 +49,8 @@ export default async function DpsFormPage({
 	}
 	console.log('proposalData', proposalData)
 
+	if (!cpf || !produto || !lmi) redirect('/dps/fill-out')
+
 	const healthData = await getHealthDataByUid(token, proposalData?.uid ?? '')
 
 	return (

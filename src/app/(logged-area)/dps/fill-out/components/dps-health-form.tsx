@@ -80,10 +80,12 @@ const DpsHealthForm = ({
 	proposalUid: proposalUidProp,
 	dpsProfileData,
 	initialHealthData,
+	autocomplete = false,
 }: {
 	onSubmit: (v: HealthForm) => void
 	proposalUid?: string
 	dpsProfileData: ProfileForm
+	autocomplete?: boolean
 	initialHealthData?: HealthForm | null
 }) => {
 	const session = useSession()
@@ -125,10 +127,10 @@ const DpsHealthForm = ({
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
-		defaultValues: initialHealthData ?? undefined,
+		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
 	})
 
-	const router = useRouter()
+	// const router = useRouter()
 
 	async function onSubmit(v: HealthForm) {
 		if (!proposalUid) {

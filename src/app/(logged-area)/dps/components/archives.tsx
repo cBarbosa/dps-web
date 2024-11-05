@@ -1,58 +1,70 @@
-'use client'
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from '@/components/ui/accordion'
+'use client';
+
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { EllipsisVerticalIcon, UploadIcon } from 'lucide-react'
-import { useState } from 'react'
-import NewInteractionDialog from './new-interaction-dialog'
-import { getProposalByUid } from '../actions'
-import { set } from 'date-fns'
-import UploadComplement from './upload-complement'
+import { useEffect, useState } from 'react'
+import { getProposalDocumentsByUid } from '../actions'
+import { CloudDownloadIcon } from 'lucide-react';
 
-export type Interaction = {
-	description: string
-	status: { id: number; description: string }
+export type DocumentType = {
+	uid: string
+    documentName: string
+    documentUrl: string
+    description: string
 	created: Date | string
-}
+    updated?: Date | string
+};
 
-export default function Interactions({
-	data: dataProp,
+export const formatDate = (date: Date | string) => {
+	if (!date) return null
+	if (typeof date === 'string') {
+		date = new Date(date)
+	}
+	return `${date.getHours().toString().padStart(2, '0')}:${date
+		.getMinutes()
+		.toString()
+		.padStart(2, '0')} - ${date.toLocaleDateString('pt-BR')}`
+};
+
+export const downloadItem = (data: string, filename: string = 'archive.pdf'):void => {
+
+    const link = document.createElement('a');
+
+    link.href = `data:application/pdf;base64,${data}`;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+};
+
+export default function Archives({
 	token,
 	uid,
 	proposalSituationId,
-	onNewInteraction,
 }: {
-	data: Interaction[]
 	proposalSituationId?: number
 	token: string
 	uid: string
-	onNewInteraction: () => void
 }) {
-	const [data, setData] = useState<Interaction[]>(dataProp)
+	const [data, setData] = useState<DocumentType[]>([]);
 
 	async function reloadInteractions() {
-		const proposalResponse = await getProposalByUid(token, uid)
+		const proposalResponse = await getProposalDocumentsByUid(token, uid);
 
-		if (!proposalResponse) return
+		if (!proposalResponse) return;
 
-		const newInteractions = proposalResponse?.data?.history
+		const newDocuments = proposalResponse?.data;
 
-		setData(newInteractions)
-		onNewInteraction?.()
-	}
+		setData(newDocuments)
+	};
 
-	console.log(data)
-	if (!data) return null
+    useEffect(()=> {
+        reloadInteractions();
+    }, []);
 
-	return data.length > 0 ? (
+	return data?.length > 0 ? (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 			<div className="flex justify-between gap-5">
-				<h4 className="basis-1 grow text-lg text-primary mb-2">Interações</h4>
+				<h4 className="basis-1 grow text-lg text-primary mb-2">Laudos e Complementos</h4>
 				{/* <div className="flex justify-center basis-1 grow">
 					{proposalSituationId === 5 ? (
 						<Button size="sm">
@@ -61,7 +73,7 @@ export default function Interactions({
 						</Button>
 					) : null}
 				</div> */}
-				<div className="flex justify-end basis-1 grow">
+				{/* <div className="flex justify-end basis-1 grow">
 					{proposalSituationId === 4 ? (
 						<NewInteractionDialog
 							token={token}
@@ -78,31 +90,39 @@ export default function Interactions({
 							onSubmit={reloadInteractions}
 						/>
 					) : null}
-				</div>
+				</div> */}
 			</div>
 			<ul>
-				{data.map((interaction, index) => {
-					if (!interaction.description) return null
+				{data.map((document, index) => {
+					if (!document.description) return null
 
 					return (
 						<li
 							key={index}
 							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
 						>
-							<div className="grow-0 basis-10">
-								<Badge variant="outline">{index + 1}</Badge>
-							</div>
+							{document.documentName && (
+								<div className="grow-0 basis-10">
+									{/* <Badge variant="outline">{index + 1}</Badge> */}
+									<CloudDownloadIcon
+										className='m-2 cursor-pointer text-teal-900 hover:text-teal-600'
+									/>
+								</div>
+							)}
+							
 							<div className="pl-5 grow basis-1 text-left">
-								{interaction?.description}
+								{document?.description}
 							</div>
 
+							{document.documentName && (
+								<div className="grow-0 px-3">
+									<Badge variant="warn" shape="pill">
+										{document.documentName}
+									</Badge>
+								</div>
+							)}
 							<div className="grow-0 px-3">
-								<Badge variant="warn" shape="pill">
-									{interaction?.status?.description}
-								</Badge>
-							</div>
-							<div className="grow-0 px-3">
-								{formatDate(interaction?.created)}
+								{formatDate(document?.created)}
 							</div>
 						</li>
 					)
@@ -112,9 +132,9 @@ export default function Interactions({
 	) : (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 			<div className="flex justify-between gap-5">
-				<h4 className="text-lg text-primary mb-2">Interações</h4>
+				<h4 className="text-lg text-primary mb-2">Laudos e Complementos</h4>
 			</div>
-			<div className="text-muted-foreground">Nenhuma interação registrada</div>
+			<div className="text-muted-foreground">Nenhuma documentação registrada</div>
 		</div>
 	)
 
@@ -148,15 +168,4 @@ export default function Interactions({
 	// 		</Accordion>
 	// 	</div>
 	// )
-}
-
-function formatDate(date: Date | string) {
-	if (!date) return null
-	if (typeof date === 'string') {
-		date = new Date(date)
-	}
-	return `${date.getHours().toString().padStart(2, '0')}:${date
-		.getMinutes()
-		.toString()
-		.padStart(2, '0')} - ${date.toLocaleDateString('pt-BR')}`
 }

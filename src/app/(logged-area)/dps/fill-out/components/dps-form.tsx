@@ -5,6 +5,7 @@ import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
+import Link from 'next/link'
 
 export const diseaseNames = {
 	'1': 'Acidente Vascular Cerebral',
@@ -55,11 +56,11 @@ const DpsForm = ({
 			name: string
 		}
 		type: {
-			code: number
+			id: number
 			description: string
 		}
 		status: {
-			code: number
+			id: number
 			description: string
 		}
 		lmi: {
@@ -72,6 +73,7 @@ const DpsForm = ({
 		question: string
 		exists: boolean
 		created: string
+		updated?: string
 	}[]
 	lmiOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
@@ -96,9 +98,16 @@ const DpsForm = ({
 		: undefined
 	console.log('initialHealthDataProp', initialHealthDataProp)
 
-	const [step, setStep] = useState<'profile' | 'health' | 'attachments'>(
-		initialProposalData ? 'health' : 'profile'
-	)
+	let initialStep: 'profile' | 'health' | 'attachments' | 'finished'
+
+	if (!initialProposalData) initialStep = 'profile'
+	else if (initialProposalData?.status.id === 10) initialStep = 'health'
+	else if (initialProposalData?.status.id === 5) initialStep = 'attachments'
+	else initialStep = 'finished'
+
+	const [step, setStep] = useState<
+		'profile' | 'health' | 'attachments' | 'finished'
+	>(initialStep)
 
 	const [dpsData, setDpsData] = useState<{
 		profile: ProfileForm | null | undefined
@@ -175,6 +184,7 @@ const DpsForm = ({
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
+		setStep('finished')
 	}
 
 	let formToDisplay
@@ -205,6 +215,7 @@ const DpsForm = ({
 						initialHealthData={dpsData.health}
 						proposalUid={initialProposalData?.uid}
 						dpsProfileData={dpsData.profile}
+						autocomplete={initialHealthDataProp?.[0].updated !== undefined}
 						onSubmit={handleHealthSubmit}
 					/>
 				</div>
@@ -224,6 +235,20 @@ const DpsForm = ({
 						setStep={setStep}
 						diseaseList={diseaseList}
 					/>
+				</div>
+			</>
+		)
+	} else if (step === 'finished') {
+		formToDisplay = (
+			<>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<DpsProfileData data={dpsData.profile} />
+				</div>
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					Proposta já possui assinatura cadastrada.{' '}
+					<Link href={`/dps/details/${initialProposalData?.uid}`}>
+						Ver detalhes
+					</Link>
 				</div>
 			</>
 		)

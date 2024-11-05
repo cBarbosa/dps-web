@@ -17,11 +17,13 @@ import {
 	maxValue,
 	nonEmpty,
 	object,
+	optional,
 	pipe,
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
 import { postProposal } from '../../actions'
+import { useRouter } from 'next/navigation'
 
 const profileForm = object({
 	produto: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -32,7 +34,7 @@ const profileForm = object({
 		custom(v => validateCpf(v as string), 'CPF inválido.')
 	),
 	name: pipe(string(), nonEmpty('Campo obrigatório.')),
-	socialName: pipe(string(), nonEmpty('Campo obrigatório.')),
+	socialName: optional(string()),
 	birthdate: pipe(
 		date('Data inválida.'),
 		maxValue(new Date(), 'Idade inválida.')
@@ -84,16 +86,24 @@ const DpsProfileForm = ({
 		},
 	})
 
+	const router = useRouter()
+
+	if (!data || !data.cpf || !data.lmi || !data.produto)
+		router.replace('/dps/fill-out')
+
 	async function onSubmit(v: ProfileForm) {
+		if (!data || !data.cpf || !data.lmi || !data.produto)
+			return router.replace('/dps/fill-out')
+
 		const postData = {
-			document: v.cpf,
+			document: data.cpf,
 			name: v.name,
-			socialName: v.socialName,
+			socialName: v.socialName ?? '',
 			email: v.email,
 			birthDate: v.birthdate.toISOString(),
-			productId: '1',
-			typeId: '1',
-			lmiRangeId: '1',
+			productId: v.produto,
+			typeId: 2,
+			lmiRangeId: +data.lmi,
 		}
 		console.log('submitting', token, postData)
 
@@ -129,7 +139,7 @@ const DpsProfileForm = ({
 								placeholder="Produto"
 								options={productOptions}
 								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={isSubmitting}
+								disabled={true}
 								onValueChange={onChange}
 								defaultValue={value}
 							/>
@@ -151,7 +161,7 @@ const DpsProfileForm = ({
 								placeholder="LMI"
 								options={lmiOptions}
 								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={isSubmitting}
+								disabled={true}
 								onValueChange={onChange}
 								defaultValue={value}
 							/>

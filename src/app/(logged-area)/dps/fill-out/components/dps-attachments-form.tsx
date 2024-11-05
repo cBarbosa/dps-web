@@ -35,21 +35,32 @@ import {
 	ObjectSchema,
 	NonOptionalSchema,
 	FileSchema,
+	union,
 } from 'valibot'
 import { DiseaseKeys, diseaseNames } from './dps-form'
 import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
-import { getProposals, postAttachmentFile } from '../../actions'
+import { getProposals, postAttachmentFile, signProposal } from '../../actions'
 
-const attachmentsForm = object({
-	attachments: array(
-		object({
-			diseaseList: array(pipe(string(), nonEmpty('Campo obrigatório.'))),
-			file: nonOptional(file(), 'Campo obrigatório.'),
-		})
-	),
-})
+const attachmentsForm = union([
+	object({
+		attachments: array(
+			object({
+				diseaseList: array(pipe(string(), nonEmpty('Campo obrigatório.'))),
+				file: nonOptional(file(), 'Campo obrigatório.'),
+			})
+		),
+	}),
+	object({
+		attachments: array(
+			object({
+				diseaseList: optional(array(string())),
+				file: optional(file()),
+			})
+		),
+	}),
+])
 
 export type AttachmentsForm = InferInput<typeof attachmentsForm>
 
@@ -123,7 +134,33 @@ const DpsAttachmentsForm = ({
 	const router = useRouter()
 
 	async function onSubmit(v: AttachmentsForm) {
-		// onSubmitProp(v) //TODO
+		console.log('submitting attachments', v)
+		if (!proposalUid) {
+			await getProposals(
+				token,
+				dpsProfileData.cpf,
+				+dpsProfileData.lmi,
+				dpsProfileData.produto
+			).then(res => {
+				setProposalUid(res?.items[0]?.uid)
+			})
+
+			return
+		}
+
+		//TODO CHECK IF ALL FILES NEEDED ARE UPLOADED
+
+		const res = await signProposal(token, proposalUid)
+
+		if (res) {
+			// reset()
+			if (res.success) {
+				onSubmitProp(v)
+			} else {
+				console.error(res.message)
+			}
+		}
+
 		console.log('saudetop', v)
 
 		// router.push('/dashboard')
@@ -269,15 +306,20 @@ function AttachmentField({
 	const [isUploaded, setIsUploaded] = useState(false)
 
 	async function uploadFile() {
-		const fileBase64 = (await getBase64(
-			getValues(`attachments.${inputIndex}.file`)
-		)) as string
+		console.log('attempting upload')
+		const fileValue = getValues(`attachments.${inputIndex}.file`)
 
-		const diseaseList = getValues(`attachments.${inputIndex}.diseaseList`)
+		const diseaseList = getValues(
+			`attachments.${inputIndex}.diseaseList`
+		) as DiseaseKeys[]
 
-		console.log('uploading')
+		if (!fileValue || !diseaseList) return
+
+		const fileBase64 = (await getBase64(fileValue)) as string
+
 		if (!fileBase64) return
 
+		console.log('uploading')
 		if (!proposalUid) {
 			await getProposals(
 				token,
@@ -292,8 +334,10 @@ function AttachmentField({
 		}
 
 		const postData = {
-			documentName: diseaseList.join('-'),
-			description: diseaseList.join(', '),
+			documentName: fileValue.name,
+			description:
+				'Laudo para as doenças: ' +
+				diseaseList.map(disease => diseaseNames[disease]).join(', '),
 			stringBase64: fileBase64,
 		}
 
