@@ -38,7 +38,7 @@ export default async function FillOutPage({
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
 	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
-		getProposals(token, cpf, lmi, produto, currentPage),
+		getProposals(token, cpf, lmi, produto, 10, currentPage),
 		getLmiOptions(token),
 		getProductList(token),
 	])

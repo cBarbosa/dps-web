@@ -10,6 +10,7 @@ const FileInput = React.forwardRef<
 		label?: string
 		value?: File | File[]
 		accept?: string
+		wrapperClassName?: string
 		onChange?: (files?: File[] | File) => void
 		afterChange?: (args: any) => void
 	}
@@ -17,6 +18,7 @@ const FileInput = React.forwardRef<
 	(
 		{
 			className,
+			wrapperClassName,
 			multiple,
 			disabled,
 			label = 'Localizar no computador',
@@ -62,7 +64,10 @@ const FileInput = React.forwardRef<
 
 		return (
 			<Label
-				className="cursor-pointer group inline-block w-full max-w-[600px]"
+				className={cn(
+					'cursor-pointer group inline-block w-full max-w-[600px]',
+					wrapperClassName
+				)}
 				title={fileListText || undefined}
 			>
 				<div

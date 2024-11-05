@@ -7,6 +7,7 @@ import { formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -109,6 +110,9 @@ export default function DpsDataTable({
 }) {
 	'use client'
 	// const router = useRouter()
+	const pathname = usePathname()
+
+	const searchParams = useSearchParams()
 
 	return (
 		<div>
@@ -118,10 +122,11 @@ export default function DpsDataTable({
 				currentPage={currentPage}
 				pageAmount={pageAmount}
 				getPageUrl={page => {
-					const url = new URL(window.location.href)
-					url.searchParams.set('page', page.toString())
-					console.log('>', url.toString())
-					return url.toString()
+					const paramsObj = Object.fromEntries(searchParams)
+					const newSearchParams = new URLSearchParams(paramsObj)
+					newSearchParams.set('page', page.toString())
+					const newUri = pathname + '?' + newSearchParams.toString()
+					return newUri
 				}}
 			/>
 		</div>
