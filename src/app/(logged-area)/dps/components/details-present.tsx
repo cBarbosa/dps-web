@@ -3,11 +3,12 @@ import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
 import { FileTextIcon, Undo2Icon, UserIcon } from 'lucide-react'
 import React from 'react'
-import { getProposalByUid, getProposalTypes } from '../actions'
+import { getProposalByUid, getProposalTypes, postStatus } from '../actions'
 import { formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Interactions from './interactions'
+import Archives from './archives'
 
 type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -39,10 +40,28 @@ const DetailsPresent = ({
 		}
 	}
 
+	async function sendToEndinFlow() {
+
+		const response = await postStatus(token, uid, 6, "Formulário aceito");
+
+		console.log('post sendToEndinFlow', response)
+
+		if (response) {
+			if (response.success) {
+				refetchProposalData();
+			} else {
+				console.error(response.message)
+			}
+		}
+	};
+
 	const lastSituation: {
 		id: number
 		description: string
-	} | null = proposalData.history?.at(0)?.status ?? null
+	} | null = proposalData.history?.at(0)?.status ?? {
+		id: 10,
+		description: 'Aguardando Preenchimento do DPS'
+	};
 
 	const showAlert: boolean =
 		// lastSituation?.id === 3 ||
@@ -78,7 +97,11 @@ const DetailsPresent = ({
 					</div>
 					<div className="flex flex-col gap-3">
 						{proposalSituation?.id === 4 ? (
-							<Button>Enviar para aceitação</Button>
+							<Button
+								onClick={sendToEndinFlow}
+							>
+								Enviar para aceitação
+							</Button>
 						) : null}
 						<Button>Visualizar DPS</Button>
 					</div>
@@ -92,16 +115,18 @@ const DetailsPresent = ({
 							{lastSituation?.description}
 						</p>
 					</div>
-					<Button
-						className="bg-orange-600 hover:bg-orange-500 hover:text-white"
-						asChild
-					>
-						<Link
-							href={`/dps/fill-out/form?cpf=${proposalData.customer.document}&produto=${proposalData.product.uid}&lmi=${proposalData.lmi.id}`}
+					{lastSituation?.id === 10 && (
+						<Button
+							className="bg-orange-600 hover:bg-orange-500 hover:text-white"
+							asChild
 						>
-							Preencher
-						</Link>
-					</Button>
+							<Link
+								href={`/dps/fill-out/form?cpf=${proposalData.customer.document}&produto=${proposalData.product.uid}&lmi=${proposalData.lmi.id}`}
+							>
+								Preencher
+							</Link>
+						</Button>
+					)}
 				</div>
 			)}
 			<Interactions
@@ -110,6 +135,12 @@ const DetailsPresent = ({
 				proposalSituationId={lastSituation?.id}
 				data={proposalData.history ?? []}
 				onNewInteraction={refetchProposalData}
+			/>
+
+			<Archives
+				token={token}
+				uid={uid}
+				proposalSituationId={lastSituation?.id}
 			/>
 		</div>
 	)
