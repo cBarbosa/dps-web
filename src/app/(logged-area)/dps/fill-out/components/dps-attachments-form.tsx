@@ -105,9 +105,11 @@ const DpsAttachmentsForm = ({
 		dpsProfileData.produto,
 	])
 
+	const fieldKeyCount = useRef(0)
+
 	const [pickedDiseasesRaw, setPickedDiseases] = useState<
-		{ key: string; arr: DiseaseKeys[] }[]
-	>([{ key: '1', arr: [] }])
+		{ key: number; arr: DiseaseKeys[] }[]
+	>([{ key: fieldKeyCount.current, arr: [] }])
 	const pickedDiseases = pickedDiseasesRaw.map(v => v.arr)
 
 	const diseaseList = useMemo(() => {
@@ -167,31 +169,31 @@ const DpsAttachmentsForm = ({
 	}
 
 	const setPickedDiseasesByKey = useCallback(
-		(key: string, diseases: DiseaseKeys[]) => {
+		(key: number, diseases: DiseaseKeys[]) => {
 			setPickedDiseases(prev => {
-				return [
-					...prev.filter(v => v.key !== key),
-					{
-						key: key,
-						arr: diseases,
-					},
-				]
+				const picked = prev.find(v => v.key === key)
+				if (!picked) return prev
+				picked.arr = diseases
+				console.log(prev)
+				return [...prev]
 			})
 		},
 		[setPickedDiseases]
 	)
 
 	const addFileInput = useCallback(() => {
+		fieldKeyCount.current++
 		setPickedDiseases(prev => [
 			...prev,
-			{ key: new Date().getTime().toString(), arr: [] },
+			{ key: fieldKeyCount.current, arr: [] },
 		])
 	}, [setPickedDiseases])
 
-	const removeFileInput = useCallback(
-		(index: number) => {
-			if (pickedDiseasesRaw.length === 1) return
+	const removeFileInputByKey = useCallback(
+		(key: number) => {
+			if (pickedDiseasesRaw.length <= 1) return
 			setPickedDiseases(prev => {
+				const index = prev.findIndex(v => v.key === key)
 				return prev.toSpliced(index, 1)
 			})
 		},
@@ -229,16 +231,16 @@ const DpsAttachmentsForm = ({
 
 					return (
 						<AttachmentField
+							key={pickedObj.key}
 							token={token}
 							setProposalUid={setProposalUid}
 							dpsProfileData={dpsProfileData}
 							proposalUid={proposalUid}
-							key={pickedObj.key}
 							getValues={getValues}
 							options={options}
-							inputIndex={i}
+							inputIndex={pickedObj.key}
 							resetField={resetField}
-							removeField={removeFileInput}
+							removeField={removeFileInputByKey}
 							setPickedDiseases={setFileDiseases}
 							control={control}
 							errors={errors}
@@ -338,7 +340,7 @@ function AttachmentField({
 			description:
 				'Laudo para as doenças: ' +
 				diseaseList.map(disease => diseaseNames[disease]).join(', '),
-			stringBase64: fileBase64,
+			stringBase64: fileBase64.split(',')[1],
 		}
 
 		console.log('submitting', postData)
@@ -370,9 +372,10 @@ function AttachmentField({
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<>
 							<MultiSelect
-								className="basis-1/2"
+								className="basis-1/2 w-1/2 max-w-[590px]"
 								options={options}
 								value={selected}
+								valueRenderer={customValueRenderer}
 								onChange={(v: { label: string; value: DiseaseKeys }[]) => {
 									setSelected(v)
 									setPickedDiseases(v.map(v => v.value))
@@ -432,6 +435,13 @@ function AttachmentField({
 			</div>
 		</div>
 	)
+}
+
+const customValueRenderer = (
+	selected: { label: string; value: DiseaseKeys }[],
+	options: { label: string; value: DiseaseKeys }[]
+) => {
+	return selected.length ? selected.map(({ label }) => label).join(', ') : ''
 }
 
 export default DpsAttachmentsForm
