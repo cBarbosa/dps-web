@@ -16,7 +16,7 @@ export async function getProposals(
 			params: {
 				page: page,
 				size: size,
-				document: cpf,
+				document: cpf ?? '',
 				lmiRange: lmi ?? '',
 				status: status ?? '',
 				productUid: produto ?? '',

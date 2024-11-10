@@ -4,20 +4,23 @@ import SearchForm from './components/search-form'
 import DpsForm from './components/dps-form'
 import axios from '../../../../lib/axios'
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getLmiOptions, getProductList, getProposals } from '../actions'
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 
 export default async function FillOutPage({
 	searchParams,
 }: {
 	searchParams: { page: string; cpf: string; lmi: string; produto: string }
 }) {
-	const session = await getServerSession(authOptions)
+	const { session, granted } = await getServerSessionAuthorization(['vendedor'])
 	const token = (session as any)?.accessToken
+
+	if (!granted) {
+		redirect('/dashboard')
+	}
 
 	const cpf = searchParams.cpf?.length > 0 ? searchParams.cpf : undefined
 	const lmi =

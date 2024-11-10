@@ -18,8 +18,13 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import useSessionAuthorization from '@/hooks/useSessionAuthorization'
+import { ApiRoles } from '@/hooks/getServerSessionAuthorization'
 
 export default function SideBar() {
+	const { session } = useSessionAuthorization()
+	const role = session?.data?.role
+
 	return (
 		<div className="flex flex-col justify-between w-full h-full p-4">
 			<div>
@@ -43,8 +48,12 @@ export default function SideBar() {
 							Dashboard
 						</MenuItem>
 						<MenuSection title="DPS" Icon={FileTextIcon}>
-							<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
-							<MenuItem href="/dps/subscription">Subscrição</MenuItem>
+							<RoleBasedRender role={role} allowedRoles={['vendedor']}>
+								<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
+							</RoleBasedRender>
+							<RoleBasedRender role={role} allowedRoles={['subscritor']}>
+								<MenuItem href="/dps/subscription">Subscrição</MenuItem>
+							</RoleBasedRender>
 						</MenuSection>
 						<MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
@@ -119,4 +128,24 @@ function MenuItem({
 			</Link>
 		</li>
 	)
+}
+
+function RoleBasedRender({
+	children,
+	allowedRoles,
+	role,
+}: {
+	children: React.ReactNode
+	allowedRoles: ApiRoles[]
+	role: ApiRoles | undefined
+}) {
+	if (!role) return null
+
+	role = role.toLowerCase() as ApiRoles
+
+	if (role === 'admin' || allowedRoles.includes(role)) {
+		return children
+	}
+
+	return null
 }

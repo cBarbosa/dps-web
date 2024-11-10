@@ -2,10 +2,13 @@ import { Input } from '@/components/ui/input'
 import DpsDataTable, { DPS } from '../components/dps-data-table'
 import { ListFilterIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getProposals } from './actions'
+// import { getProposals } from './actions'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
+import { getProposals } from '../dps/actions'
+import { ApiRoles } from '@/hooks/getServerSessionAuthorization'
+import { signOut } from 'next-auth/react'
 
 export default async function DashboardPage({
 	searchParams,
@@ -14,16 +17,33 @@ export default async function DashboardPage({
 }) {
 	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken
+	const role = (session as any)?.role?.toLowerCase() as
+		| Lowercase<ApiRoles>
+		| undefined
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
-	const data = await getProposals(token, currentPage)
+	let status
+	if (role === 'vendedor') status = 10
+	if (role === 'subscritor') status = 4
+	if (role === 'subscritor-med') status = 5
+	if (role === 'admin') status = undefined
+	else return signOut()
+
+	const data = await getProposals(
+		token,
+		undefined, //cpf
+		undefined, //lmi
+		undefined, //produto
+		status, //status
+		currentPage
+	)
 	console.log('||||||||->>')
 	console.dir(data, { depth: Infinity })
 
-	const pageAmount = Math.ceil(data?.totalItems / 10)
-
 	if (data === null) return redirect('/dashboard')
+
+	const pageAmount = Math.ceil(data?.totalItems / 10)
 
 	if (searchParams?.page && +searchParams.page > pageAmount) {
 		return redirect('/dashboard')
