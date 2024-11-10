@@ -55,13 +55,13 @@ export default function SideBar() {
 								<MenuItem href="/dps/subscription">Subscrição</MenuItem>
 							</RoleBasedRender>
 						</MenuSection>
-						<MenuSection title="Backup" Icon={SaveIcon}>
+						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
 							<MenuItem href="/">Listar Backups</MenuItem>
 						</MenuSection>
 						<MenuItem href="/" Icon={NotebookPenIcon}>
 							Formulários
-						</MenuItem>
+						</MenuItem> */}
 						<MenuItem href="/settings" Icon={SettingsIcon}>
 							Configurações
 						</MenuItem>
@@ -69,7 +69,9 @@ export default function SideBar() {
 				</Accordion>
 			</div>
 			<div className="font-semibold text-sm text-center text-muted-foreground">
-				Enterprise Tecnologia 2024
+				<Link href="https://techtrailoficial.com.br">
+					Techtrail {new Date().getFullYear()}
+				</Link>
 			</div>
 		</div>
 	)

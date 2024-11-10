@@ -32,6 +32,8 @@ export default async function FillOutPage({
 	const produto =
 		searchParams.produto?.length > 0 ? searchParams.produto : undefined
 
+	const allowSearch = cpf && lmi && produto
+
 	const urlParams = new URLSearchParams({
 		cpf: cpf ?? '',
 		produto: produto ?? '',
@@ -41,7 +43,9 @@ export default async function FillOutPage({
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
 	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
-		getProposals(token, cpf, lmi, produto, 10, currentPage),
+		allowSearch
+			? getProposals(token, cpf, lmi, produto, 10, currentPage)
+			: { totalItems: 0, items: [] },
 		getLmiOptions(token),
 		getProductList(token),
 	])
@@ -114,15 +118,21 @@ export default async function FillOutPage({
 					</div>
 				) : (
 					<div className="flex justify-between items-center mt-7 p-5 rounded-lg bg-white">
-						Nenhum proponente encontrado com os filtros informados.
-						<Button variant="default" asChild>
-							<Link
-								href={'/dps/fill-out/form?' + urlParams.toString()}
-								className="hover:text-white"
-							>
-								Novo Proponente
-							</Link>
-						</Button>
+						{allowSearch ? (
+							<>
+								Nenhum proponente encontrado com os filtros informados.
+								<Button variant="default" asChild>
+									<Link
+										href={'/dps/fill-out/form?' + urlParams.toString()}
+										className="hover:text-white"
+									>
+										Novo Proponente
+									</Link>
+								</Button>
+							</>
+						) : (
+							'Informe os filtros para buscar proponentes.'
+						)}
 					</div>
 				)}
 			</div>
