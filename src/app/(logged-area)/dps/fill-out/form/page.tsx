@@ -9,14 +9,19 @@ import {
 	getProposals,
 } from '../../actions'
 import { redirect } from 'next/navigation'
+import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 
 export default async function DpsFormPage({
 	searchParams,
 }: {
 	searchParams: { cpf: string; lmi: string; produto: string }
 }) {
-	const session = await getServerSession(authOptions)
-	const token = (session as any)?.accessToken
+	const { session, granted } = await getServerSessionAuthorization(['vendedor'])
+	const token = session?.accessToken ?? ''
+
+	if (!granted) {
+		redirect('/dashboard')
+	}
 
 	const cpf = searchParams.cpf
 	const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi

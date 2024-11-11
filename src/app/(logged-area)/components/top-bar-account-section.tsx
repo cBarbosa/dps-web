@@ -17,7 +17,9 @@ export default function AccountSection({ userData }: { userData: UserData }) {
 				<div className="text-sm font-bold text-primary-dark">
 					{userData.name}
 				</div>
-				<div className="text-xs text-muted-foreground">Super Admin</div>
+				<div className="text-xs text-muted-foreground capitalize">
+					{userData.role.toLowerCase()}
+				</div>
 			</div>
 			<Popover>
 				<PopoverTrigger asChild>
