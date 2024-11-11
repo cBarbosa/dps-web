@@ -94,6 +94,15 @@ export default async function SubscriptionPage({
 		}
 	})
 
+	async function filterResults(formData: FormData) {
+		'use server'
+		const cpfRaw = formData.get('cpf')
+		const cpf = cpfRaw?.toString().replace(/[^\d]/g, '')
+		console.log('filtering', cpf)
+
+		redirect(`/dps/subscription?cpf=${cpf}`)
+	}
+
 	return (
 		<div className="p-5">
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -103,20 +112,23 @@ export default async function SubscriptionPage({
 						Aqui listamos todas as DPS&apos;s preenchidas em nossa plataforma.
 					</span>
 				</div>
-				<div className="mb-3 flex gap-5 items-center">
+				<form action={filterResults} className="mb-3 flex gap-5 items-center">
 					<Input
-						placeholder="Código DPS"
+						name="cpf"
+						placeholder="Pesquisar CPF"
 						className="w-72 p-5 rounded-full bg-gray-150 border-none"
 						icon={<SearchIcon size={20} className="text-gray-500" />}
 						iconOffset={2}
+						mask="999.999.999-99"
 					/>
 					<Button
+						type="submit"
 						variant="round"
 						className="w-10 h-10 p-0 text-muted-foreground bg-gray-150 hover:bg-gray-200"
 					>
 						<ListFilterIcon size={20} />
 					</Button>
-				</div>
+				</form>
 				<DpsDataTable data={data} currentPage={1} pageAmount={1} />
 			</div>
 		</div>

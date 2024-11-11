@@ -1,3 +1,4 @@
+'use client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -6,23 +7,43 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover'
 import { BellIcon, MessageSquareTextIcon, SearchIcon } from 'lucide-react'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useCallback } from 'react'
 import { Session } from 'next-auth'
 import AccountSection from './top-bar-account-section'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export type UserData = {
 	name: string
 	email: string
 	image?: string | null
+	role: string
 }
 
 export function TopBar({ session }: { session: Session | null }) {
+	const router = useRouter()
+
 	if (!session) return // redirect('/login')
 
 	const userData: UserData = {
 		name: session.user!.name!,
 		email: session.user!.email!,
 		image: session.user!.image,
+		role: (session as any).role,
+	}
+
+	function searchCpf(formData: FormData) {
+		const cpfRaw = formData.get('cpf')
+
+		//remove special characters
+		const cpf = cpfRaw?.toString().replace(/[^\d]/g, '')
+
+		if (cpf && cpf?.length < 11) {
+			return
+		}
+
+		router.push(`dashboard?cpf=${cpf}`)
+
+		console.log(cpf)
 	}
 
 	const notifications = [
@@ -48,6 +69,8 @@ export function TopBar({ session }: { session: Session | null }) {
 			<div className="basis-auto">
 				<div className="text-xl font-black text-primary-dark">
 					Bom dia, {userData.name}
+					{'>>'}
+					{userData.role + ''}
 				</div>
 				<div className="text-sm text-muted-foreground capitalize">
 					{new Date()
@@ -61,12 +84,16 @@ export function TopBar({ session }: { session: Session | null }) {
 				</div>
 			</div>
 			<div className="grow">
-				<Input
-					className="px-8 py-6 rounded-2xl max-w-[530px]"
-					placeholder="Pesquisar algo"
-					icon={<SearchIcon className="text-primary" />}
-					iconOffset={12}
-				/>
+				<form action={searchCpf}>
+					<Input
+						name="cpf"
+						className="px-8 py-6 rounded-2xl max-w-[530px]"
+						placeholder="Pesquisar CPF"
+						icon={<SearchIcon className="text-primary" />}
+						iconOffset={12}
+						mask="999.999.999-99"
+					/>
+				</form>
 			</div>
 			<div className="basis-auto flex gap-3">
 				<NewsButton icon={<BellIcon />} newsList={notifications} />

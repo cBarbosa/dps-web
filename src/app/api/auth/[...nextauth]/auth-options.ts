@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
 						email: json.data.userData.email,
 						name: json.data.userData.name,
 						accessToken: json.data.accessToken,
+						role: json.data.role,
 					}
 				}
 
@@ -63,13 +64,22 @@ export const authOptions: NextAuthOptions = {
 			if (user) {
 				token = Object.assign({}, token, {
 					accessToken: (user as any).accessToken,
+					role: (user as any).role,
+					expires: (user as any).expires,
 				})
 			}
 			return token
 		},
 		async session({ session, token }) {
+			if (new Date(token.expires as string) > new Date()) {
+				return {
+					user: undefined,
+					expires: (token.expires as string) ?? '',
+				}
+			}
 			session = Object.assign({}, session, {
 				accessToken: token.accessToken,
+				role: token.role,
 			})
 			return session
 		},

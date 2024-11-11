@@ -16,7 +16,7 @@ export async function getProposals(
 			params: {
 				page: page,
 				size: size,
-				document: cpf,
+				document: cpf ?? '',
 				lmiRange: lmi ?? '',
 				status: status ?? '',
 				productUid: produto ?? '',
@@ -362,6 +362,9 @@ export async function postAttachmentFile(
 	}
 ) {
 	try {
+		if (data.stringBase64.startsWith('data:'))
+			data.stringBase64 = data.stringBase64.split(',')[1]
+
 		const response = await axios.post(`v1/Proposal/${uid}/document`, data, {
 			headers: {
 				Authorization: `Bearer ${token}`,
@@ -452,18 +455,20 @@ export async function postStatus(
 export async function getProposalDocumentsByUid(
 	token: string,
 	uid: string
-): Promise<Promise<{
-	message: string
-	success: boolean
-	data: {
-		uid: string
-		documentName: string
-		documentUrl: string
-		description: string
-		created: Date | string
-		updated?: Date | string
-	}[]
-} | null>> {
+): Promise<
+	Promise<{
+		message: string
+		success: boolean
+		data: {
+			uid: string
+			documentName: string
+			documentUrl: string
+			description: string
+			created: Date | string
+			updated?: Date | string
+		}[]
+	} | null>
+> {
 	try {
 		const response = await axios.get(`v1/Proposal/${uid}/document`, {
 			headers: {
@@ -484,5 +489,5 @@ export async function getProposalDocumentsByUid(
 		}
 	}
 
-	return null;
-};
+	return null
+}
