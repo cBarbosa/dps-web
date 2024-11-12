@@ -69,8 +69,6 @@ export function TopBar({ session }: { session: Session | null }) {
 			<div className="basis-auto">
 				<div className="text-xl font-black text-primary-dark">
 					Bom dia, {userData.name}
-					{'>>'}
-					{userData.role + ''}
 				</div>
 				<div className="text-sm text-muted-foreground capitalize">
 					{new Date()
