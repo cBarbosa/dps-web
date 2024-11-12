@@ -29,7 +29,7 @@ export default async function DashboardPage({
 	if (role === 'subscritor') status = 4
 	if (role === 'subscritor-med') status = 5
 	if (role === 'admin') status = undefined
-	else signOut()
+	else redirect('/logout')
 
 	const data = await getProposals(
 		token,
@@ -39,10 +39,8 @@ export default async function DashboardPage({
 		status, //status
 		currentPage
 	)
-	console.log('||||||||->>')
-	console.dir(data, { depth: Infinity })
 
-	if (data === null) return redirect('/dashboard')
+	if (data === null) return redirect('/logout')
 
 	const pageAmount = Math.ceil(data?.totalItems / 10)
 
@@ -65,7 +63,6 @@ export default async function DashboardPage({
 		'use server'
 		const cpfRaw = formData.get('cpf')
 		const cpf = cpfRaw?.toString().replace(/[^\d]/g, '')
-		console.log('filtering', cpf)
 
 		redirect(`/dashboard?cpf=${cpf}`)
 	}
