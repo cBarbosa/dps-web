@@ -16,58 +16,9 @@ export default async function SubscriptionMedPage({
 	])
 	const token = (session as any)?.accessToken
 
-	// const data: DPS[] = [
-	// 	{
-	// 		codigo: 'INV-10022024-001',
-	// 		cpf: '875.896.857-89',
-	// 		dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
-	// 		tipoDoc: 'simples',
-	// 		status: {
-	// 			code: 1,
-	// 			description: 'Aguardando análise',
-	// 		},
-	// 	},
-	// 	{
-	// 		codigo: 'INV-10022024-002',
-	// 		cpf: '123.252.548-89',
-	// 		dataCadastro: new Date('2024-09-15T00:00:00-03:00'),
-	// 		tipoDoc: 'simples',
-	// 		status: {
-	// 			code: 1,
-	// 			description: 'Aguardando análise',
-	// 		},
-	// 	},
-	// 	{
-	// 		codigo: 'INV-10022024-003',
-	// 		cpf: '123.252.857-89',
-	// 		dataCadastro: new Date('2024-08-11T00:00:00-03:00'),
-	// 		tipoDoc: 'completa',
-	// 		status: {
-	// 			code: 1,
-	// 			description: 'Aguardando análise',
-	// 		},
-	// 	},
-	// 	{
-	// 		codigo: 'INV-10022024-004',
-	// 		cpf: '000.252.548-89',
-	// 		dataCadastro: new Date('2024-05-01T00:00:00-03:00'),
-	// 		tipoDoc: 'completa',
-	// 		status: {
-	// 			code: 1,
-	// 			description: 'Aguardando análise',
-	// 		},
-	// 	},
-	// 	{
-	// 		codigo: 'INV-10022024-009',
-	// 		cpf: '123.087.548-89',
-	// 		dataCadastro: new Date('2024-10-15T00:00:00-03:00'),
-	// 		tipoDoc: 'completa',
-	// 		status: {
-	// 			code: 1,
-	// 			description: 'Aguardando análise',
-	// 		},
-	// 	},
-	// ]
+	if (!granted) {
+		redirect('/dashboard')
+	}
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 

@@ -20,17 +20,15 @@ export default async function DashboardPage({
 		| Lowercase<ApiRoles>
 		| undefined
 
-	console.log('role', role)
-
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 	const cpf = searchParams?.cpf
 
 	let status
 	if (role === 'vendedor') status = 10
-	if (role === 'subscritor') status = 4
-	if (role === 'subscritor-med') status = 5
-	if (role === 'admin') status = undefined
-	// else redirect('/logout')
+	else if (role === 'subscritor') status = 4
+	else if (role === 'subscritor-med') status = 5
+	else if (role === 'admin') status = undefined
+	else redirect('/logout')
 
 	const data = await getProposals(
 		token,
