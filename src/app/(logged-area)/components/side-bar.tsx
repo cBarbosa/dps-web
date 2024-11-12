@@ -54,6 +54,9 @@ export default function SideBar() {
 							<RoleBasedRender role={role} allowedRoles={['subscritor']}>
 								<MenuItem href="/dps/subscription">Subscrição</MenuItem>
 							</RoleBasedRender>
+							<RoleBasedRender role={role} allowedRoles={['subscritor-med']}>
+								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
+							</RoleBasedRender>
 						</MenuSection>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
@@ -114,7 +117,7 @@ function MenuItem({
 }) {
 	const path = usePathname()
 
-	const isActive = href.startsWith(path)
+	const isActive = path === href
 
 	return (
 		<li className="my-1">

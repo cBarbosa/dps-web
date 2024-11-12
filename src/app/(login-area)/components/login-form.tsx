@@ -93,9 +93,10 @@ export default function LoginForm() {
 		}
 
 		let redirectPath = params.get('callbackUrl') || '/dashboard'
-		if (redirectPath.startsWith('/logout')) {
+		if (redirectPath.startsWith('/logout') || redirectPath === '/') {
 			redirectPath = '/dashboard'
 		}
+		console.log('redirectPath', redirectPath)
 		router.push(redirectPath)
 	}
 
