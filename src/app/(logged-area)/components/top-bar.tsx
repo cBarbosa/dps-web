@@ -41,7 +41,7 @@ export function TopBar({ session }: { session: Session | null }) {
 			return
 		}
 
-		router.push(`dashboard?cpf=${cpf}`)
+		router.push(`/dashboard?cpf=${cpf}`)
 
 		console.log(cpf)
 	}
