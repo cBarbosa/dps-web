@@ -20,6 +20,8 @@ export default async function DashboardPage({
 		| Lowercase<ApiRoles>
 		| undefined
 
+	console.log('role', role)
+
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 	const cpf = searchParams?.cpf
 
