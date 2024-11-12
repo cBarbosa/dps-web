@@ -16,6 +16,10 @@ export default async function SubscriptionPage({
 	])
 	const token = (session as any)?.accessToken
 
+	if (!granted) {
+		redirect('/dashboard')
+	}
+
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
 	const dataRaw = await getProposals(
