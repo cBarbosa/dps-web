@@ -3,19 +3,18 @@ import DpsDataTable, { DPS } from '../components/dps-data-table'
 import { ListFilterIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 // import { getProposals } from './actions'
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { getProposals } from '../dps/actions'
-import { ApiRoles } from '@/hooks/getServerSessionAuthorization'
-import { signOut } from 'next-auth/react'
+import getServerSessionAuthorization, {
+	ApiRoles,
+} from '@/hooks/getServerSessionAuthorization'
 
 export default async function DashboardPage({
 	searchParams,
 }: {
 	searchParams: { page: string; cpf: string }
 }) {
-	const session = await getServerSession(authOptions)
+	const { session, granted } = await getServerSessionAuthorization()
 	const token = (session as any)?.accessToken
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
@@ -29,7 +28,7 @@ export default async function DashboardPage({
 	if (role === 'subscritor') status = 4
 	if (role === 'subscritor-med') status = 5
 	if (role === 'admin') status = undefined
-	else redirect('/logout')
+	// else redirect('/logout')
 
 	const data = await getProposals(
 		token,
