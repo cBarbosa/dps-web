@@ -49,11 +49,15 @@ export default function LoginForm() {
 		title: '',
 	})
 
+	const [isLoading, setIsLoading] = useState(false)
+
 	useEffect(() => {
 		router.refresh()
 	}, [router])
 
 	async function onSubmit(v: LoginSchema) {
+		setIsLoading(true)
+
 		const result = await signIn('credentials', {
 			email: v.email,
 			password: v.password,
@@ -67,6 +71,7 @@ export default function LoginForm() {
 				title: 'Ocorreu um erro ao autenticar',
 				message: 'Tente novamente.',
 			})
+			setIsLoading(false)
 
 			return
 		}
@@ -78,6 +83,7 @@ export default function LoginForm() {
 				title: 'Login inválido',
 				message: result.error || 'Email ou senha inválido',
 			})
+			setIsLoading(false)
 			return
 		}
 
@@ -89,6 +95,7 @@ export default function LoginForm() {
 				title: 'Ocorreu um erro ao autenticar',
 				message: 'Tente novamente.',
 			})
+			setIsLoading(false)
 			return
 		}
 
@@ -173,10 +180,10 @@ export default function LoginForm() {
 
 					<Button
 						type="submit"
-						disabled={isSubmitting}
+						disabled={isSubmitting || isLoading}
 						className="py-6 text-base font-semibold"
 					>
-						{isSubmitting ? 'Carregando...' : 'Entrar'}
+						{isSubmitting || isLoading ? 'Carregando...' : 'Entrar'}
 					</Button>
 
 					<LabeledSeparator label="OU" className="text-xs" />

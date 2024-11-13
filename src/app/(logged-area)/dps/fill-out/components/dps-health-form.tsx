@@ -3,13 +3,14 @@ import FileInput from '@/components/ui/file-input'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
-import { cn } from '@/lib/utils'
+import { cn, ParseInt } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
-import React, { useCallback, useEffect } from 'react'
+import React, { FocusEvent, useCallback, useEffect, useRef } from 'react'
 import {
 	Control,
 	Controller,
+	FieldErrors,
 	FormState,
 	useForm,
 	UseFormSetValue,
@@ -31,6 +32,7 @@ import { diseaseNames } from './dps-form'
 import { getProposals, postHealthDataByUid } from '../../actions'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
+import { set } from 'date-fns'
 
 const diseaseSchema = variant(
 	'has',
@@ -91,7 +93,7 @@ const DpsHealthForm = ({
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
 
-	console.log('>>>initialHealthData', initialHealthData)
+	// console.log('>>>initialHealthData', initialHealthData)
 
 	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
 		proposalUidProp
@@ -200,9 +202,18 @@ const DpsHealthForm = ({
 				)}
 			</div>
 
-			<Button type="submit" className="w-40">
-				Salvar
-			</Button>
+			<div className="flex justify-start items-center gap-5">
+				<Button type="submit" className="w-40">
+					Salvar
+				</Button>
+				{errors ? (
+					<div className="text-red-500">
+						{Object.values(errors).some(v => v.has)
+							? 'Preencha todos os campos'
+							: ''}
+					</div>
+				) : null}
+			</div>
 		</form>
 	)
 }
@@ -237,6 +248,22 @@ function DiseaseField({
 	const handleDescriptionChange = useCallback(() => {
 		trigger(`${name}.description`)
 	}, [trigger, name])
+
+	const hasInputRef = useRef<HTMLElement | null>(null)
+	function handleValidShake(check: boolean) {
+		if (check && hasInputRef.current) {
+			console.log('TEM ERRO', hasInputRef.current)
+			hasInputRef.current.style.animation = 'horizontal-shaking 0.25s backwards'
+			setTimeout(() => {
+				if (hasInputRef.current) hasInputRef.current.style.animation = ''
+			}, 250)
+		}
+		return check
+	}
+
+	useEffect(() => {
+		handleValidShake(!!errors[name]?.has)
+	}, [errors, name])
 
 	return (
 		<ShareLine className="py-4 px-4 hover:bg-gray-50">
@@ -290,6 +317,10 @@ function DiseaseField({
 							onValueChange={handleChange}
 							defaultValue={value}
 							className="flex flex-row justify-end items-start gap-5"
+							ref={r => {
+								hasInputRef.current = r
+								ref(r)
+							}}
 						>
 							<div className={errors?.[name]?.has && 'text-red-500'}>
 								<RadioGroupItem
@@ -320,3 +351,21 @@ function DiseaseField({
 }
 
 export default DpsHealthForm
+
+function shakeFirstErrorField(errors: FieldErrors<HealthForm>) {
+	console.log('eeerr', errors)
+	const firstFieldKey = Object.keys(errors).reduce((prev, curr) => {
+		const currInt = +curr
+		const prevInt = prev ? +prev : Infinity
+		if (currInt < prevInt) return curr
+		return prev
+	}, undefined as string | undefined)
+
+	if (firstFieldKey === undefined) return
+
+	console.log(
+		'to shake',
+		firstFieldKey,
+		errors[firstFieldKey as keyof HealthForm]
+	)
+}

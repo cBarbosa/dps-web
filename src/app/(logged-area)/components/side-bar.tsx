@@ -9,8 +9,6 @@ import {
 	ArrowLeftFromLineIcon,
 	FileTextIcon,
 	LayoutDashboardIcon,
-	NotebookPenIcon,
-	SaveIcon,
 	SettingsIcon,
 } from 'lucide-react'
 import Image from 'next/image'
