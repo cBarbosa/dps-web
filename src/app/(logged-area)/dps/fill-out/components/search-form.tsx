@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import SelectComp from '@/components/ui/select-comp'
 import {
+	custom,
 	InferInput,
 	literal,
 	minLength,
@@ -18,6 +19,7 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { SearchIcon } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import validateCpf from 'validar-cpf'
 
 const searchSchema =
 	// union(
@@ -25,7 +27,8 @@ const searchSchema =
 	object({
 		cpf: pipe(
 			string(),
-			transform(input => input.replace(/\D/g, ''))
+			transform(input => input.replace(/\D/g, '')),
+			custom(v => validateCpf(v as string), 'CPF inválido.')
 			// nonEmpty('Campo obrigatório.')
 		),
 		produto:
