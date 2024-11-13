@@ -150,7 +150,7 @@ export default function Interactions({
 	// )
 }
 
-function formatDate(date: Date | string) {
+export function formatDate(date: Date | string) {
 	if (!date) return null
 	if (typeof date === 'string') {
 		date = new Date(date)

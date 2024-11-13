@@ -2,6 +2,8 @@ import { DateAfter } from './../../node_modules/react-day-picker/src/types/Match
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
+export type ParseInt<T> = T extends `${infer N extends number}` ? N : never
+
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
 }

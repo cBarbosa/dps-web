@@ -41,27 +41,26 @@ const DetailsPresent = ({
 	}
 
 	async function sendToEndinFlow() {
-
-		const response = await postStatus(token, uid, 6, "Formulário aceito");
+		const response = await postStatus(token, uid, 6, 'Formulário aceito')
 
 		console.log('post sendToEndinFlow', response)
 
 		if (response) {
 			if (response.success) {
-				refetchProposalData();
+				refetchProposalData()
 			} else {
 				console.error(response.message)
 			}
 		}
-	};
+	}
 
 	const lastSituation: {
 		id: number
 		description: string
 	} | null = proposalData.history?.at(0)?.status ?? {
 		id: 10,
-		description: 'Aguardando Preenchimento do DPS'
-	};
+		description: 'Aguardando Preenchimento do DPS',
+	}
 
 	const showAlert: boolean =
 		// lastSituation?.id === 3 ||
@@ -97,13 +96,9 @@ const DetailsPresent = ({
 					</div>
 					<div className="flex flex-col gap-3">
 						{proposalSituation?.id === 4 ? (
-							<Button
-								onClick={sendToEndinFlow}
-							>
-								Enviar para aceitação
-							</Button>
+							<Button onClick={sendToEndinFlow}>Enviar para aceitação</Button>
 						) : null}
-						<Button>Visualizar DPS</Button>
+						<Button disabled>Visualizar DPS</Button>
 					</div>
 				</div>
 			</div>

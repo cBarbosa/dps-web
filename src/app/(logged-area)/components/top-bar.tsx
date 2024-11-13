@@ -7,10 +7,10 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover'
 import { BellIcon, MessageSquareTextIcon, SearchIcon } from 'lucide-react'
-import React, { ReactNode, useCallback } from 'react'
+import React, { ReactNode } from 'react'
 import { Session } from 'next-auth'
 import AccountSection from './top-bar-account-section'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export type UserData = {
 	name: string
