@@ -42,9 +42,10 @@ export default async function FillOutPage({
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
+	const status = undefined; // se quiser valor fixo 10;
 	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
 		allowSearch
-			? getProposals(token, cpf, lmi, produto, 10, currentPage)
+			? getProposals(token, cpf, lmi, produto, status, currentPage)
 			: { totalItems: 0, items: [] },
 		getLmiOptions(token),
 		getProductList(token),

@@ -35,7 +35,7 @@ export default async function DashboardPage({
 		cpf, //cpf
 		undefined, //lmi
 		undefined, //produto
-		status, //status
+		undefined, //status
 		currentPage
 	)
 
