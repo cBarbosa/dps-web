@@ -1,11 +1,18 @@
 'use client'
 
+import React, {
+	useCallback,
+	useEffect
+} from 'react';
 import { Badge } from '@/components/ui/badge'
-import { useCallback, useEffect, useState } from 'react'
-import { getProposalDocumentsByUid } from '../actions'
-import { CloudDownloadIcon } from 'lucide-react'
-import Link from 'next/link'
+import {
+	getProposalArchiveByUid,
+	getProposalDocumentsByUid
+} from '../actions'
+import { CloudDownloadIcon } from 'lucide-react';
 import { formatDate } from './interactions'
+import { Button } from '@/components/ui/button'
+import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
 
 export type DocumentType = {
 	uid: string
@@ -14,19 +21,6 @@ export type DocumentType = {
 	description: string
 	created: Date | string
 	updated?: Date | string
-}
-
-export const downloadItem = (
-	data: string,
-	filename: string = 'archive.pdf'
-): void => {
-	const link = document.createElement('a')
-
-	link.href = `data:application/pdf;base64,${data}`
-	link.setAttribute('download', filename)
-	document.body.appendChild(link)
-	link.click()
-	link.parentNode?.removeChild(link)
 }
 
 export default function Archives({
@@ -38,7 +32,9 @@ export default function Archives({
 	token: string
 	uid: string
 }) {
-	const [data, setData] = useState<DocumentType[]>([])
+	const [data, setData] = React.useState<DocumentType[]>([]);
+	const [isModalOpen, setIsModalOpen] = React.useState(false);
+	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined);
 
 	const reloadInteractions = useCallback(async () => {
 		const proposalResponse = await getProposalDocumentsByUid(token, uid)
@@ -48,11 +44,21 @@ export default function Archives({
 		const newDocuments = proposalResponse?.data
 
 		setData(newDocuments)
-	}, [token, uid, setData])
+	}, [token, uid, setData]);
+
+	const handleViewArchive = useCallback(async (documentUid:string) => {
+		setIsModalOpen(opt => true);
+
+		const response = await getProposalArchiveByUid(token, uid, documentUid);
+
+		if(!response) return;
+
+		setPdfUrl(createPdfUrlFromBase64(response.data));
+	}, []);
 
 	useEffect(() => {
 		reloadInteractions()
-	}, [reloadInteractions])
+	}, [reloadInteractions]);
 
 	return data?.length > 0 ? (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -71,15 +77,14 @@ export default function Archives({
 							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
 						>
 							{document.documentName && (
-								<Link
-									href={document.documentUrl}
+								<Button
 									className="grow-0 basis-10 text-teal-900 hover:text-teal-600"
-									target="_blank"
-									download
+									variant={`ghost`}
+									onClick={() => handleViewArchive(document.uid)}
 								>
 									{/* <Badge variant="outline">{index + 1}</Badge> */}
 									<CloudDownloadIcon className="m-2" />
-								</Link>
+								</Button>
 							)}
 
 							<div className="pl-5 grow basis-1 text-left">
@@ -88,7 +93,10 @@ export default function Archives({
 
 							{document.documentName && (
 								<div className="grow-0 px-3">
-									<Badge variant="warn" shape="pill">
+									<Badge
+										variant="warn"
+										shape="pill"
+									>
 										{document.documentName}
 									</Badge>
 								</div>
@@ -98,6 +106,11 @@ export default function Archives({
 					)
 				})}
 			</ul>
+			<DialogShowArchive
+				isModalOpen={isModalOpen}
+				setIsModalOpen={setIsModalOpen}
+				pdfUrl={pdfUrl}
+			/>
 		</div>
 	) : (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">

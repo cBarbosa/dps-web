@@ -50,7 +50,7 @@ export default async function FillOutPage({
 		getLmiOptions(token),
 		getProductList(token),
 	])
-	console.log('||||||||->>')
+
 	console.dir(data, { depth: Infinity })
 
 	const lmiOptions =
@@ -91,8 +91,6 @@ export default async function FillOutPage({
 			proposalData = data.totalItems > 0 ? data.items?.[0] : null
 		}
 	}
-
-	console.log('proposalData', proposalData)
 
 	return (
 		<div className="p-5">

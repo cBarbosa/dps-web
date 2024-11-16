@@ -1,3 +1,10 @@
+import React, {
+	FocusEvent,
+	useCallback,
+	useEffect,
+	useRef
+} from 'react';
+
 import { Button } from '@/components/ui/button'
 import FileInput from '@/components/ui/file-input'
 import { Input } from '@/components/ui/input'
@@ -6,7 +13,7 @@ import ShareLine from '@/components/ui/share-line'
 import { cn, ParseInt } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useRouter } from 'next/navigation'
-import React, { FocusEvent, useCallback, useEffect, useRef } from 'react'
+
 import {
 	Control,
 	Controller,

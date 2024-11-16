@@ -1,10 +1,20 @@
 'use client'
-import React, { useEffect, useState } from 'react'
-import DpsProfileForm, { ProfileForm } from './dps-profile-form'
-import DpsHealthForm, { HealthForm } from './dps-health-form'
+
+import React, {
+	useEffect,
+	useState
+} from 'react';
+import DpsProfileForm, {
+	ProfileForm
+} from './dps-profile-form'
+import DpsHealthForm, {
+	HealthForm
+} from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
+import DpsAttachmentsForm, {
+	AttachmentsForm
+} from './dps-attachments-form'
 import Link from 'next/link'
 
 export const diseaseNames = {
