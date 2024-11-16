@@ -20,10 +20,10 @@ import {
 	optional,
 	pipe,
 	string,
-} from 'valibot'
-import validateCpf from 'validar-cpf'
-import { postProposal } from '../../actions'
-import { useRouter } from 'next/navigation'
+} from 'valibot';
+import validateCpf from 'validar-cpf';
+import { postProposal } from '../../actions';
+import { useRouter } from 'next/navigation';
 
 const profileForm = object({
 	produto: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -307,7 +307,7 @@ const DpsProfileForm = ({
 			</ShareLine>
 
 			<ShareLine>
-				<Controller
+				{/* <Controller
 					control={control}
 					defaultValue=""
 					name="profession"
@@ -321,6 +321,36 @@ const DpsProfileForm = ({
 								disabled={isSubmitting}
 								onValueChange={onChange}
 								defaultValue={value}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.profession?.message}
+							</div>
+						</label>
+					)}
+				/> */}
+
+				<Controller
+					control={control}
+					defaultValue=""
+					name="profession"
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Atividade profissional</div>
+							<Input
+								id="profession"
+								type="text"
+								placeholder="Atividade profissional"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.profession &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								autoComplete="profession"
+								disabled={isSubmitting}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
 								{errors?.profession?.message}

@@ -21,6 +21,7 @@ export type DPS = {
 }
 
 type DpsStatus = {
+	id?: number
 	code: number
 	description: string
 }
@@ -64,7 +65,11 @@ export const columns: ColumnDef<DPS>[] = [
 		cell: ({ getValue }) => {
 			const status = getValue<DpsStatus>()
 
-			return <StatusBadge status={status} />
+			return <StatusBadge status={{
+					code: status.id ?? 0,
+					description: status.description
+				}}
+			/>
 		},
 	},
 	{
@@ -97,7 +102,7 @@ export const columns: ColumnDef<DPS>[] = [
 			)
 		},
 	},
-]
+];
 
 export default function DpsDataTable({
 	data,
@@ -162,6 +167,12 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 		case 5:
 			badgeProps.variant = 'success'
 			break
+		case 6:
+			badgeProps.variant = 'success';
+			break;
+		case 10:
+			badgeProps.variant = 'warn';
+			break;
 		default:
 	}
 

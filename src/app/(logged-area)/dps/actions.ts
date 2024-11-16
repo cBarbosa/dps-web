@@ -491,3 +491,72 @@ export async function getProposalDocumentsByUid(
 
 	return null
 }
+
+export const getProposalArchiveByUid = async(
+	token: string,
+	uid: string,
+	documentUid: string
+): Promise<
+	Promise<{
+		message: string
+		success: boolean
+		data: string
+	} | null>
+> => {
+	try {
+
+		const response = await axios.get(`v1/Proposal/${uid}/document/${documentUid}`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			}
+		});
+
+		if (response?.data) {
+			return response.data;
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.error(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout');
+		}
+	}
+
+	return null;
+};
+
+export const getProposalSignByUid = async(
+	token: string,
+	uid: string
+): Promise<
+	Promise<{
+		message: string
+		success: boolean
+		data: string
+	} | null>
+> => {
+	try {
+
+		const response = await axios.get(`v1/Proposal/${uid}/pdf-sign`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			}
+		});
+
+		if (response?.data) {
+			return response.data;
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.error(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout');
+		}
+	}
+
+	return null;
+};

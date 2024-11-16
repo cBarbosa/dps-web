@@ -24,7 +24,7 @@ export default async function DashboardPage({
 	const cpf = searchParams?.cpf
 
 	let status
-	if (role === 'vendedor') status = 10
+	if (role === 'vendedor') status = undefined
 	else if (role === 'subscritor') status = 4
 	else if (role === 'subscritor-med') status = 5
 	else if (role === 'admin') status = undefined
@@ -35,7 +35,7 @@ export default async function DashboardPage({
 		cpf, //cpf
 		undefined, //lmi
 		undefined, //produto
-		undefined, //status
+		status, //status
 		currentPage
 	)
 
