@@ -11,11 +11,13 @@ import {
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { PlusIcon, SendIcon, UploadIcon } from 'lucide-react'
-import { postAttachmentFile, postStatus } from '../actions'
+import { SendIcon } from 'lucide-react'
+import {
+	postAttachmentFile,
+	postStatus
+} from '../actions';
 import { getBase64 } from '@/lib/utils'
 import FileInput from '@/components/ui/file-input'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 const UploadComplement = ({
@@ -133,7 +135,7 @@ const UploadComplement = ({
 				<SendIcon size={14} className="mr-2" />
 				Enviar complemento
 			</Button>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>Envio de complemento</DialogTitle>
 				</DialogHeader>
@@ -144,6 +146,7 @@ const UploadComplement = ({
 						placeholder="Descrição da interação"
 						className="col-span-3 max-h-96"
 						onChange={e => setMessage(e.target.value)}
+						value={message}
 					/>
 				</div>
 				<div>
@@ -154,7 +157,7 @@ const UploadComplement = ({
 					<FileInput
 						id="complement"
 						accept="application/pdf"
-						wrapperClassName="max-w-[370px] w-full"
+						wrapperClassName=" w-full"
 						disabled={isLoading}
 						onChange={handleSelectFile as any}
 						value={file}
@@ -163,6 +166,13 @@ const UploadComplement = ({
 					{error && <p className="text-sm text-red-500">{error}</p>}
 				</div>
 				<DialogFooter>
+					<Button
+						variant={`outline`}
+						type="button"
+						onClick={() => [setFile(undefined), setMessage('')]}
+					>
+						Limpar
+					</Button>
 					<Button
 						type="submit"
 						disabled={isLoading || message === ''}
