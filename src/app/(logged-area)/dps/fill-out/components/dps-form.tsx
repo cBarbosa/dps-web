@@ -255,7 +255,7 @@ const DpsForm = ({
 					<DpsProfileData data={dpsData.profile} />
 				</div>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					Preenchimento de DPS realizado com sucesso, o seu cliente receberá um email com o formulário para assinatura, aguarde a assinatura para prosseguimento da aceitação.{' '}
+					Preenchimento de DPS realizado com sucesso, encaminhado para assinatura do proponente.{' '}
 					<Link href={`/dps/details/${initialProposalData?.uid}`}>
 						Ver detalhes
 					</Link>
