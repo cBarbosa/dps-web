@@ -119,7 +119,7 @@ export default async function FillOutPage({
 					<div className="flex justify-between items-center mt-7 p-5 rounded-lg bg-white">
 						{allowSearch ? (
 							<>
-								Nenhum proponente encontrado com os filtros informados.
+								Nenhuma DPS encontrada com os filtros informados.
 								<Button
 									variant="default"
 									asChild>
