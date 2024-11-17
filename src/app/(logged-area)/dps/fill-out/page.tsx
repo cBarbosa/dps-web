@@ -120,12 +120,14 @@ export default async function FillOutPage({
 						{allowSearch ? (
 							<>
 								Nenhum proponente encontrado com os filtros informados.
-								<Button variant="default" asChild>
+								<Button
+									variant="default"
+									asChild>
 									<Link
 										href={'/dps/fill-out/form?' + urlParams.toString()}
 										className="hover:text-white"
 									>
-										Novo Proponente
+										Preencher nova DPS
 									</Link>
 								</Button>
 							</>

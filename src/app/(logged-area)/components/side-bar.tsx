@@ -63,9 +63,9 @@ export default function SideBar() {
 						<MenuItem href="/" Icon={NotebookPenIcon}>
 							Formulários
 						</MenuItem> */}
-						<MenuItem href="/settings" Icon={SettingsIcon}>
+						{/* <MenuItem href="/settings" Icon={SettingsIcon}>
 							Configurações
-						</MenuItem>
+						</MenuItem> */}
 					</ul>
 				</Accordion>
 			</div>
