@@ -104,7 +104,7 @@ export default function LoginForm() {
 			redirectPath = '/dashboard'
 		}
 		console.log('redirectPath', redirectPath)
-		router.push(redirectPath)
+		router.push('/dashboard')
 	}
 
 	return (

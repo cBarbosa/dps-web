@@ -2,14 +2,25 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
-import { FileTextIcon, Undo2Icon, UserIcon } from 'lucide-react'
-import { getProposalArchiveByUid, getProposalByUid, getProposalSignByUid, postStatus } from '../actions'
+import {
+	FileTextIcon,
+	Undo2Icon,
+	UserIcon
+} from 'lucide-react';
+import {
+	getProposalByUid,
+	getProposalSignByUid,
+	postStatus
+} from '../actions';
 import { formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Interactions from './interactions'
 import Archives from './archives'
-import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive';
+import {
+	createPdfUrlFromBase64,
+	DialogShowArchive
+} from './dialog-archive';
 import { useSession } from 'next-auth/react';
 
 type ProposalDataType = NonNullable<
@@ -114,7 +125,7 @@ const DetailsPresent = ({
 					</div>
 					<div className="flex flex-col gap-3">
 
-						{proposalSituation?.id === 4 && role === 'SUBSCRITOR' && (
+						{proposalSituation?.id === 4 && (role === 'SUBSCRITOR'||role === 'ADMIN') && (
 							<Button
 								onClick={sendToEndinFlow}
 							>
@@ -156,9 +167,9 @@ const DetailsPresent = ({
 			<Interactions
 				token={token}
 				uid={uid}
-				proposalSituationId={lastSituation?.id === 4 && role === 'SUBSCRITOR'
+				proposalSituationId={lastSituation?.id === 4 && (role === 'SUBSCRITOR' || role === 'ADMIN')
 					? lastSituation?.id
-					: lastSituation?.id === 5 && role === 'SUBSCRITOR-MED'
+					: lastSituation?.id === 5 && (role === 'SUBSCRITOR-MED' || role === 'ADMIN')
 						? lastSituation?.id
 						: undefined
 				}
