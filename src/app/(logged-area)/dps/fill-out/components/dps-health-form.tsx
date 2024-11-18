@@ -164,17 +164,17 @@ const DpsHealthForm = ({
 
 		console.log('submitting', postData)
 
-		const existsAnyDesease = postData.some(x => x.exists);
-
-		if(!existsAnyDesease) {
-			const responseSign = await signProposal(token, proposalUid);
-			if(!responseSign)
-				return; //TODO add error alert
-		}
-
 		const response = await postHealthDataByUid(token, proposalUid, postData)
 
 		console.log('post proposal', response)
+
+		const existsAnyDesease = postData.some(x => x.exists);
+		if(!existsAnyDesease) {
+			const responseSign = await signProposal(token, proposalUid);
+			console.log('post signProposal', responseSign)
+			if(!responseSign)
+				console.log(responseSign); //TODO add error alert
+		}
 
 		if (response) {
 			reset()
@@ -219,7 +219,11 @@ const DpsHealthForm = ({
 			</div>
 
 			<div className="flex justify-start items-center gap-5">
-				<Button type="submit" className="w-40">
+				<Button
+					type="submit"
+					className="w-40"
+					disabled={isSubmitting}
+				>
 					Salvar
 				</Button>
 				{errors ? (
