@@ -157,7 +157,7 @@ const DpsAttachmentsForm = ({
 			// reset()
 			if (res.success) {
 				onSubmitProp(v)
-			} else {
+			} else { //TODO add error alert
 				console.error(res.message)
 			}
 		}

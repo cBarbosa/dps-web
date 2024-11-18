@@ -102,6 +102,7 @@ const DpsProfileForm = ({
 			email: v.email,
 			birthDate: v.birthdate.toISOString(),
 			productId: v.produto,
+			profession: v.profession ?? '',
 			typeId: 2,
 			lmiRangeId: +data.lmi,
 		}

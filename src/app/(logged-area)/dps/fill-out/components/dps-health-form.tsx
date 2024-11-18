@@ -169,7 +169,7 @@ const DpsHealthForm = ({
 		if(!existsAnyDesease) {
 			const responseSign = await signProposal(token, proposalUid);
 			if(!responseSign)
-				return;
+				return; //TODO add error alert
 		}
 
 		const response = await postHealthDataByUid(token, proposalUid, postData)
@@ -180,12 +180,13 @@ const DpsHealthForm = ({
 			reset()
 			if (response.success) {
 				onSubmitProp(v)
-			} else {
+			} else { //TODO add error alert
 				console.error(response.message)
 			}
 		}
 		onSubmitProp(v)
 		console.log('saudetop', v)
+		
 		// router.push('/dashboard')
 	}
 

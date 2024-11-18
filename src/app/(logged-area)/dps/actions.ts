@@ -79,9 +79,10 @@ export async function postProposal(
 	data: {
 		document: string
 		name: string
-		socialName: string | null
+		socialName?: string | null
 		email: string
 		birthDate: string
+		profession?: string | null
 		productId: string
 		typeId: number
 		lmiRangeId: number

@@ -93,6 +93,8 @@ const DpsForm = ({
 	const lmi = params.get('lmi') ?? ''
 	const produto = params.get('produto') ?? ''
 
+	console.log(params)
+
 	const initialHealthData = initialHealthDataProp
 		? Object.keys(diseaseNames).reduce((acc, curr) => {
 				if (initialHealthDataProp[+curr])
