@@ -1,20 +1,11 @@
 'use client'
 
-import React, {
-	useEffect,
-	useState
-} from 'react';
-import DpsProfileForm, {
-	ProfileForm
-} from './dps-profile-form'
-import DpsHealthForm, {
-	HealthForm
-} from './dps-health-form'
+import React, { useEffect, useState } from 'react'
+import DpsProfileForm, { ProfileForm } from './dps-profile-form'
+import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import DpsAttachmentsForm, {
-	AttachmentsForm
-} from './dps-attachments-form'
+import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
 import Link from 'next/link'
 
 export const diseaseNames = {
@@ -44,11 +35,21 @@ export const diseaseNames = {
 export type DiseaseKeys = keyof typeof diseaseNames
 
 const DpsForm = ({
+	autocompleteData,
 	initialProposalData,
 	initialHealthData: initialHealthDataProp,
 	lmiOptions,
 	productOptions,
 }: {
+	autocompleteData?: {
+		cpf?: string
+		name?: string
+		socialName?: string
+		birthdate?: Date | string
+		profession?: string
+		email?: string
+		phone?: string
+	}
 	initialProposalData?: {
 		uid: string
 		code: string
@@ -129,7 +130,7 @@ const DpsForm = ({
 		profile: initialProposalData?.customer
 			? {
 					produto: initialProposalData.product.uid,
-					lmi: '9',
+					lmi: initialProposalData.lmi.code?.toString(),
 					cpf: initialProposalData.customer.document,
 					name: initialProposalData.customer.name,
 					socialName: initialProposalData.customer.socialName ?? '',
@@ -191,13 +192,9 @@ const DpsForm = ({
 		setStep('health')
 	}
 	function handleHealthSubmit(v: HealthForm) {
-		setDpsData(prev => ({ ...prev, health: v }));
-		const hasSomeDesease = Object.entries(v)
-			.some(x => x[1].has === 'yes');
-		setStep(hasSomeDesease
-			? 'attachments'
-			: 'finished'
-		);
+		setDpsData(prev => ({ ...prev, health: v }))
+		const hasSomeDesease = Object.entries(v).some(x => x[1].has === 'yes')
+		setStep(hasSomeDesease ? 'attachments' : 'finished')
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
@@ -214,6 +211,14 @@ const DpsForm = ({
 						cpf: cpf,
 						lmi: lmi,
 						produto: produto,
+						name: autocompleteData?.name,
+						socialName: autocompleteData?.socialName,
+						email: autocompleteData?.email,
+						birthdate: autocompleteData?.birthdate
+							? new Date(autocompleteData.birthdate)
+							: undefined,
+						profession: autocompleteData?.profession,
+						phone: autocompleteData?.phone,
 					}}
 					lmiOptions={lmiOptions}
 					productOptions={productOptions}
@@ -262,7 +267,8 @@ const DpsForm = ({
 					<DpsProfileData data={dpsData.profile} />
 				</div>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					Preenchimento de DPS realizado com sucesso, encaminhado para assinatura do proponente.{' '}
+					Preenchimento de DPS realizado com sucesso, encaminhado para
+					assinatura do proponente.{' '}
 					<Link href={`/dps/details/${initialProposalData?.uid}`}>
 						Ver detalhes
 					</Link>

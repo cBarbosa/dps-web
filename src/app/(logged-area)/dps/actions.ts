@@ -493,7 +493,7 @@ export async function getProposalDocumentsByUid(
 	return null
 }
 
-export const getProposalArchiveByUid = async(
+export const getProposalArchiveByUid = async (
 	token: string,
 	uid: string,
 	documentUid: string
@@ -505,30 +505,32 @@ export const getProposalArchiveByUid = async(
 	} | null>
 > => {
 	try {
-
-		const response = await axios.get(`v1/Proposal/${uid}/document/${documentUid}`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
+		const response = await axios.get(
+			`v1/Proposal/${uid}/document/${documentUid}`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
 			}
-		});
+		)
 
 		if (response?.data) {
-			return response.data;
+			return response.data
 		} else {
-			throw new Error('Unsuccessful request');
+			throw new Error('Unsuccessful request')
 		}
 	} catch (err) {
-		console.error(err);
+		console.error(err)
 
 		if ((err as any)?.status === 401) {
-			redirect('/logout');
+			redirect('/logout')
 		}
 	}
 
-	return null;
-};
+	return null
+}
 
-export const getProposalSignByUid = async(
+export const getProposalSignByUid = async (
 	token: string,
 	uid: string
 ): Promise<
@@ -539,25 +541,117 @@ export const getProposalSignByUid = async(
 	} | null>
 > => {
 	try {
-
 		const response = await axios.get(`v1/Proposal/${uid}/pdf-sign`, {
 			headers: {
 				Authorization: `Bearer ${token}`,
-			}
-		});
+			},
+		})
 
 		if (response?.data) {
-			return response.data;
+			return response.data
 		} else {
-			throw new Error('Unsuccessful request');
+			throw new Error('Unsuccessful request')
 		}
 	} catch (err) {
-		console.error(err);
+		console.error(err)
 
 		if ((err as any)?.status === 401) {
-			redirect('/logout');
+			redirect('/logout')
 		}
 	}
 
-	return null;
-};
+	return null
+}
+
+export async function getProponentDataByCpf(cpf: string): Promise<
+	| {
+			detalhes: {
+				antecedenteCriminal: string
+				nascimento: string
+				riscoAposentadoPorDoenca: string
+				aposentado: string
+				situacaoCadastral: string
+				obitoOnline: string
+				profissao: string
+				nome: string
+				profissaoRisco: string
+				renda: string
+				idade: string
+				riscoAposentadoPorAcidente: string
+				cpf: string
+				sexo: string
+				mandadoPrisao: string
+				nomeMae: string
+				aposentadoMotivo: string
+			}
+			mortePorQualquerCausa: {
+				score: string
+				indicadorDecisao: string
+			}
+			morteNatural: {
+				score: string
+				indicadorDecisao: string
+			}
+			mortePorAcidente: {
+				score: string
+				indicadorDecisao: string
+			}
+			acidente: {
+				score: string
+				indicadorDecisao: string
+			}
+			doencasCronicas: {
+				score: string
+				indicadorDecisao: string
+			}
+	  }
+	| {
+			codigo: string
+			mensagem: string
+			parametros: unknown[]
+			validacoes: [
+				{
+					propriedade: string
+					mensagem: string
+					argumentos: unknown[]
+				}
+			]
+			stacktrace: string
+			referencia: string
+	  }
+	| null
+> {
+	cpf = cpf.replace(/[^\d]/g, '')
+	if (cpf.length !== 11) return null
+
+	try {
+		const response = await axios.get(
+			'https://apitechtrail.com.br/api/score/pf/' + cpf,
+			{
+				headers: {
+					Authorization:
+						'Basic MjJlYWU3ZDQtZjI3Mi00NDJlLTkyZDAtYWZlMjMyMDg4YmFkOjYwYWU0NmE2OGI2ZWY4NTAxYjQ4NWVkMzQ3ZGMzZjI4OGFhYTIyOGYxMWUxZGQyNzMxZDAzY2IyOTI5ZTM3NmY=',
+				},
+			}
+		)
+
+		if (!response.data.codigo) {
+			return response.data
+		} else {
+			throw new Error(
+				'Unsuccessful request. Message: "' +
+					response.data.mensagem +
+					'".\n\n Parametros: ' +
+					response.data?.parametros?.join(', ')
+			)
+		}
+	} catch (err) {
+		console.error(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+
+		return null
+	}
+}

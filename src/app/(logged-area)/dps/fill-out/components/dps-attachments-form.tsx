@@ -157,14 +157,13 @@ const DpsAttachmentsForm = ({
 			// reset()
 			if (res.success) {
 				onSubmitProp(v)
-			} else { //TODO add error alert
+			} else {
+				//TODO add error alert
 				console.error(res.message)
 			}
 		}
 
 		console.log('saudetop', v)
-
-		// router.push('/dashboard')
 	}
 
 	const setPickedDiseasesByKey = useCallback(
@@ -305,7 +304,9 @@ function AttachmentField({
 		{ label: string; value: DiseaseKeys }[]
 	>([])
 
-	const [isUploaded, setIsUploaded] = useState(false)
+	const [uploadStatus, setUploadStatus] = useState<
+		'none' | 'uploading' | 'uploaded'
+	>('none')
 
 	async function uploadFile() {
 		console.log('attempting upload')
@@ -320,6 +321,8 @@ function AttachmentField({
 		const fileBase64 = (await getBase64(fileValue)) as string
 
 		if (!fileBase64) return
+
+		setUploadStatus('uploading')
 
 		console.log('uploading')
 		if (!proposalUid) {
@@ -352,10 +355,11 @@ function AttachmentField({
 		if (response) {
 			// reset()
 			if (response.success) {
-				setIsUploaded(true)
+				setUploadStatus('uploaded')
 				// onSubmitProp(v)
 			} else {
 				console.error(response.message)
+				setUploadStatus('none')
 			}
 		}
 		// onSubmitProp(v)
@@ -382,6 +386,7 @@ function AttachmentField({
 									onChange(v.map(v => v.value))
 								}}
 								labelledBy="Selecione as doenças deste laudo"
+								disabled={isSubmitting || uploadStatus !== 'none'}
 							/>
 
 							<Button
@@ -392,6 +397,7 @@ function AttachmentField({
 									resetField(`attachments.${inputIndex}.diseaseList`)
 									resetField(`attachments.${inputIndex}.file`)
 								}}
+								disabled={isSubmitting || uploadStatus !== 'none'}
 							>
 								Remover
 							</Button>
@@ -416,7 +422,7 @@ function AttachmentField({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								accept="application/pdf"
-								disabled={isSubmitting || isUploaded}
+								disabled={isSubmitting || uploadStatus !== 'none'}
 								onChange={onChange}
 								// afterChange={handleAttachmentAfterChange}
 								onBlur={onBlur}
@@ -429,8 +435,16 @@ function AttachmentField({
 						</div>
 					)}
 				/>
-				<Button className="h-12 mt-3.5" onClick={uploadFile}>
-					Fazer upload
+				<Button
+					className="h-12 mt-3.5"
+					onClick={uploadFile}
+					disabled={isSubmitting || uploadStatus !== 'none'}
+				>
+					{uploadStatus === 'none'
+						? 'Fazer upload'
+						: uploadStatus === 'uploading'
+						? 'Enviando...'
+						: 'Enviado'}
 				</Button>
 			</div>
 		</div>
