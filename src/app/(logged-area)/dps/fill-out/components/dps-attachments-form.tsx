@@ -151,7 +151,6 @@ const DpsAttachmentsForm = ({
 		}
 
 		//TODO CHECK IF ALL FILES NEEDED ARE UPLOADED
-
 		const res = await signProposal(token, proposalUid)
 
 		if (res) {
@@ -207,9 +206,6 @@ const DpsAttachmentsForm = ({
 		>
 			<h3 className="text-primary text-lg">Anexar laudos</h3>
 			<div>Faça upload dos laudos das doenças especificadas.</div>
-			<Button className="w-64" onClick={addFileInput}>
-				Adicionar novo arquivo
-			</Button>
 
 			{Object.keys(diseaseList).length > 0 ? (
 				pickedDiseasesRaw.map((pickedObj, i) => {
@@ -253,6 +249,10 @@ const DpsAttachmentsForm = ({
 					<div className="text-gray-500">Não é necessário anexar arquivos.</div>
 				</div>
 			)}
+
+			<Button className="w-64" onClick={addFileInput}>
+				Adicionar novo arquivo
+			</Button>
 
 			<div className="flex gap-5">
 				<Button

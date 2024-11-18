@@ -189,8 +189,13 @@ const DpsForm = ({
 		setStep('health')
 	}
 	function handleHealthSubmit(v: HealthForm) {
-		setDpsData(prev => ({ ...prev, health: v }))
-		setStep('attachments')
+		setDpsData(prev => ({ ...prev, health: v }));
+		const hasSomeDesease = Object.entries(v)
+			.some(x => x[1].has === 'yes');
+		setStep(hasSomeDesease
+			? 'attachments'
+			: 'finished'
+		);
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
