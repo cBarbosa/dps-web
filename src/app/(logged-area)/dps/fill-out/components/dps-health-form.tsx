@@ -36,7 +36,7 @@ import {
 	optional,
 } from 'valibot'
 import { diseaseNames } from './dps-form'
-import { getProposals, postHealthDataByUid } from '../../actions'
+import { getProposals, postHealthDataByUid, signProposal } from '../../actions'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
 import { set } from 'date-fns'
@@ -162,7 +162,15 @@ const DpsHealthForm = ({
 			created: new Date().toISOString(),
 		}))
 
-		console.log('submitting', token, postData)
+		console.log('submitting', postData)
+
+		const existsAnyDesease = postData.some(x => x.exists);
+
+		if(!existsAnyDesease) {
+			const responseSign = await signProposal(token, proposalUid);
+			if(!responseSign)
+				return;
+		}
 
 		const response = await postHealthDataByUid(token, proposalUid, postData)
 
