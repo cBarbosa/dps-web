@@ -20,10 +20,10 @@ import {
 	optional,
 	pipe,
 	string,
-} from 'valibot';
-import validateCpf from 'validar-cpf';
-import { postProposal } from '../../actions';
-import { useRouter } from 'next/navigation';
+} from 'valibot'
+import validateCpf from 'validar-cpf'
+import { postProposal } from '../../actions'
+import { useRouter } from 'next/navigation'
 
 const profileForm = object({
 	produto: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -83,6 +83,12 @@ const DpsProfileForm = ({
 			cpf: data?.cpf,
 			lmi: data?.lmi,
 			produto: data?.produto,
+			name: data?.name,
+			birthdate: data?.birthdate,
+			profession: data?.profession,
+			email: data?.email,
+			phone: data?.phone,
+			socialName: data?.socialName,
 		},
 	})
 
@@ -189,7 +195,7 @@ const DpsProfileForm = ({
 									errors?.cpf && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="cpf"
-								disabled={isSubmitting}
+								disabled={true}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -232,7 +238,7 @@ const DpsProfileForm = ({
 									errors?.birthdate &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.birthdate !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -263,7 +269,7 @@ const DpsProfileForm = ({
 									errors?.name && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="name"
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.name !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -293,7 +299,7 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="socialName"
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.socialName !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -347,7 +353,7 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="profession"
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.profession !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -376,7 +382,7 @@ const DpsProfileForm = ({
 									errors?.email && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="email"
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.email !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -408,7 +414,7 @@ const DpsProfileForm = ({
 									errors?.phone && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="phone"
-								disabled={isSubmitting}
+								disabled={isSubmitting || data?.phone !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
