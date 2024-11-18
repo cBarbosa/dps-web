@@ -567,7 +567,7 @@ export async function getProponentDataByCpf(cpf: string): Promise<
 	| {
 			detalhes: {
 				antecedenteCriminal: string
-				nascimento: string
+				nascimento?: string
 				riscoAposentadoPorDoenca: string
 				aposentado: string
 				situacaoCadastral: string
@@ -605,20 +605,20 @@ export async function getProponentDataByCpf(cpf: string): Promise<
 				indicadorDecisao: string
 			}
 	  }
-	| {
-			codigo: string
-			mensagem: string
-			parametros: unknown[]
-			validacoes: [
-				{
-					propriedade: string
-					mensagem: string
-					argumentos: unknown[]
-				}
-			]
-			stacktrace: string
-			referencia: string
-	  }
+	// | {
+	// 		codigo: string
+	// 		mensagem: string
+	// 		parametros: unknown[]
+	// 		validacoes: [
+	// 			{
+	// 				propriedade: string
+	// 				mensagem: string
+	// 				argumentos: unknown[]
+	// 			}
+	// 		]
+	// 		stacktrace: string
+	// 		referencia: string
+	//   }
 	| null
 > {
 	cpf = cpf.replace(/[^\d]/g, '')

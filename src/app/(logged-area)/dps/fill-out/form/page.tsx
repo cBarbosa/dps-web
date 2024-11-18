@@ -76,28 +76,24 @@ export default async function DpsFormPage({
 
 		*/
 
-	// @ts-expect-error known issue
-	const proponentDataBirthdateAux = proponentDataRaw?.detalhes?.nascimento
-		? // @ts-expect-error known issue
-		  proponentDataRaw.detalhes.nascimento.split('/')
-		: undefined
+	const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
+		? proponentDataRaw?.detalhes.nascimento.split('/')
+		: undefined;
+
 	const proponentDataBirthdate = proponentDataBirthdateAux
 		? new Date(
-				proponentDataBirthdateAux[2],
-				proponentDataBirthdateAux[1] - 1,
-				proponentDataBirthdateAux[0]
+				Number(proponentDataBirthdateAux[2]),
+				Number(proponentDataBirthdateAux[1]) - 1,
+				Number(proponentDataBirthdateAux[0])
 		  )
-		: undefined
+		: undefined;
 
 	const autocompleteData = {
-		// @ts-expect-error known issue
-		cpf: proponentDataRaw?.detalhes?.cpf,
-		// @ts-expect-error known issue
-		name: proponentDataRaw?.detalhes?.nome,
+		cpf: proponentDataRaw?.detalhes.cpf,
+		name: proponentDataRaw?.detalhes.nome,
 		socialName: undefined,
 		birthdate: proponentDataBirthdate,
-		// @ts-expect-error known issue
-		profession: proponentDataRaw.detalhes?.profissao,
+		profession: proponentDataRaw?.detalhes.profissao,
 		email: undefined,
 		phone: undefined,
 	}

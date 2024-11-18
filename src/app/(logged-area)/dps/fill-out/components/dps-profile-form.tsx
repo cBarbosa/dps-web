@@ -429,7 +429,7 @@ const DpsProfileForm = ({
 				<div></div>
 			</ShareLine>
 
-			<Button type="submit" className="w-40">
+			<Button type="submit" className="w-40" disabled={isSubmitting}>
 				Salvar
 			</Button>
 		</form>
