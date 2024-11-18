@@ -6,6 +6,7 @@ import {
 	getHealthDataByUid,
 	getLmiOptions,
 	getProductList,
+	getProponentDataByCpf,
 	getProposals,
 } from '../../actions'
 import { redirect } from 'next/navigation'
@@ -27,13 +28,17 @@ export default async function DpsFormPage({
 	const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
 	const produto = searchParams.produto
 
-	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
-		cpf && lmi && produto ? getProposals(token, cpf, lmi, produto) : null,
-		getLmiOptions(token),
-		getProductList(token),
-	])
+	if (!cpf || !produto || !lmi) redirect('/dps/fill-out')
+
+	const [data, lmiOptionsRaw, productListRaw, proponentDataRaw] =
+		await Promise.all([
+			cpf && lmi && produto ? getProposals(token, cpf, lmi, produto) : null,
+			getLmiOptions(token),
+			getProductList(token),
+			cpf ? getProponentDataByCpf(cpf) : null,
+		])
 	console.log('||||||||->>')
-	console.dir(data, { depth: Infinity })
+	console.dir(proponentDataRaw, { depth: Infinity })
 
 	const lmiOptions =
 		lmiOptionsRaw?.data.map(item => ({
@@ -52,11 +57,52 @@ export default async function DpsFormPage({
 	if (cpf && cpf.length >= 11 && data) {
 		proposalData = data.totalItems > 0 ? data.items?.[0] : null
 	}
-	console.log('proposalData', proposalData)
 
-	if (!cpf || !produto || !lmi) redirect('/dps/fill-out')
+	const healthData = proposalData?.uid
+		? await getHealthDataByUid(token, proposalData.uid)
+		: undefined
 
-	const healthData = await getHealthDataByUid(token, proposalData?.uid ?? '')
+	/*
+
+						produto: initialProposalData.product.uid,
+						lmi: initialProposalData.lmi.description,
+						cpf: initialProposalData.customer.document,
+						name: initialProposalData.customer.name,
+						socialName: initialProposalData.customer.name,
+						birthdate: new Date(initialProposalData.customer.birthdate),
+						profession: '',
+						email: initialProposalData.customer.email,
+						phone: '',
+
+		*/
+
+	// @ts-expect-error known issue
+	const proponentDataBirthdateAux = proponentDataRaw?.detalhes?.nascimento
+		? // @ts-expect-error known issue
+		  proponentDataRaw.detalhes.nascimento.split('/')
+		: undefined
+	const proponentDataBirthdate = proponentDataBirthdateAux
+		? new Date(
+				proponentDataBirthdateAux[2],
+				proponentDataBirthdateAux[1] - 1,
+				proponentDataBirthdateAux[0]
+		  )
+		: undefined
+
+	const autocompleteData = {
+		// @ts-expect-error known issue
+		cpf: proponentDataRaw?.detalhes?.cpf,
+		// @ts-expect-error known issue
+		name: proponentDataRaw?.detalhes?.nome,
+		socialName: undefined,
+		birthdate: proponentDataBirthdate,
+		// @ts-expect-error known issue
+		profession: proponentDataRaw.detalhes?.profissao,
+		email: undefined,
+		phone: undefined,
+	}
+
+	console.log('autocompleteData', autocompleteData)
 
 	return (
 		<DpsForm
@@ -64,6 +110,7 @@ export default async function DpsFormPage({
 			initialHealthData={healthData?.data}
 			lmiOptions={lmiOptions}
 			productOptions={productOptions}
+			autocompleteData={autocompleteData}
 		/>
 	)
 }
