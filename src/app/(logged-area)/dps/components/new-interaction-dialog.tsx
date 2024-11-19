@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { PlusIcon } from 'lucide-react'
 import { postStatus } from '../actions'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function NewInteractionDialog({
 	token,
@@ -65,20 +66,34 @@ export default function NewInteractionDialog({
 			>
 				<PlusIcon className="mr-2" size={12} /> Nova interação
 			</Button>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
 					<DialogTitle>Solicitar novo complemento</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-4">
 					<Label htmlFor="description">Descreva a nova interação:</Label>
-					<Input
+					{/* <Input
 						id="description"
 						placeholder="Descrição da interação"
 						className="col-span-3"
 						onChange={e => setDescription(e.target.value)}
+					/> */}
+					<Textarea
+						id="description"
+						placeholder="Descrição da interação"
+						className="col-span-3 max-h-96"
+						onChange={e => setDescription(e.target.value)}
+						value={description}
 					/>
 				</div>
 				<DialogFooter>
+					<Button
+						variant={`outline`}
+						type="button"
+						onClick={() => setDescription('')}
+					>
+						Limpar
+					</Button>
 					<Button
 						type="submit"
 						disabled={isLoading || description.length <= 0}
