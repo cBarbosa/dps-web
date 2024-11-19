@@ -42,6 +42,8 @@ import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
 import { getProposals, postAttachmentFile, signProposal } from '../../actions'
+import useAlertDialog from '@/hooks/use-alert-dialog'
+import { LoaderIcon } from 'lucide-react'
 
 const attachmentsForm = union([
 	object({
@@ -85,6 +87,8 @@ const DpsAttachmentsForm = ({
 	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
 		proposalUidProp
 	)
+
+	const [isLoading, setIsLoading] = useState(false)
 
 	useEffect(() => {
 		if (!proposalUid) {
@@ -131,9 +135,8 @@ const DpsAttachmentsForm = ({
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<AttachmentsForm>({
 		resolver: valibotResolver(attachmentsForm),
+		disabled: isLoading,
 	})
-
-	const router = useRouter()
 
 	async function onSubmit(v: AttachmentsForm) {
 		console.log('submitting attachments', v)
@@ -240,6 +243,7 @@ const DpsAttachmentsForm = ({
 							control={control}
 							errors={errors}
 							isSubmitting={isSubmitting}
+							setIsLoading={setIsLoading}
 						/>
 					)
 				})
@@ -258,10 +262,15 @@ const DpsAttachmentsForm = ({
 					variant="outline"
 					className="w-40"
 					onClick={() => setStep('health')}
+					disabled={isSubmitting || isLoading}
 				>
 					Voltar
 				</Button>
-				<Button type="submit" className="w-40">
+				<Button
+					type="submit"
+					className="w-40"
+					disabled={isSubmitting || isLoading}
+				>
 					Salvar
 				</Button>
 			</div>
@@ -285,6 +294,7 @@ function AttachmentField({
 	errors,
 	resetField,
 	isSubmitting,
+	setIsLoading,
 }: {
 	token: string
 	proposalUid?: string
@@ -299,6 +309,7 @@ function AttachmentField({
 	control: Control<AttachmentsForm>
 	errors: FormState<AttachmentsForm>['errors']
 	isSubmitting: boolean
+	setIsLoading: (v: boolean) => void
 }) {
 	const [selected, setSelected] = useState<
 		{ label: string; value: DiseaseKeys }[]
@@ -307,6 +318,12 @@ function AttachmentField({
 	const [uploadStatus, setUploadStatus] = useState<
 		'none' | 'uploading' | 'uploaded'
 	>('none')
+
+	const alertDialog = useAlertDialog({
+		initialContent: {
+			title: '',
+		},
+	})
 
 	async function uploadFile() {
 		console.log('attempting upload')
@@ -323,6 +340,7 @@ function AttachmentField({
 		if (!fileBase64) return
 
 		setUploadStatus('uploading')
+		setIsLoading(true)
 
 		console.log('uploading')
 		if (!proposalUid) {
@@ -349,6 +367,11 @@ function AttachmentField({
 		console.log('submitting', postData)
 
 		const response = await postAttachmentFile(token, proposalUid, postData)
+		// const response = await Promise.resolve({ success: false, message: 'erro' })
+		// const response = await Promise.reject(new Error('erro'))
+
+		// // await 1 second to simulate upload time
+		// await new Promise(resolve => setTimeout(resolve, 1000))
 
 		console.log('post upload', response)
 
@@ -359,9 +382,26 @@ function AttachmentField({
 				// onSubmitProp(v)
 			} else {
 				console.error(response.message)
+				alertDialog.setContent(
+					{
+						title: 'Erro ao enviar anexo',
+						description: 'Tente novamente.',
+					},
+					true
+				)
 				setUploadStatus('none')
 			}
+		} else {
+			alertDialog.setContent(
+				{
+					title: 'Ocorreu um problema',
+					description: 'Arquivo não foi enviado.',
+				},
+				true
+			)
+			setUploadStatus('none')
 		}
+		setIsLoading(false)
 		// onSubmitProp(v)
 		// console.log('saudetop', v)
 	}
@@ -440,12 +480,18 @@ function AttachmentField({
 					onClick={uploadFile}
 					disabled={isSubmitting || uploadStatus !== 'none'}
 				>
-					{uploadStatus === 'none'
-						? 'Fazer upload'
-						: uploadStatus === 'uploading'
-						? 'Enviando...'
-						: 'Enviado'}
+					{uploadStatus === 'none' ? (
+						'Fazer upload'
+					) : uploadStatus === 'uploading' ? (
+						<>
+							<LoaderIcon className="animate-spin mr-1" />
+							Enviando...
+						</>
+					) : (
+						'Enviado'
+					)}
 				</Button>
+				{alertDialog.dialogComp}
 			</div>
 		</div>
 	)
