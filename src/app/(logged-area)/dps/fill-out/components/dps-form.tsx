@@ -123,10 +123,12 @@ const DpsForm = ({
 	>(initialStep)
 
 	const [dpsData, setDpsData] = useState<{
+		uid?: string
 		profile: ProfileForm | null | undefined
 		health: HealthForm | null | undefined
 		attachments: AttachmentsForm | null | undefined
 	}>({
+		uid: initialProposalData?.uid,
 		profile: initialProposalData?.customer
 			? {
 					produto: initialProposalData.product.uid,
@@ -143,6 +145,8 @@ const DpsForm = ({
 		health: initialHealthData,
 		attachments: undefined,
 	})
+
+	console.log('*A*A*A*', initialProposalData)
 
 	useEffect(() => {
 		if (initialProposalData !== undefined) {
@@ -187,8 +191,8 @@ const DpsForm = ({
 	// 	tireoide: { has: true, description: 'teste' },
 	// }
 
-	function handleProfileSubmit(v: ProfileForm) {
-		setDpsData(prev => ({ ...prev, profile: v }))
+	function handleProfileSubmit(uid: string, v: ProfileForm) {
+		setDpsData(prev => ({ ...prev, profile: v, uid: uid }))
 		setStep('health')
 	}
 	function handleHealthSubmit(v: HealthForm) {
@@ -269,9 +273,7 @@ const DpsForm = ({
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					Preenchimento de DPS realizado com sucesso, encaminhado para
 					assinatura do proponente.{' '}
-					<Link href={`/dps/details/${initialProposalData?.uid}`}>
-						Ver detalhes
-					</Link>
+					<Link href={`/dps/details/${dpsData.uid}`}>Ver detalhes</Link>
 				</div>
 			</>
 		)
