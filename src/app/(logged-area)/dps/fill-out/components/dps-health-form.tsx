@@ -1,9 +1,4 @@
-import React, {
-	FocusEvent,
-	useCallback,
-	useEffect,
-	useRef
-} from 'react';
+import React, { FocusEvent, useCallback, useEffect, useRef } from 'react'
 
 import { Button } from '@/components/ui/button'
 import FileInput from '@/components/ui/file-input'
@@ -168,26 +163,24 @@ const DpsHealthForm = ({
 
 		console.log('post proposal', response)
 
-		const existsAnyDesease = postData.some(x => x.exists);
-		if(!existsAnyDesease) {
-			const responseSign = await signProposal(token, proposalUid);
+		const existsAnyDesease = postData.some(x => x.exists)
+		if (!existsAnyDesease) {
+			const responseSign = await signProposal(token, proposalUid)
 			console.log('post signProposal', responseSign)
-			if(!responseSign)
-				console.log(responseSign); //TODO add error alert
+			if (!responseSign) console.log(responseSign) //TODO add error alert
 		}
 
 		if (response) {
 			reset()
 			if (response.success) {
 				onSubmitProp(v)
-			} else { //TODO add error alert
+			} else {
+				//TODO add error alert
 				console.error(response.message)
 			}
 		}
 		onSubmitProp(v)
 		console.log('saudetop', v)
-		
-		// router.push('/dashboard')
 	}
 
 	return (
@@ -219,11 +212,7 @@ const DpsHealthForm = ({
 			</div>
 
 			<div className="flex justify-start items-center gap-5">
-				<Button
-					type="submit"
-					className="w-40"
-					disabled={isSubmitting}
-				>
+				<Button type="submit" className="w-40" disabled={isSubmitting}>
 					Salvar
 				</Button>
 				{errors ? (
