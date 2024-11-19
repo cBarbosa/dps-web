@@ -61,7 +61,7 @@ const DpsProfileForm = ({
 	lmiOptions,
 	productOptions,
 }: {
-	onSubmit: (v: ProfileForm) => void
+	onSubmit: (uid: string, v: ProfileForm) => void
 	data?: Partial<ProfileForm>
 	lmiOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
@@ -121,7 +121,7 @@ const DpsProfileForm = ({
 		if (response) {
 			reset()
 			if (response.success) {
-				onSubmitProp(v)
+				onSubmitProp(response.data, v)
 			} else {
 				console.error(response.message)
 			}
