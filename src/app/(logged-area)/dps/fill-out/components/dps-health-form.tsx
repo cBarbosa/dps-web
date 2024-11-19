@@ -155,6 +155,7 @@ const DpsHealthForm = ({
 			question: diseaseNames[key as keyof typeof diseaseNames],
 			exists: value.has === 'yes',
 			created: new Date().toISOString(),
+			description: value.description,
 		}))
 
 		console.log('submitting', postData)

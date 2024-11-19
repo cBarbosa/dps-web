@@ -3,7 +3,7 @@ import React from 'react'
 
 const LoadingScreen = () => {
 	return (
-		<div className="flex w-screen h-screen justify-center items-center">
+		<div className="flex w-full h-full justify-center items-center">
 			<LoaderIcon className="animate-spin" />
 		</div>
 	)
