@@ -88,22 +88,19 @@ const DpsForm = ({
 	const params = useParams<{ uid: string }>()
 	const uid = params.uid
 
-	console.log(params)
-
 	const initialHealthData = initialHealthDataProp
-		? Object.keys(diseaseNames).reduce((acc, curr) => {
-				if (initialHealthDataProp[+curr])
+		? Object.keys(diseaseNames).reduce((acc, curr, i) => {
+				if (initialHealthDataProp[i])
 					return {
 						...acc,
-						[initialHealthDataProp[+curr].code]: {
-							has: initialHealthDataProp[+curr].exists ? 'yes' : 'no',
-							description: initialHealthDataProp[+curr].description ?? '',
+						[initialHealthDataProp[i].code]: {
+							has: initialHealthDataProp[i].exists ? 'yes' : 'no',
+							description: initialHealthDataProp[i].description ?? '',
 						},
 					}
 				return acc
 		  }, {} as HealthForm)
 		: undefined
-	console.log('initialHealthDataProp', initialHealthDataProp)
 
 	let initialStep: 'health' | 'attachments' | 'finished'
 

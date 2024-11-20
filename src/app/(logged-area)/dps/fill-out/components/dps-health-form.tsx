@@ -97,7 +97,7 @@ const DpsHealthForm = ({
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
 
-	// console.log('>>>initialHealthData', initialHealthData)
+	console.log('>>>initialHealthData', initialHealthData)
 
 	const {
 		handleSubmit,
@@ -112,8 +112,6 @@ const DpsHealthForm = ({
 		resolver: valibotResolver(healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
 	})
-
-	// const router = useRouter()
 
 	async function onSubmit(v: HealthForm) {
 		const postData = Object.entries(v).map(([key, value], i) => ({
@@ -161,21 +159,19 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(
-					(key, i) => (
-						<DiseaseField
-							name={key}
-							label={diseaseNames[key]}
-							control={control}
-							watch={watch}
-							errors={errors}
-							isSubmitting={isSubmitting}
-							trigger={trigger}
-							setValue={setValue}
-							key={key}
-						/>
-					)
-				)}
+				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key => (
+					<DiseaseField
+						name={key}
+						label={diseaseNames[key]}
+						control={control}
+						watch={watch}
+						errors={errors}
+						isSubmitting={isSubmitting}
+						trigger={trigger}
+						setValue={setValue}
+						key={key}
+					/>
+				))}
 			</div>
 
 			<div className="flex justify-start items-center gap-5">
@@ -327,21 +323,3 @@ function DiseaseField({
 }
 
 export default DpsHealthForm
-
-function shakeFirstErrorField(errors: FieldErrors<HealthForm>) {
-	console.log('eeerr', errors)
-	const firstFieldKey = Object.keys(errors).reduce((prev, curr) => {
-		const currInt = +curr
-		const prevInt = prev ? +prev : Infinity
-		if (currInt < prevInt) return curr
-		return prev
-	}, undefined as string | undefined)
-
-	if (firstFieldKey === undefined) return
-
-	console.log(
-		'to shake',
-		firstFieldKey,
-		errors[firstFieldKey as keyof HealthForm]
-	)
-}
