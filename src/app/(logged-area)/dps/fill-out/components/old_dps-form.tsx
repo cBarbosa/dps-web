@@ -1,4 +1,4 @@
-'use client'
+/*'use client'
 
 import React, { useEffect, useState } from 'react'
 import DpsProfileForm, { ProfileForm } from './dps-profile-form'
@@ -265,7 +265,7 @@ const DpsForm = ({
 					/>
 				</div>
 
-				{/* <Archives token={token} uid={uid} /> */}
+				{/* <Archives token={token} uid={uid} /> * /}
 			</>
 		)
 	} else if (step === 'finished') {
@@ -289,7 +289,7 @@ const DpsForm = ({
 				? 'undefined'
 				: dpsData.profile === null
 				? 'null'
-				: 'value'} */}
+				: 'value'} * /}
 			{formToDisplay}
 		</div>
 	)
@@ -320,3 +320,4 @@ function DpsProfileData({ data }: { data: ProfileForm }) {
 }
 
 export default DpsForm
+*/

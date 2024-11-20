@@ -1,4 +1,4 @@
-'use client'
+/*'use client'
 import { Button } from '@/components/ui/button'
 import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
@@ -223,7 +223,7 @@ const DpsProfileForm = ({
 								onBlur={onBlur}
 								value={value}
 								ref={ref}
-							/> */}
+							/> * /}
 
 							<DatePicker
 								id="birthdate"
@@ -329,7 +329,7 @@ const DpsProfileForm = ({
 							</div>
 						</label>
 					)}
-				/> */}
+				/> * /}
 
 				<Controller
 					control={control}
@@ -432,3 +432,4 @@ const DpsProfileForm = ({
 }
 
 export default DpsProfileForm
+*/

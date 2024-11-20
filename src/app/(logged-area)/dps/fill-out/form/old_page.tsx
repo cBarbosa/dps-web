@@ -1,4 +1,4 @@
-import React from 'react'
+/*import React from 'react'
 import DpsForm from '../components/dps-form'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
@@ -74,7 +74,7 @@ export default async function DpsFormPage({
 						email: initialProposalData.customer.email,
 						phone: '',
 
-		*/
+		* /
 
 	const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 		? proponentDataRaw?.detalhes.nascimento.split('/')
@@ -110,3 +110,4 @@ export default async function DpsFormPage({
 		/>
 	)
 }
+*/
