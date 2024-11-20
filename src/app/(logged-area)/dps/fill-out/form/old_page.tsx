@@ -11,7 +11,6 @@ import {
 } from '../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
-import DpsProfileForm from '../components/dps-profile-form'
 
 export default async function DpsFormPage({
 	searchParams,
@@ -79,7 +78,7 @@ export default async function DpsFormPage({
 
 	const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 		? proponentDataRaw?.detalhes.nascimento.split('/')
-		: undefined
+		: undefined;
 
 	const proponentDataBirthdate = proponentDataBirthdateAux
 		? new Date(
@@ -87,7 +86,7 @@ export default async function DpsFormPage({
 				Number(proponentDataBirthdateAux[1]) - 1,
 				Number(proponentDataBirthdateAux[0])
 		  )
-		: undefined
+		: undefined;
 
 	const autocompleteData = {
 		cpf: proponentDataRaw?.detalhes.cpf,
@@ -102,33 +101,12 @@ export default async function DpsFormPage({
 	console.log('autocompleteData', autocompleteData)
 
 	return (
-		// <DpsForm
-		// 	initialProposalData={proposalData}
-		// 	initialHealthData={healthData?.data}
-		// 	lmiOptions={lmiOptions}
-		// 	productOptions={productOptions}
-		// 	autocompleteData={autocompleteData}
-		// />
-		<div className="p-5">
-			<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<DpsProfileForm
-					data={{
-						cpf: cpf,
-						lmi: lmi.toString(),
-						produto: produto,
-						name: autocompleteData?.name,
-						socialName: autocompleteData?.socialName,
-						email: autocompleteData?.email,
-						birthdate: autocompleteData?.birthdate
-							? new Date(autocompleteData.birthdate)
-							: undefined,
-						profession: autocompleteData?.profession,
-						phone: autocompleteData?.phone,
-					}}
-					lmiOptions={lmiOptions}
-					productOptions={productOptions}
-				/>
-			</div>
-		</div>
+		<DpsForm
+			initialProposalData={proposalData}
+			initialHealthData={healthData?.data}
+			lmiOptions={lmiOptions}
+			productOptions={productOptions}
+			autocompleteData={autocompleteData}
+		/>
 	)
 }
