@@ -295,6 +295,7 @@ export async function getHealthDataByUid(
 		exists: boolean
 		created: string
 		updated: string
+		description?: string
 	}[]
 } | null> {
 	try {
@@ -563,48 +564,47 @@ export const getProposalSignByUid = async (
 	return null
 }
 
-export async function getProponentDataByCpf(cpf: string): Promise<
-	| {
-			detalhes: {
-				antecedenteCriminal: string
-				nascimento?: string
-				riscoAposentadoPorDoenca: string
-				aposentado: string
-				situacaoCadastral: string
-				obitoOnline: string
-				profissao: string
-				nome: string
-				profissaoRisco: string
-				renda: string
-				idade: string
-				riscoAposentadoPorAcidente: string
-				cpf: string
-				sexo: string
-				mandadoPrisao: string
-				nomeMae: string
-				aposentadoMotivo: string
-			}
-			mortePorQualquerCausa: {
-				score: string
-				indicadorDecisao: string
-			}
-			morteNatural: {
-				score: string
-				indicadorDecisao: string
-			}
-			mortePorAcidente: {
-				score: string
-				indicadorDecisao: string
-			}
-			acidente: {
-				score: string
-				indicadorDecisao: string
-			}
-			doencasCronicas: {
-				score: string
-				indicadorDecisao: string
-			}
-	  }
+export async function getProponentDataByCpf(cpf: string): Promise<{
+	detalhes: {
+		antecedenteCriminal: string
+		nascimento?: string
+		riscoAposentadoPorDoenca: string
+		aposentado: string
+		situacaoCadastral: string
+		obitoOnline: string
+		profissao: string
+		nome: string
+		profissaoRisco: string
+		renda: string
+		idade: string
+		riscoAposentadoPorAcidente: string
+		cpf: string
+		sexo: string
+		mandadoPrisao: string
+		nomeMae: string
+		aposentadoMotivo: string
+	}
+	mortePorQualquerCausa: {
+		score: string
+		indicadorDecisao: string
+	}
+	morteNatural: {
+		score: string
+		indicadorDecisao: string
+	}
+	mortePorAcidente: {
+		score: string
+		indicadorDecisao: string
+	}
+	acidente: {
+		score: string
+		indicadorDecisao: string
+	}
+	doencasCronicas: {
+		score: string
+		indicadorDecisao: string
+	}
+} | null> {
 	// | {
 	// 		codigo: string
 	// 		mensagem: string
@@ -619,8 +619,6 @@ export async function getProponentDataByCpf(cpf: string): Promise<
 	// 		stacktrace: string
 	// 		referencia: string
 	//   }
-	| null
-> {
 	cpf = cpf.replace(/[^\d]/g, '')
 	if (cpf.length !== 11) return null
 

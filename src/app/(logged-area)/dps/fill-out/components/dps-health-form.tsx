@@ -31,10 +31,14 @@ import {
 	optional,
 } from 'valibot'
 import { diseaseNames } from './dps-form'
-import { getProposals, postHealthDataByUid, signProposal } from '../../actions'
+import {
+	getProposalByUid,
+	getProposals,
+	postHealthDataByUid,
+	signProposal,
+} from '../../actions'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
-import { set } from 'date-fns'
 
 const diseaseSchema = variant(
 	'has',
@@ -81,14 +85,12 @@ export type HealthForm = InferInput<typeof healthForm>
 
 const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
-	proposalUid: proposalUidProp,
-	dpsProfileData,
+	proposalUid,
 	initialHealthData,
 	autocomplete = false,
 }: {
 	onSubmit: (v: HealthForm) => void
-	proposalUid?: string
-	dpsProfileData: ProfileForm
+	proposalUid: string
 	autocomplete?: boolean
 	initialHealthData?: HealthForm | null
 }) => {
@@ -96,29 +98,6 @@ const DpsHealthForm = ({
 	const token = (session.data as any)?.accessToken
 
 	// console.log('>>>initialHealthData', initialHealthData)
-
-	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
-		proposalUidProp
-	)
-
-	useEffect(() => {
-		if (!proposalUid) {
-			getProposals(
-				token,
-				dpsProfileData.cpf,
-				+dpsProfileData.lmi,
-				dpsProfileData.produto
-			).then(res => {
-				setProposalUid(res?.items[0]?.uid)
-			})
-		}
-	}, [
-		token,
-		proposalUid,
-		dpsProfileData.cpf,
-		dpsProfileData.lmi,
-		dpsProfileData.produto,
-	])
 
 	const {
 		handleSubmit,
@@ -137,24 +116,12 @@ const DpsHealthForm = ({
 	// const router = useRouter()
 
 	async function onSubmit(v: HealthForm) {
-		if (!proposalUid) {
-			await getProposals(
-				token,
-				dpsProfileData.cpf,
-				+dpsProfileData.lmi,
-				dpsProfileData.produto
-			).then(res => {
-				setProposalUid(res?.items[0]?.uid)
-			})
-
-			return
-		}
-
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
 			question: diseaseNames[key as keyof typeof diseaseNames],
 			exists: value.has === 'yes',
 			created: new Date().toISOString(),
+			description: value.description,
 		}))
 
 		console.log('submitting', postData)

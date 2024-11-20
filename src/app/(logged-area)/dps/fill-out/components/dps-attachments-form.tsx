@@ -42,6 +42,8 @@ import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { ProfileForm } from './dps-profile-form'
 import { getProposals, postAttachmentFile, signProposal } from '../../actions'
+import useAlertDialog from '@/hooks/use-alert-dialog'
+import { CheckCircleIcon, CheckIcon, LoaderIcon } from 'lucide-react'
 
 const attachmentsForm = union([
 	object({
@@ -67,14 +69,14 @@ export type AttachmentsForm = InferInput<typeof attachmentsForm>
 const DpsAttachmentsForm = ({
 	onSubmit: onSubmitProp,
 	setStep,
-	proposalUid: proposalUidProp,
+	proposalUid,
 	dpsProfileData,
 	diseaseList: diseaseListProp,
 }: {
 	onSubmit: (v: AttachmentsForm) => void
-	proposalUid?: string
+	proposalUid: string
 	dpsProfileData: ProfileForm
-	setStep: (step: 'profile' | 'health' | 'attachments') => void
+	setStep: (step: 'health' | 'attachments') => void
 	diseaseList: Partial<
 		Record<DiseaseKeys, { has: boolean; description: string }>
 	>
@@ -82,28 +84,9 @@ const DpsAttachmentsForm = ({
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
 
-	const [proposalUid, setProposalUid] = React.useState<string | undefined>(
-		proposalUidProp
-	)
+	const [isLoading, setIsLoading] = useState(false)
 
-	useEffect(() => {
-		if (!proposalUid) {
-			getProposals(
-				token,
-				dpsProfileData.cpf,
-				+dpsProfileData.lmi,
-				dpsProfileData.produto
-			).then(res => {
-				setProposalUid(res?.items[0]?.uid)
-			})
-		}
-	}, [
-		token,
-		proposalUid,
-		dpsProfileData.cpf,
-		dpsProfileData.lmi,
-		dpsProfileData.produto,
-	])
+	const [canProceed, setCanProceed] = useState(false)
 
 	const fieldKeyCount = useRef(0)
 
@@ -131,24 +114,11 @@ const DpsAttachmentsForm = ({
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<AttachmentsForm>({
 		resolver: valibotResolver(attachmentsForm),
+		disabled: isLoading,
 	})
-
-	const router = useRouter()
 
 	async function onSubmit(v: AttachmentsForm) {
 		console.log('submitting attachments', v)
-		if (!proposalUid) {
-			await getProposals(
-				token,
-				dpsProfileData.cpf,
-				+dpsProfileData.lmi,
-				dpsProfileData.produto
-			).then(res => {
-				setProposalUid(res?.items[0]?.uid)
-			})
-
-			return
-		}
 
 		//TODO CHECK IF ALL FILES NEEDED ARE UPLOADED
 		const res = await signProposal(token, proposalUid)
@@ -178,6 +148,20 @@ const DpsAttachmentsForm = ({
 		},
 		[setPickedDiseases]
 	)
+
+	function checkPickedDiseases() {
+		console.log('picked >', pickedDiseases)
+		console.log('list >', diseaseList)
+
+		const pickedDiseasesFlat = pickedDiseases.flat(2)
+		if (
+			pickedDiseasesFlat.length === diseaseList.length &&
+			diseaseList.every(v => pickedDiseasesFlat.includes(v))
+		) {
+			console.log('>> ok')
+			setCanProceed(true)
+		}
+	}
 
 	const addFileInput = useCallback(() => {
 		fieldKeyCount.current++
@@ -228,7 +212,6 @@ const DpsAttachmentsForm = ({
 						<AttachmentField
 							key={pickedObj.key}
 							token={token}
-							setProposalUid={setProposalUid}
 							dpsProfileData={dpsProfileData}
 							proposalUid={proposalUid}
 							getValues={getValues}
@@ -240,6 +223,8 @@ const DpsAttachmentsForm = ({
 							control={control}
 							errors={errors}
 							isSubmitting={isSubmitting}
+							setIsLoading={setIsLoading}
+							checkPickedDiseases={checkPickedDiseases}
 						/>
 					)
 				})
@@ -249,7 +234,11 @@ const DpsAttachmentsForm = ({
 				</div>
 			)}
 
-			<Button className="w-64" onClick={addFileInput}>
+			<Button
+				className="w-64"
+				onClick={addFileInput}
+				disabled={pickedDiseases.flat(2).length === diseaseList.length}
+			>
 				Adicionar novo arquivo
 			</Button>
 
@@ -258,10 +247,15 @@ const DpsAttachmentsForm = ({
 					variant="outline"
 					className="w-40"
 					onClick={() => setStep('health')}
+					disabled={isSubmitting || isLoading}
 				>
 					Voltar
 				</Button>
-				<Button type="submit" className="w-40">
+				<Button
+					type="submit"
+					className="w-40"
+					disabled={!canProceed || isSubmitting || isLoading}
+				>
 					Salvar
 				</Button>
 			</div>
@@ -274,7 +268,6 @@ DpsAttachmentsForm.displayName = 'DpsAttachmentsForm'
 function AttachmentField({
 	token,
 	proposalUid,
-	setProposalUid,
 	options,
 	dpsProfileData,
 	setPickedDiseases,
@@ -285,10 +278,11 @@ function AttachmentField({
 	errors,
 	resetField,
 	isSubmitting,
+	setIsLoading,
+	checkPickedDiseases,
 }: {
 	token: string
-	proposalUid?: string
-	setProposalUid: (v: string) => void
+	proposalUid: string
 	dpsProfileData: ProfileForm
 	options: { label: string; value: string }[]
 	setPickedDiseases: (v: DiseaseKeys[]) => void
@@ -299,6 +293,8 @@ function AttachmentField({
 	control: Control<AttachmentsForm>
 	errors: FormState<AttachmentsForm>['errors']
 	isSubmitting: boolean
+	setIsLoading: (v: boolean) => void
+	checkPickedDiseases: () => void
 }) {
 	const [selected, setSelected] = useState<
 		{ label: string; value: DiseaseKeys }[]
@@ -307,6 +303,14 @@ function AttachmentField({
 	const [uploadStatus, setUploadStatus] = useState<
 		'none' | 'uploading' | 'uploaded'
 	>('none')
+
+	const [uploadedFilename, setUploadedFilename] = useState<string>()
+
+	const alertDialog = useAlertDialog({
+		initialContent: {
+			title: '',
+		},
+	})
 
 	async function uploadFile() {
 		console.log('attempting upload')
@@ -323,20 +327,9 @@ function AttachmentField({
 		if (!fileBase64) return
 
 		setUploadStatus('uploading')
+		setIsLoading(true)
 
 		console.log('uploading')
-		if (!proposalUid) {
-			await getProposals(
-				token,
-				dpsProfileData.cpf,
-				+dpsProfileData.lmi,
-				dpsProfileData.produto
-			).then(res => {
-				if (res?.items[0]?.uid) setProposalUid(res?.items[0]?.uid)
-			})
-
-			return
-		}
 
 		const postData = {
 			documentName: fileValue.name,
@@ -349,6 +342,11 @@ function AttachmentField({
 		console.log('submitting', postData)
 
 		const response = await postAttachmentFile(token, proposalUid, postData)
+		// const response = await Promise.resolve({ success: false, message: 'erro' })
+		// const response = await Promise.reject(new Error('erro'))
+
+		// // await 1 second to simulate upload time
+		// await new Promise(resolve => setTimeout(resolve, 1000))
 
 		console.log('post upload', response)
 
@@ -356,15 +354,42 @@ function AttachmentField({
 			// reset()
 			if (response.success) {
 				setUploadStatus('uploaded')
+				setUploadedFilename(fileValue.name)
+				checkPickedDiseases()
 				// onSubmitProp(v)
 			} else {
 				console.error(response.message)
+				alertDialog.setContent(
+					{
+						title: 'Erro ao enviar anexo',
+						description: 'Tente novamente.',
+					},
+					true
+				)
 				setUploadStatus('none')
 			}
+		} else {
+			alertDialog.setContent(
+				{
+					title: 'Ocorreu um problema',
+					description: 'Arquivo não foi enviado.',
+				},
+				true
+			)
+			setUploadStatus('none')
 		}
+		setIsLoading(false)
 		// onSubmitProp(v)
 		// console.log('saudetop', v)
 	}
+
+	if (uploadStatus === 'uploaded')
+		return (
+			<UploadCompleted
+				diseaseList={selected.map(v => v.label)}
+				fileName={uploadedFilename ?? ''}
+			/>
+		)
 
 	return (
 		<div className="py-4 px-4 hover:bg-gray-50">
@@ -440,12 +465,18 @@ function AttachmentField({
 					onClick={uploadFile}
 					disabled={isSubmitting || uploadStatus !== 'none'}
 				>
-					{uploadStatus === 'none'
-						? 'Fazer upload'
-						: uploadStatus === 'uploading'
-						? 'Enviando...'
-						: 'Enviado'}
+					{uploadStatus === 'none' ? (
+						'Fazer upload'
+					) : uploadStatus === 'uploading' ? (
+						<>
+							<LoaderIcon className="animate-spin mr-1" />
+							Enviando...
+						</>
+					) : (
+						'Enviado'
+					)}
 				</Button>
+				{alertDialog.dialogComp}
 			</div>
 		</div>
 	)
@@ -459,3 +490,29 @@ const customValueRenderer = (
 }
 
 export default DpsAttachmentsForm
+
+function UploadCompleted({
+	diseaseList,
+	fileName,
+}: {
+	diseaseList: string[]
+	fileName: string
+}) {
+	return (
+		<div className="py-1 px-1">
+			<div className="flex items-center justify-start gap-5 border p-3 rounded-xl hover:bg-gray-50">
+				<div className="basis-0 grow-0">
+					<CheckCircleIcon className="text-green-600" size={32} />
+				</div>
+				<div className="basis-auto grow">
+					<p className="text-gray-800 text-base">
+						{diseaseList.length > 0
+							? `Doenças: ${diseaseList.join(', ')}`
+							: 'Nenhuma doença selecionada'}
+					</p>
+					<p className="text-slate-400 text-sm">Arquivo: {fileName}</p>
+				</div>
+			</div>
+		</div>
+	)
+}

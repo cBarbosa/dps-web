@@ -51,10 +51,12 @@ const profileForm = object({
 export type ProfileForm = InferInput<typeof profileForm>
 
 const DpsProfileForm = ({
+	onSubmit: onSubmitProp,
 	data,
 	lmiOptions,
 	productOptions,
 }: {
+	onSubmit: (uid: string, v: ProfileForm) => void
 	data?: Partial<ProfileForm>
 	lmiOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
@@ -114,7 +116,7 @@ const DpsProfileForm = ({
 		if (response) {
 			reset()
 			if (response.success) {
-				router.push('/dps/fill-out/form/' + response.data)
+				onSubmitProp(response.data, v)
 			} else {
 				console.error(response.message)
 			}

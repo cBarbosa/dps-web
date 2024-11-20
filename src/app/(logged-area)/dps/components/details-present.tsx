@@ -1,27 +1,16 @@
 'use client'
-import React from 'react';
+import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
-import {
-	FileTextIcon,
-	Undo2Icon,
-	UserIcon
-} from 'lucide-react';
-import {
-	getProposalByUid,
-	getProposalSignByUid,
-	postStatus
-} from '../actions';
+import { FileTextIcon, Undo2Icon, UserIcon } from 'lucide-react'
+import { getProposalByUid, getProposalSignByUid, postStatus } from '../actions'
 import { formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Interactions from './interactions'
 import Archives from './archives'
-import {
-	createPdfUrlFromBase64,
-	DialogShowArchive
-} from './dialog-archive';
-import { useSession } from 'next-auth/react';
+import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
+import { useSession } from 'next-auth/react'
 
 type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -41,11 +30,12 @@ const DetailsPresent = ({
 	proposalTypeDescription?: string
 }) => {
 	const session = useSession()
-	const role = (session.data as any)?.role;
+	const role = (session.data as any)?.role
 
-	const [proposalData, setProposalData] =	React.useState<ProposalDataType>(proposalDataProp);
-	const [isModalOpen, setIsModalOpen] = React.useState(false);
-	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined);
+	const [proposalData, setProposalData] =
+		React.useState<ProposalDataType>(proposalDataProp)
+	const [isModalOpen, setIsModalOpen] = React.useState(false)
+	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
 	const proposalSituation = proposalData?.history[0]?.status
 
@@ -72,14 +62,14 @@ const DetailsPresent = ({
 	}
 
 	const handleViewArchive = React.useCallback(async () => {
-		setIsModalOpen(opt => true);
+		setIsModalOpen(opt => true)
 
-		const response = await getProposalSignByUid(token, uid);
+		const response = await getProposalSignByUid(token, uid)
 
-		if(!response) return;
+		if (!response) return
 
-		setPdfUrl(createPdfUrlFromBase64(response.data));
-	}, []);
+		setPdfUrl(createPdfUrlFromBase64(response.data))
+	}, [token, uid])
 
 	const lastSituation: {
 		id: number
@@ -96,9 +86,7 @@ const DetailsPresent = ({
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<GoBackButton
-
-				>
+				<GoBackButton>
 					<Undo2Icon className="mr-2" />
 					Voltar
 				</GoBackButton>
@@ -124,18 +112,16 @@ const DetailsPresent = ({
 						</div>
 					</div>
 					<div className="flex flex-col gap-3">
-
-						{proposalSituation?.id === 4 && (role === 'SUBSCRITOR'||role === 'ADMIN') && (
-							<Button
-								onClick={sendToEndinFlow}
-							>
-								Enviar para aceitação
-							</Button>
-						)}
+						{proposalSituation?.id === 4 &&
+							(role === 'SUBSCRITOR' || role === 'ADMIN') && (
+								<Button onClick={sendToEndinFlow}>Enviar para aceitação</Button>
+							)}
 
 						<Button
 							onClick={handleViewArchive}
-							disabled={proposalSituation?.id === 10 || proposalSituation.id === 3}
+							disabled={
+								proposalSituation?.id === 10 || proposalSituation.id === 3
+							}
 						>
 							Visualizar DPS
 						</Button>
@@ -155,11 +141,7 @@ const DetailsPresent = ({
 							className="bg-orange-600 hover:bg-orange-500 hover:text-white"
 							asChild
 						>
-							<Link
-								href={`/dps/fill-out/form?cpf=${proposalData.customer.document}&produto=${proposalData.product.uid}&lmi=${proposalData.lmi.id}`}
-							>
-								Preencher
-							</Link>
+							<Link href={`/dps/fill-out/form/${uid}`}>Preencher</Link>
 						</Button>
 					)}
 				</div>
@@ -167,9 +149,11 @@ const DetailsPresent = ({
 			<Interactions
 				token={token}
 				uid={uid}
-				proposalSituationId={lastSituation?.id === 4 && (role === 'SUBSCRITOR' || role === 'ADMIN')
-					? lastSituation?.id
-					: lastSituation?.id === 5 && (role === 'SUBSCRITOR-MED' || role === 'ADMIN')
+				proposalSituationId={
+					lastSituation?.id === 4 && (role === 'SUBSCRITOR' || role === 'ADMIN')
+						? lastSituation?.id
+						: lastSituation?.id === 5 &&
+						  (role === 'SUBSCRITOR-MED' || role === 'ADMIN')
 						? lastSituation?.id
 						: undefined
 				}
@@ -177,11 +161,7 @@ const DetailsPresent = ({
 				onNewInteraction={refetchProposalData}
 			/>
 
-			<Archives
-				token={token}
-				uid={uid}
-				proposalSituationId={lastSituation?.id}
-			/>
+			<Archives token={token} uid={uid} />
 
 			<DialogShowArchive
 				isModalOpen={isModalOpen}
