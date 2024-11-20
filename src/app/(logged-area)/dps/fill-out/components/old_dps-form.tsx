@@ -1,14 +1,13 @@
-'use client'
+/*'use client'
 
 import React, { useEffect, useState } from 'react'
 import DpsProfileForm, { ProfileForm } from './dps-profile-form'
 import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
 import Link from 'next/link'
 import Archives from '../../components/archives'
-import { useSession } from 'next-auth/react'
 
 export const diseaseNames = {
 	'1': 'Acidente Vascular Cerebral',
@@ -37,13 +36,25 @@ export const diseaseNames = {
 export type DiseaseKeys = keyof typeof diseaseNames
 
 const DpsForm = ({
+	autocompleteData,
 	initialProposalData,
 	initialHealthData: initialHealthDataProp,
+	lmiOptions,
+	productOptions,
 }: {
-	initialProposalData: {
+	autocompleteData?: {
+		cpf?: string
+		name?: string
+		socialName?: string
+		birthdate?: Date | string
+		profession?: string
+		email?: string
+		phone?: string
+	}
+	initialProposalData?: {
 		uid: string
 		code: string
-		created: string
+		createdAt: string
 		customer: {
 			uid: string
 			document: string
@@ -60,19 +71,15 @@ const DpsForm = ({
 			id: number
 			description: string
 		}
-		history: {
-			description: string
-			status: {
-				id: number
-				description: string
-			}
-			created: string
-		}[]
-		lmi: {
+		status: {
 			id: number
 			description: string
 		}
-	}
+		lmi: {
+			code: number
+			description: string
+		}
+	} | null
 	initialHealthData?: {
 		code: string
 		question: string
@@ -81,59 +88,88 @@ const DpsForm = ({
 		updated?: string
 		description?: string
 	}[]
+	lmiOptions: { value: string; label: string }[]
+	productOptions: { value: string; label: string }[]
 }) => {
-	const session = useSession()
-	const token = (session.data as any)?.accessToken
+	const params = useSearchParams()
+	const cpf = params.get('cpf') ?? ''
+	const lmi = params.get('lmi') ?? ''
+	const produto = params.get('produto') ?? ''
 
-	const params = useParams<{ uid: string }>()
-	const uid = params.uid
+	console.log(params)
 
 	const initialHealthData = initialHealthDataProp
-		? Object.keys(diseaseNames).reduce((acc, curr, i) => {
-				if (initialHealthDataProp[i])
+		? Object.keys(diseaseNames).reduce((acc, curr) => {
+				if (initialHealthDataProp[+curr])
 					return {
 						...acc,
-						[initialHealthDataProp[i].code]: {
-							has: initialHealthDataProp[i].exists ? 'yes' : 'no',
-							description: initialHealthDataProp[i].description ?? '',
+						[initialHealthDataProp[+curr].code]: {
+							has: initialHealthDataProp[+curr].exists ? 'yes' : 'no',
+							description: initialHealthDataProp[+curr].description ?? '',
 						},
 					}
 				return acc
 		  }, {} as HealthForm)
 		: undefined
+	console.log('initialHealthDataProp', initialHealthDataProp)
 
-	let initialStep: 'health' | 'attachments' | 'finished'
+	let initialStep: 'profile' | 'health' | 'attachments' | 'finished'
 
-	if (initialProposalData.history[0].status.id === 10) initialStep = 'health'
-	else if (initialProposalData.history[0].status.id === 5)
-		initialStep = 'attachments'
+	if (!initialProposalData) initialStep = 'profile'
+	else if (initialProposalData?.status.id === 10) initialStep = 'health'
+	else if (initialProposalData?.status.id === 5) initialStep = 'attachments'
 	else initialStep = 'finished'
 
-	const [step, setStep] = useState<'health' | 'attachments' | 'finished'>(
-		initialStep
-	)
+	const [step, setStep] = useState<
+		'profile' | 'health' | 'attachments' | 'finished'
+	>(initialStep)
 
 	const [dpsData, setDpsData] = useState<{
 		uid?: string
-		profile: ProfileForm
+		profile: ProfileForm | null | undefined
 		health: HealthForm | null | undefined
 		attachments: AttachmentsForm | null | undefined
 	}>({
-		uid: initialProposalData.uid,
-		profile: {
-			produto: initialProposalData.product.uid,
-			lmi: initialProposalData.lmi.id.toString(),
-			cpf: initialProposalData.customer.document,
-			name: initialProposalData.customer.name,
-			socialName: initialProposalData.customer.socialName ?? '',
-			birthdate: new Date(initialProposalData.customer.birthdate),
-			profession: '',
-			email: initialProposalData.customer.email,
-			phone: '',
-		},
+		uid: initialProposalData?.uid,
+		profile: initialProposalData?.customer
+			? {
+					produto: initialProposalData.product.uid,
+					lmi: initialProposalData.lmi.code?.toString(),
+					cpf: initialProposalData.customer.document,
+					name: initialProposalData.customer.name,
+					socialName: initialProposalData.customer.socialName ?? '',
+					birthdate: new Date(initialProposalData.customer.birthdate),
+					profession: '',
+					email: initialProposalData.customer.email,
+					phone: '',
+			  }
+			: undefined,
 		health: initialHealthData,
 		attachments: undefined,
 	})
+
+	console.log('*A*A*A*', initialProposalData)
+
+	useEffect(() => {
+		if (initialProposalData !== undefined) {
+			if (initialProposalData)
+				setDpsData(prev => ({
+					...prev,
+					profile: {
+						produto: initialProposalData.product.uid,
+						lmi: initialProposalData.lmi.description,
+						cpf: initialProposalData.customer.document,
+						name: initialProposalData.customer.name,
+						socialName: initialProposalData.customer.name,
+						birthdate: new Date(initialProposalData.customer.birthdate),
+						profession: '',
+						email: initialProposalData.customer.email,
+						phone: '',
+					},
+				}))
+			else setDpsData(prev => ({ ...prev, profile: null }))
+		} else setDpsData(prev => ({ ...prev, profile: undefined }))
+	}, [initialProposalData])
 
 	const diseaseList = dpsData.health
 		? Object.entries(dpsData.health)
@@ -150,6 +186,17 @@ const DpsForm = ({
 				)
 		: []
 
+	// {
+	// 	chagas: { has: true, description: 'teste' },
+	// 	ler: { has: true, description: 'teste' },
+	// 	neurologicas: { has: true, description: 'teste' },
+	// 	tireoide: { has: true, description: 'teste' },
+	// }
+
+	function handleProfileSubmit(uid: string, v: ProfileForm) {
+		setDpsData(prev => ({ ...prev, profile: v, uid: uid }))
+		setStep('health')
+	}
 	function handleHealthSubmit(v: HealthForm) {
 		setDpsData(prev => ({ ...prev, health: v }))
 		const hasSomeDesease = Object.entries(v).some(x => x[1].has === 'yes')
@@ -162,7 +209,30 @@ const DpsForm = ({
 
 	let formToDisplay
 
-	if (step === 'health') {
+	if (!dpsData.profile) {
+		formToDisplay = (
+			<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<DpsProfileForm
+					data={{
+						cpf: cpf,
+						lmi: lmi,
+						produto: produto,
+						name: autocompleteData?.name,
+						socialName: autocompleteData?.socialName,
+						email: autocompleteData?.email,
+						birthdate: autocompleteData?.birthdate
+							? new Date(autocompleteData.birthdate)
+							: undefined,
+						profession: autocompleteData?.profession,
+						phone: autocompleteData?.phone,
+					}}
+					lmiOptions={lmiOptions}
+					productOptions={productOptions}
+					onSubmit={handleProfileSubmit}
+				/>
+			</div>
+		)
+	} else if (step === 'health') {
 		formToDisplay = (
 			<>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -171,7 +241,8 @@ const DpsForm = ({
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<DpsHealthForm
 						initialHealthData={dpsData.health}
-						proposalUid={initialProposalData.uid}
+						proposalUid={initialProposalData?.uid}
+						dpsProfileData={dpsData.profile}
 						autocomplete={initialHealthDataProp?.[0].updated !== undefined}
 						onSubmit={handleHealthSubmit}
 					/>
@@ -184,17 +255,17 @@ const DpsForm = ({
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<DpsProfileData data={dpsData.profile} />
 				</div>
-				<div className="p-9 my-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<DpsAttachmentsForm
 						onSubmit={handleAttachmentsSubmit}
-						proposalUid={initialProposalData.uid}
+						proposalUid={initialProposalData?.uid}
 						dpsProfileData={dpsData.profile}
 						setStep={setStep}
 						diseaseList={diseaseList}
 					/>
 				</div>
 
-				<Archives token={token} uid={uid} />
+				{/* <Archives token={token} uid={uid} /> * /}
 			</>
 		)
 	} else if (step === 'finished') {
@@ -218,17 +289,13 @@ const DpsForm = ({
 				? 'undefined'
 				: dpsData.profile === null
 				? 'null'
-				: 'value'} */}
+				: 'value'} * /}
 			{formToDisplay}
 		</div>
 	)
 }
 
-function DpsProfileData({
-	data,
-}: {
-	data: { cpf: string; name: string; birthdate: Date }
-}) {
+function DpsProfileData({ data }: { data: ProfileForm }) {
 	return (
 		<div className="px-3">
 			<h3 className="text-primary text-lg">Dados do Proponente</h3>
@@ -253,3 +320,4 @@ function DpsProfileData({
 }
 
 export default DpsForm
+*/

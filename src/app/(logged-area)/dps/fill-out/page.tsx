@@ -1,14 +1,16 @@
 import { InfoIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import SearchForm from './components/search-form'
-import DpsForm from './components/dps-form'
-import axios from '../../../../lib/axios'
 import { redirect } from 'next/navigation'
 import { getLmiOptions, getProductList, getProposals } from '../actions'
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
+
+export const revalidate = 0 // no cache
+export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function FillOutPage({
 	searchParams,
