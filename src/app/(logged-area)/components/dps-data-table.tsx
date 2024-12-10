@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
+import { Progress } from '@/components/ui/progress'
 import { formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
@@ -41,14 +42,23 @@ export const columns: ColumnDef<DPS>[] = [
 	},
 	{
 		accessorKey: 'dataCadastro',
-		header: 'Data do Cadastro',
+		header: () => <div className="w-full text-center">SLA</div>,
 		cell: ({ getValue }) => {
 			const date = getValue<Date>()
-			return date?.toLocaleDateString('pt-BR', {
-				day: '2-digit',
-				month: '2-digit',
-				year: 'numeric',
-			})
+
+			const days14inMs = 14 * 24 * 60 * 60 * 1000
+			const endDate = new Date(date.getTime() + days14inMs)
+
+			const remaining = endDate?.getTime() - Date.now()
+			// if (remaining > days14inMs) {
+			// 	return date?.toLocaleDateString('pt-BR', {
+			// 		day: '2-digit',
+			// 		month: '2-digit',
+			// 		year: 'numeric',
+			// 	})
+			// }
+
+			return <ProgressBar value={(1 - remaining / days14inMs) * 100} />
 		},
 	},
 	{
@@ -65,11 +75,14 @@ export const columns: ColumnDef<DPS>[] = [
 		cell: ({ getValue }) => {
 			const status = getValue<DpsStatus>()
 
-			return <StatusBadge status={{
-					code: status.id ?? 0,
-					description: status.description
-				}}
-			/>
+			return (
+				<StatusBadge
+					status={{
+						code: status.id ?? 0,
+						description: status.description,
+					}}
+				/>
+			)
 		},
 	},
 	{
@@ -102,7 +115,37 @@ export const columns: ColumnDef<DPS>[] = [
 			)
 		},
 	},
-];
+]
+
+function ProgressBar({ value }: { value: number }) {
+	const colors = [
+		[85, 212, 129],
+		[17, 144, 249],
+		[249, 133, 17],
+		[249, 17, 20],
+	]
+
+	if (value < 0) value = 0
+	if (value > 100) value = 100
+
+	const transitionRange = 100 / (colors.length - 1)
+
+	const colorInterval = value / transitionRange
+
+	const transitionStart = Math.floor(colorInterval)
+
+	const r = colors[transitionStart][0]
+	const g = colors[transitionStart][1]
+	const b = colors[transitionStart][2]
+
+	const bg = `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`
+
+	return (
+		<div className="px-4">
+			<Progress className="h-1.5 w-full min-w-20" value={value} color={bg} />
+		</div>
+	)
+}
 
 export default function DpsDataTable({
 	data,
@@ -168,11 +211,11 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 			badgeProps.variant = 'success'
 			break
 		case 6:
-			badgeProps.variant = 'success';
-			break;
+			badgeProps.variant = 'success'
+			break
 		case 10:
-			badgeProps.variant = 'warn';
-			break;
+			badgeProps.variant = 'warn'
+			break
 		default:
 	}
 
