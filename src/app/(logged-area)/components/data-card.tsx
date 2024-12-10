@@ -19,7 +19,7 @@ import {
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 
 function DataCard({ children }: { children: React.ReactNode }) {
-	return <div className="p-4 rounded-xl bg-gray-100">{children}</div>
+	return <div className="p-4 rounded-3xl bg-gray-100">{children}</div>
 }
 
 export function PieChartCard({

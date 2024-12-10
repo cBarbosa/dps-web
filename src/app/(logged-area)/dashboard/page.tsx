@@ -116,9 +116,77 @@ export default async function DashboardPage({
 						/>
 					</div>
 				</div>
-
-				<div></div>
+				<EndingProposalList />
 			</div>
+		</div>
+	)
+}
+
+async function EndingProposalList() {
+	const { session, granted } = await getServerSessionAuthorization()
+	const token = (session as any)?.accessToken
+	const role = (session as any)?.role?.toLowerCase() as
+		| Lowercase<ApiRoles>
+		| undefined
+
+	let roleBasedData: { status?: number; title: string }
+	if (role === 'vendedor')
+		roleBasedData = {
+			status: undefined,
+			title: "SLA's - Iminência de finalização de prazo de 15 dias",
+		}
+	else if (role === 'subscritor')
+		roleBasedData = {
+			status: undefined,
+			title: "SLA's - Iminência de finalização de prazo de 48 Horas",
+		}
+	else if (role === 'subscritor-med')
+		roleBasedData = {
+			status: undefined,
+			title: "SLA's - Iminência de finalização de prazo de 5 dias úteis",
+		}
+	// else if (role === 'superior-vendas')
+	// 	roleBasedData = {
+	// 		status: undefined,
+	// 		title: 'Passíveis de reanálise - Menores que 30 dias corridos da recusa',
+	// 	}
+	else if (role === 'admin')
+		roleBasedData = {
+			status: undefined,
+			title: "SLA's - Iminência de finalização de prazo de 15 dias",
+		}
+	else redirect('/logout')
+
+	const data = await getProposals(
+		token,
+		undefined, //cpf
+		undefined, //lmi
+		undefined, //produto
+		roleBasedData.status //status
+	)
+
+	if (data === null) return redirect('/logout')
+
+	const tableRowsData: DPS[] = data?.items.map((item: any) => {
+		return {
+			uid: item.uid,
+			codigo: item.code,
+			cpf: item.customer.document,
+			dataCadastro: item?.created && new Date(item.created),
+			tipoDoc: item.type?.description,
+			status: item.status,
+		}
+	})
+
+	return (
+		<div className="mt-14">
+			<div className="flex gap-5 justify-between">
+				<h3 className="text-primary text-lg">{roleBasedData.title}</h3>
+				<Button variant="link" className="text-primary font-semibold">
+					Ver mais
+				</Button>
+			</div>
+			<DpsDataTable data={tableRowsData} currentPage={0} pageAmount={1} />
 		</div>
 	)
 }
