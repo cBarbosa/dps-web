@@ -85,26 +85,11 @@ export default function Interactions({
 					if (!interaction.description) return null
 
 					return (
-						<li
+						<InteractionItem
 							key={index}
-							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
-						>
-							<div className="grow-0 basis-10">
-								<Badge variant="outline">{index + 1}</Badge>
-							</div>
-							<div className="pl-5 grow basis-1 text-left">
-								{interaction?.description}
-							</div>
-
-							<div className="grow-0 px-3">
-								<Badge variant="warn" shape="pill">
-									{interaction?.status?.description}
-								</Badge>
-							</div>
-							<div className="grow-0 px-3">
-								{formatDate(interaction?.created)}
-							</div>
-						</li>
+							index={index}
+							interaction={interaction}
+						/>
 					)
 				})}
 			</ul>
@@ -159,4 +144,32 @@ export function formatDate(date: Date | string) {
 		.getMinutes()
 		.toString()
 		.padStart(2, '0')} - ${date.toLocaleDateString('pt-BR')}`
+}
+
+function InteractionItem({
+	index,
+	interaction,
+}: {
+	index: number
+	interaction: Interaction
+}) {
+	return (
+		<li className="w-full flex mt-2 p-4 justify-between items-center border rounded-xl bg-[#F4F7F7]">
+			<div className="grow-0 basis-10">
+				<Badge variant="outline" className="text-muted-foreground bg-white">
+					{index + 1}
+				</Badge>
+			</div>
+			<div className="pl-5 grow basis-1 text-left">
+				{interaction?.description}
+			</div>
+
+			<div className="grow-0 px-3">
+				<Badge variant="warn" shape="pill">
+					{interaction?.status?.description}
+				</Badge>
+			</div>
+			<div className="grow-0 px-3">{formatDate(interaction?.created)}</div>
+		</li>
+	)
 }

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { getProposalArchiveByUid, getProposalDocumentsByUid } from '../actions'
-import { CloudDownloadIcon } from 'lucide-react'
+import { CloudDownloadIcon, FileTextIcon } from 'lucide-react'
 import { formatDate } from './interactions'
 import { Button } from '@/components/ui/button'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
@@ -69,18 +69,16 @@ export default function Archives({
 					return (
 						<li
 							key={index}
-							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
+							className="w-full flex mt-2 p-3 justify-between items-center border rounded-xl bg-[#F4F7F7]"
 						>
-							{document.documentName && (
-								<Button
-									className="grow-0 basis-10 text-teal-900 hover:text-teal-600"
-									variant={`ghost`}
-									onClick={() => handleViewArchive(document.uid)}
+							<div className="grow-0 basis-10">
+								<Badge
+									variant="outline"
+									className="text-muted-foreground bg-white"
 								>
-									{/* <Badge variant="outline">{index + 1}</Badge> */}
-									<CloudDownloadIcon className="m-2" />
-								</Button>
-							)}
+									{index + 1}
+								</Badge>
+							</div>
 
 							<div className="pl-5 grow basis-1 text-left">
 								{document?.description}
@@ -93,7 +91,19 @@ export default function Archives({
 									</Badge>
 								</div>
 							)}
-							<div className="grow-0 px-3">{formatDate(document?.created)}</div>
+
+							{/* <div className="grow-0 px-3">{formatDate(document?.created)}</div> */}
+
+							{document.documentName && (
+								<Button
+									className="grow-0 basis-10 text-teal-900 hover:text-teal-600"
+									variant={`ghost`}
+									onClick={() => handleViewArchive(document.uid)}
+								>
+									<FileTextIcon className="mr-2" />
+									Abrir Arquivo
+								</Button>
+							)}
 						</li>
 					)
 				})}

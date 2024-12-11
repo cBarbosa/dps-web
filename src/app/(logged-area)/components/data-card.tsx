@@ -17,9 +17,20 @@ import {
 	RadialBarChart,
 } from 'recharts'
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-function DataCard({ children }: { children: React.ReactNode }) {
-	return <div className="p-4 rounded-3xl bg-gray-100">{children}</div>
+export function DataCard({
+	className,
+	children,
+}: {
+	className?: string
+	children: React.ReactNode
+}) {
+	return (
+		<div className={cn('p-4 rounded-3xl bg-gray-100', className)}>
+			{children}
+		</div>
+	)
 }
 
 export function PieChartCard({

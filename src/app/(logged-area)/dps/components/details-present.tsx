@@ -2,7 +2,17 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
-import { FileTextIcon, Undo2Icon, UserIcon } from 'lucide-react'
+import {
+	Building2Icon,
+	CalendarIcon,
+	DollarSignIcon,
+	FileTextIcon,
+	IdCardIcon,
+	PhoneIcon,
+	Undo2Icon,
+	UserIcon,
+	UserRoundIcon,
+} from 'lucide-react'
 import { getProposalByUid, getProposalSignByUid, postStatus } from '../actions'
 import { formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -11,6 +21,7 @@ import Interactions from './interactions'
 import Archives from './archives'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
 import { useSession } from 'next-auth/react'
+import { DataCard } from '../../components/data-card'
 
 type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -85,49 +96,6 @@ const DetailsPresent = ({
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
-			<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<GoBackButton>
-					<Undo2Icon className="mr-2" />
-					Voltar
-				</GoBackButton>
-				<div className="mx-5 my-3 flex gap-6 justify-between items-center">
-					<div>
-						<h4 className="text-lg text-primary">Detalhes da DPS</h4>
-						<div className="text-sm">
-							{proposalData.code}
-							<Badge shape="pill" variant="warn" className="ml-4">
-								{proposalSituation?.description ?? 'Estado desconhecido'}
-							</Badge>
-						</div>
-						<div className="mt-4 flex gap-5 text-muted-foreground [&>div]:flex [&>div]:gap-2">
-							<div>LMI: {lmiDescription}</div>
-							<div>
-								<FileTextIcon />
-								{proposalTypeDescription}
-							</div>
-							<div>
-								<UserIcon />
-								{formatCpf(proposalData.customer.document)}
-							</div>
-						</div>
-					</div>
-					<div className="flex flex-col gap-3">
-						{proposalSituation?.id === 4 &&
-							(role === 'SUBSCRITOR' || role === 'ADMIN') && (
-								<Button onClick={sendToEndinFlow}>Enviar para aceitação</Button>
-							)}
-
-						<Button
-							onClick={handleViewArchive}
-							disabled={
-								proposalSituation?.id === 10 || proposalSituation.id === 3
-							}
-						>
-							Visualizar DPS
-						</Button>
-					</div>
-				</div>
-			</div>
 			{showAlert && (
 				<div className="flex flex-row justify-between items-center gap-5 p-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-3xl">
 					<div>
@@ -146,6 +114,122 @@ const DetailsPresent = ({
 					)}
 				</div>
 			)}
+
+			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<GoBackButton>
+					<Undo2Icon className="mr-2" />
+					Voltar
+				</GoBackButton>
+
+				<div className="mx-5 mt-2">
+					<div className="w-full flex justify-between items-center">
+						<h4 className="text-lg text-primary">
+							Detalhes da DPS
+							<Badge shape="pill" variant="warn" className="ml-4">
+								{proposalSituation?.description ?? 'Estado desconhecido'}
+							</Badge>
+						</h4>
+						<span className="font-mono text-sm text-gray-500">
+							{proposalData.code}
+						</span>
+					</div>
+
+					<h5 className="text-xl my-4">Produto: {proposalData.product.name}</h5>
+
+					<div className="flex gap-6 justify-between items-center">
+						{/* <div className="mt-4 flex gap-5 text-muted-foreground [&>div]:flex [&>div]:gap-2">
+						<DataCard>LMI: {lmiDescription}</DataCard>
+						<DataCard>
+							<FileTextIcon />
+							{proposalTypeDescription}
+						</DataCard>
+						<DataCard>
+							<UserIcon />
+							{formatCpf(proposalData.customer.document)}
+						</DataCard>
+					</div> */}
+						<div className="mt-4 flex gap-5 text-muted-foreground">
+							<DetailDataCard label="Prazo" value={lmiDescription}>
+								<CalendarIcon />
+							</DetailDataCard>
+							<DetailDataCard
+								label="Tipo Imóvel"
+								value={proposalTypeDescription}
+							>
+								<Building2Icon />
+							</DetailDataCard>
+							<DetailDataCard
+								label="Valor DFI"
+								value={formatCpf(proposalData.customer.document)}
+							>
+								<DollarSignIcon />
+							</DetailDataCard>
+							<DetailDataCard
+								label="Valor da contratação"
+								value={'R$ 320.000,00'}
+							>
+								<DollarSignIcon />
+							</DetailDataCard>
+						</div>
+
+						<div className="flex flex-col gap-3">
+							{proposalSituation?.id === 4 &&
+								(role === 'SUBSCRITOR' || role === 'ADMIN') && (
+									<Button onClick={sendToEndinFlow}>
+										Enviar para aceitação
+									</Button>
+								)}
+
+							<Button
+								onClick={handleViewArchive}
+								disabled={
+									proposalSituation?.id === 10 || proposalSituation.id === 3
+								}
+							>
+								Visualizar DPS
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+				<div className="mx-5 mt-2">
+					<h4 className="text-lg text-primary">Detalhes do Proponente</h4>
+
+					<h5 className="text-xl mt-4 mb-8">
+						{proposalData.customer.name}{' '}
+						<span className="text-base text-muted-foreground">
+							{' '}
+							- {proposalData.customer.email}
+						</span>
+					</h5>
+
+					<div className="mt-4 flex gap-5 text-muted-foreground">
+						<DetailDataCard
+							label="Nascimento"
+							value={new Date(
+								proposalData.customer.birthdate
+							).toLocaleDateString('pt-BR')}
+						>
+							<CalendarIcon />
+						</DetailDataCard>
+						<DetailDataCard
+							label="CPF"
+							value={formatCpf(proposalData.customer.document)}
+						>
+							<IdCardIcon />
+						</DetailDataCard>
+						<DetailDataCard label="Telefone" value={'-'}>
+							<PhoneIcon />
+						</DetailDataCard>
+						<DetailDataCard label="Sexo" value={'-'}>
+							<UserRoundIcon />
+						</DetailDataCard>
+					</div>
+				</div>
+			</div>
+
 			<Interactions
 				token={token}
 				uid={uid}
@@ -173,3 +257,23 @@ const DetailsPresent = ({
 }
 
 export default DetailsPresent
+
+function DetailDataCard({
+	children,
+	label,
+	value,
+}: {
+	children: React.ReactNode
+	label: React.ReactNode
+	value: React.ReactNode
+}) {
+	return (
+		<DataCard className="flex items-center gap-2">
+			<div className="text-green-950">{children}</div>
+			<div>
+				<p className="text-xs text-primary">{label}</p>
+				<p className="text-sm text-green-950">{value}</p>
+			</div>
+		</DataCard>
+	)
+}
