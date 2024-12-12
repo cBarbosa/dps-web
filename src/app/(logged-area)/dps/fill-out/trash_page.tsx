@@ -1,5 +1,5 @@
-import React from 'react'
-import DpsForm from '../components/dps-form'
+/*import React from 'react'
+import DpsForm from './components/dps-form'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import {
@@ -8,13 +8,13 @@ import {
 	getProductList,
 	getProponentDataByCpf,
 	getProposals,
-} from '../../actions'
+} from '../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
-import DpsProfileForm from '../components/dps-profile-form'
-import DpsInitialForm from '../components/dps-initial-form'
+import DpsProfileForm from './components/dps-profile-form'
+import DpsInitialForm from './components/dps-initial-form'
 
-export default async function DpsFormPage({
+export default async function FillOutPage({
 	searchParams,
 }: {
 	searchParams: { cpf: string; lmi: string; produto: string }
@@ -27,14 +27,14 @@ export default async function DpsFormPage({
 	}
 
 	const cpf = searchParams.cpf
-	// const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
-	// const produto = searchParams.produto
+	const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
+	const produto = searchParams.produto
 
-	if (!cpf) redirect('/dps/fill-out')
+	// if (!cpf || !produto || !lmi) redirect('/dps/fill-out')
 
 	const [data, lmiOptionsRaw, productListRaw, proponentDataRaw] =
 		await Promise.all([
-			cpf ? getProposals(token, cpf) : null,
+			cpf && lmi && produto ? getProposals(token, cpf, lmi, produto) : null,
 			getLmiOptions(token),
 			getProductList(token),
 			cpf ? getProponentDataByCpf(cpf) : null,
@@ -76,7 +76,7 @@ export default async function DpsFormPage({
 						email: initialProposalData.customer.email,
 						phone: '',
 
-		*/
+		* /
 
 	const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 		? proponentDataRaw?.detalhes.nascimento.split('/')
@@ -111,25 +111,24 @@ export default async function DpsFormPage({
 		// 	autocompleteData={autocompleteData}
 		// />
 		<div className="p-5">
-			<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<DpsInitialForm
-					data={{
-						profile: {
-							cpf: cpf,
-							name: autocompleteData?.name,
-							socialName: autocompleteData?.socialName,
-							email: autocompleteData?.email,
-							birthdate: autocompleteData?.birthdate
-								? new Date(autocompleteData.birthdate)
-								: undefined,
-							profession: autocompleteData?.profession,
-							phone: autocompleteData?.phone,
-						},
-					}}
-					lmiOptions={lmiOptions}
-					productOptions={productOptions}
-				/>
-			</div>
+			<DpsInitialForm
+				data={{
+					profile: {
+						cpf: cpf,
+						name: autocompleteData?.name,
+						socialName: autocompleteData?.socialName,
+						email: autocompleteData?.email,
+						birthdate: autocompleteData?.birthdate
+							? new Date(autocompleteData.birthdate)
+							: undefined,
+						profession: autocompleteData?.profession,
+						phone: autocompleteData?.phone,
+					},
+				}}
+				lmiOptions={lmiOptions}
+				productOptions={productOptions}
+			/>
 		</div>
 	)
 }
+*/

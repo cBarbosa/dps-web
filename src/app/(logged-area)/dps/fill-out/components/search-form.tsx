@@ -31,14 +31,14 @@ const searchSchema =
 			custom(v => validateCpf(v as string), 'CPF inválido.')
 			// nonEmpty('Campo obrigatório.')
 		),
-		produto:
-			// pipe(
-			string(),
+		// produto:
+		// pipe(
+		// string(),
 		// nonEmpty('Campo obrigatório.'),
 		// ),
-		lmi:
-			// pipe(
-			string(),
+		// lmi:
+		// pipe(
+		// string(),
 		// nonEmpty('Campo obrigatório.'),
 		// ),
 	})
@@ -75,8 +75,8 @@ export default function SearchForm({
 		resolver: valibotResolver(searchSchema),
 		defaultValues: {
 			cpf: params.get('cpf') ?? '',
-			produto: params.get('produto') ?? '',
-			lmi: params.get('lmi') ?? '',
+			// produto: params.get('produto') ?? '',
+			// lmi: params.get('lmi') ?? '',
 		},
 	})
 
@@ -96,8 +96,8 @@ export default function SearchForm({
 
 		const searchParams = new URLSearchParams({
 			cpf: v.cpf,
-			produto: v.produto,
-			lmi: v.lmi,
+			// produto: v.produto,
+			// lmi: v.lmi,
 		})
 
 		router.push(`/dps/fill-out?${searchParams.toString()}`)
@@ -113,29 +113,30 @@ export default function SearchForm({
 							Buscar dados do proponente
 						</span>
 					</div>
-					<Controller
-						control={control}
-						defaultValue=""
-						name="cpf"
-						render={({ field: { onChange, onBlur, value, ref } }) => (
-							<Input
-								placeholder="000.000.000-00"
-								mask="999.999.999-99"
-								className={cn(
-									'max-w-72 p-4 border-none rounded-xl',
-									errors?.cpf &&
-										'outline outline-1 outline-red-500 focus-visible:outline-red-500'
-								)}
-								disabled={isSubmitting}
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-							/>
-						)}
-					/>
+					<div className="flex items-center gap-2">
+						<Controller
+							control={control}
+							defaultValue=""
+							name="cpf"
+							render={({ field: { onChange, onBlur, value, ref } }) => (
+								<Input
+									placeholder="000.000.000-00"
+									mask="999.999.999-99"
+									className={cn(
+										'max-w-72 p-4 border-none rounded-xl',
+										errors?.cpf &&
+											'outline outline-1 outline-red-500 focus-visible:outline-red-500'
+									)}
+									disabled={isSubmitting}
+									onChange={onChange}
+									onBlur={onBlur}
+									value={value}
+									ref={ref}
+								/>
+							)}
+						/>
 
-					<Controller
+						{/* <Controller
 						control={control}
 						defaultValue=""
 						name="produto"
@@ -175,12 +176,13 @@ export default function SearchForm({
 								defaultValue={value}
 							/>
 						)}
-					/>
+					/> */}
 
-					<Button type="submit" className="w-full max-w-32 p-4 rounded-xl">
-						<SearchIcon size={18} className="mr-2" />
-						Buscar
-					</Button>
+						<Button type="submit" className="w-full max-w-32 p-4 rounded-xl">
+							<SearchIcon size={18} className="mr-2" />
+							Buscar
+						</Button>
+					</div>
 				</div>
 			</form>
 		</>

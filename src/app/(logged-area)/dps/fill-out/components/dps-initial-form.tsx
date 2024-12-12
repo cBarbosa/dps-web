@@ -89,33 +89,31 @@ const DpsInitialForm = ({
 	async function onSubmit(v: DpsInitialForm) {
 		console.log('submitting', v)
 
-		return
+		const postData = {
+			document: data?.profile?.cpf ?? v.profile.cpf,
+			name: v.profile.name,
+			socialName: v.profile.socialName ?? '',
+			email: v.profile.email,
+			birthDate: v.profile.birthdate.toISOString(),
+			productId: v.product.product,
+			profession: v.profile.profession ?? '',
+			typeId: 2,
+			lmiRangeId: Number(v.product.lmi),
+		}
+		console.log('submitting', token, postData)
 
-		// const postData = {
-		// 	document: data.profile?.cpf,
-		// 	name: v.profile.name,
-		// 	socialName: v.profile.socialName ?? '',
-		// 	email: v.profile.email,
-		// 	birthDate: v.profile.birthdate.toISOString(),
-		// 	productId: '',
-		// 	profession: v.profile.profession ?? '',
-		// 	typeId: 2,
-		// 	lmiRangeId: 0,
-		// }
-		// console.log('submitting', token, postData)
+		const response = await postProposal(token, postData)
 
-		// const response = await postProposal(token, postData)
+		console.log('post proposal', response)
 
-		// console.log('post proposal', response)
-
-		// if (response) {
-		// 	reset()
-		// 	if (response.success) {
-		// 		router.push('/dps/fill-out/form/' + response.data)
-		// 	} else {
-		// 		console.error(response.message)
-		// 	}
-		// }
+		if (response) {
+			reset()
+			if (response.success) {
+				router.push('/dps/fill-out/form/' + response.data)
+			} else {
+				console.error(response.message)
+			}
+		}
 	}
 
 	return (
