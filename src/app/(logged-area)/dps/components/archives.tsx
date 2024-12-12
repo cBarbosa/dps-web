@@ -3,7 +3,12 @@
 import React, { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { getProposalArchiveByUid, getProposalDocumentsByUid } from '../actions'
-import { CloudDownloadIcon, FileTextIcon } from 'lucide-react'
+import {
+	CloudDownloadIcon,
+	FileTextIcon,
+	ThumbsDownIcon,
+	ThumbsUpIcon,
+} from 'lucide-react'
 import { formatDate } from './interactions'
 import { Button } from '@/components/ui/button'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
@@ -61,6 +66,16 @@ export default function Archives({
 				<h4 className="basis-1 grow text-lg text-primary mb-2">
 					Laudos e Complementos
 				</h4>
+				<div className="flex gap-2 mb-3">
+					<Button variant="default">
+						<ThumbsUpIcon className="mr-2" size={18} />
+						Aprovar laudo DFI
+					</Button>
+					<Button variant="destructive">
+						<ThumbsDownIcon className="mr-2" size={18} />
+						Reprovar laudo DFI
+					</Button>
+				</div>
 			</div>
 			<ul>
 				{data.map((document, index) => {

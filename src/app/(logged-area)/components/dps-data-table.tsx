@@ -4,6 +4,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import { Progress } from '@/components/ui/progress'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
@@ -141,9 +147,22 @@ function ProgressBar({ value }: { value: number }) {
 	const bg = `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`
 
 	return (
-		<div className="px-4">
-			<Progress className="h-1.5 w-full min-w-20" value={value} color={bg} />
-		</div>
+		<TooltipProvider delayDuration={0}>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<div className="px-4 py-2 cursor-pointer">
+						<Progress
+							className="h-1.5 w-full min-w-20"
+							value={value}
+							color={bg}
+						/>
+					</div>
+				</TooltipTrigger>
+				<TooltipContent>
+					<p>{value}%</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	)
 }
 

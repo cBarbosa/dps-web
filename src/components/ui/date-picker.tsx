@@ -72,7 +72,6 @@ function DatePicker(
 
 		onBlur?.(parsedDate)
 	}
-	console.log('valueprop', valueProp)
 
 	function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const value = e.target.value

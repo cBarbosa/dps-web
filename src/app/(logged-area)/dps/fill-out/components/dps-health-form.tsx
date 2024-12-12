@@ -38,7 +38,7 @@ import {
 	signProposal,
 } from '../../actions'
 import { useSession } from 'next-auth/react'
-import { ProfileForm } from './dps-profile-form'
+import { dpsProfileForm } from './dps-profile-form'
 
 const diseaseSchema = variant(
 	'has',
