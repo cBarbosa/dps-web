@@ -16,7 +16,7 @@ import {
 } from 'valibot'
 import { Controller, useForm } from 'react-hook-form'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { SearchIcon } from 'lucide-react'
+import { PlusCircleIcon, SearchIcon } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import validateCpf from 'validar-cpf'
@@ -182,6 +182,16 @@ export default function SearchForm({
 							<SearchIcon size={18} className="mr-2" />
 							Buscar
 						</Button>
+
+						{getValues('cpf') && (
+							<Button type='button' className="w-full max-w-32 p-4 rounded-xl" onClick={
+							event => router.push(`/dps/fill-out/form?cpf=${getValues('cpf')}`)
+							}>
+								<PlusCircleIcon size={18} className="mr-2" />
+								Cadastrar DPS
+							</Button>
+						)}
+						
 					</div>
 				</div>
 			</form>

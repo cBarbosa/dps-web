@@ -135,7 +135,7 @@ const DpsInitialForm = ({
 			<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<DpsProductForm
 					data={data?.product as Partial<DpsProductFormType>}
-					lmiOptions={lmiOptions}
+					lmiOptions={[]}
 					productOptions={productOptions}
 					control={control}
 					formState={formState}
