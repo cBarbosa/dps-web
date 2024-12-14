@@ -54,13 +54,7 @@ const searchSchema =
 
 type SearchSchema = InferInput<typeof searchSchema>
 
-export default function SearchForm({
-	lmiOptions,
-	productOptions,
-}: {
-	lmiOptions: { value: string; label: string }[]
-	productOptions: { value: string; label: string }[]
-}) {
+export default function SearchForm() {
 	const params = useSearchParams()
 
 	const {

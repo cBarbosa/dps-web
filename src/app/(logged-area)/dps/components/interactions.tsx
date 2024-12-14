@@ -70,14 +70,14 @@ export default function Interactions({
 							onSubmit={reloadInteractions}
 						/>
 					) : null}
-					{proposalSituationId === 5 ? (
+					{/* {proposalSituationId === 5 ? (
 						<UploadComplement
 							token={token}
 							proposalUid={uid}
 							interactionDescription={data[0]?.description}
 							onSubmit={reloadInteractions}
 						/>
-					) : null}
+					) : null} */}
 				</div>
 			</div>
 			<ul>

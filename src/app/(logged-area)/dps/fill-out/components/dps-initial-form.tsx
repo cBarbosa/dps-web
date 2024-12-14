@@ -44,6 +44,7 @@ const DpsInitialForm = ({
 	data,
 	lmiOptions,
 	productOptions,
+	tipoImovelOptions,
 }: {
 	data?: RecursivePartial<DpsInitialForm>
 	lmiOptions: {
@@ -51,6 +52,10 @@ const DpsInitialForm = ({
 		label: string
 	}[]
 	productOptions: {
+		value: string
+		label: string
+	}[]
+	tipoImovelOptions: {
 		value: string
 		label: string
 	}[]
@@ -137,6 +142,7 @@ const DpsInitialForm = ({
 					data={data?.product as Partial<DpsProductFormType>}
 					lmiOptions={lmiOptions}
 					productOptions={productOptions}
+					tipoImovelOptions={tipoImovelOptions}
 					control={control}
 					formState={formState}
 				/>

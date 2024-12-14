@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 export function DataCard({
 	className,
@@ -83,14 +84,21 @@ export function PieChartCard({
 					<ul>
 						{chartData.data.map((item, index) => (
 							<li key={index}>
-								<span
-									className="inline-block w-4 h-1.5 mr-3 rounded-full"
-									style={{ backgroundColor: item.fill }}
-								/>
-								<span>
-									{item.label}{' '}
-									<span className="text-gray-400 text-xs">({item.value}%)</span>
-								</span>
+								<Link
+									href="dashboard/table"
+									className="font-normal text-foreground hover:text-foreground/80"
+								>
+									<span
+										className="inline-block w-4 h-1.5 mr-3 rounded-full"
+										style={{ backgroundColor: item.fill }}
+									/>
+									<span>
+										{item.label}{' '}
+										<span className="text-gray-400 text-xs">
+											({item.value}%)
+										</span>
+									</span>
+								</Link>
 							</li>
 						))}
 					</ul>

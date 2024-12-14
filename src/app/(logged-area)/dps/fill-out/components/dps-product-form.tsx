@@ -22,27 +22,18 @@ export const dpsProductForm = object({
 
 export type DpsProductFormType = InferInput<typeof dpsProductForm>
 
-const propertyTypeOptions = [
-	{
-		value: '1',
-		label: 'Residencial',
-	},
-	{
-		value: '2',
-		label: 'Comercial',
-	},
-]
-
 const DpsProductForm = ({
 	data,
 	lmiOptions,
 	productOptions,
+	tipoImovelOptions,
 	control,
 	formState,
 }: {
 	data?: Partial<DpsProductFormType>
 	lmiOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
+	tipoImovelOptions: { value: string; label: string }[]
 	control: Control<DpsInitialForm>
 	formState: FormState<DpsInitialForm>
 }) => {
@@ -164,7 +155,7 @@ const DpsProductForm = ({
 							<div className="text-gray-500">Tipo de Imóvel</div>
 							<SelectComp
 								placeholder="Tipo de Imóvel"
-								options={propertyTypeOptions}
+								options={tipoImovelOptions}
 								triggerClassName="p-4 h-12 rounded-lg"
 								onValueChange={onChange}
 								defaultValue={value}

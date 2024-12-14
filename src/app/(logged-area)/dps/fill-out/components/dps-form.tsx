@@ -10,7 +10,7 @@ import { UserIcon } from 'lucide-react'
 import { useParams, useSearchParams } from 'next/navigation'
 import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
 import Link from 'next/link'
-import Archives from '../../components/archives'
+import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
 
@@ -165,7 +165,8 @@ const DpsForm = ({
 	function handleHealthSubmit(v: HealthForm) {
 		setDpsData(prev => ({ ...prev, health: v }))
 		const hasSomeDesease = Object.entries(v).some(x => x[1].has === 'yes')
-		setStep(hasSomeDesease ? 'attachments' : 'finished')
+		// setStep(hasSomeDesease ? 'attachments' : 'finished')
+		setStep('finished')
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
@@ -206,7 +207,7 @@ const DpsForm = ({
 					/>
 				</div>
 
-				<Archives token={token} uid={uid} />
+				<MedReports token={token} uid={uid} />
 			</>
 		)
 	} else if (step === 'finished') {

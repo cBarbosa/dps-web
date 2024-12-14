@@ -8,6 +8,7 @@ import {
 	getProductList,
 	getProponentDataByCpf,
 	getProposals,
+	getTipoImovelOptions,
 } from '../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
@@ -32,13 +33,19 @@ export default async function DpsFormPage({
 
 	if (!cpf) redirect('/dps/fill-out')
 
-	const [data, lmiOptionsRaw, productListRaw, proponentDataRaw] =
-		await Promise.all([
-			cpf ? getProposals(token, cpf) : null,
-			getLmiOptions(token),
-			getProductList(token),
-			cpf ? getProponentDataByCpf(cpf) : null,
-		])
+	const [
+		data,
+		lmiOptionsRaw,
+		tipoImovelOptionsRaw,
+		productListRaw,
+		proponentDataRaw,
+	] = await Promise.all([
+		cpf ? getProposals(token, cpf) : null,
+		getLmiOptions(token),
+		getTipoImovelOptions(token),
+		getProductList(token),
+		cpf ? getProponentDataByCpf(cpf) : null,
+	])
 	console.log('||||||||->>')
 	console.dir(proponentDataRaw, { depth: Infinity })
 
@@ -52,6 +59,12 @@ export default async function DpsFormPage({
 		productListRaw?.data.map(item => ({
 			value: item.uid,
 			label: item.name,
+		})) ?? []
+
+	const tipoImovelOptions =
+		tipoImovelOptionsRaw?.data.map(item => ({
+			value: item.id.toString(),
+			label: item.description,
 		})) ?? []
 
 	let proposalData
@@ -128,6 +141,7 @@ export default async function DpsFormPage({
 					}}
 					lmiOptions={lmiOptions}
 					productOptions={productOptions}
+					tipoImovelOptions={tipoImovelOptions}
 				/>
 			</div>
 		</div>

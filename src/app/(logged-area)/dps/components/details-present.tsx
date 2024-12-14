@@ -18,10 +18,11 @@ import { formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Interactions from './interactions'
-import Archives from './archives'
+import MedReports from './med-reports'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
 import { useSession } from 'next-auth/react'
 import { DataCard } from '../../components/data-card'
+import DfiReports from './dfi-reports'
 
 type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -49,6 +50,8 @@ const DetailsPresent = ({
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
 	const proposalSituation = proposalData?.history[0]?.status
+
+	console.log('proposalData', proposalData)
 
 	async function refetchProposalData() {
 		const response = await getProposalByUid(token, uid)
@@ -90,16 +93,18 @@ const DetailsPresent = ({
 		description: 'Aguardando Preenchimento do DPS',
 	}
 
-	const showAlert: boolean =
+	const showFillOutAlert: boolean =
 		// lastSituation?.id === 3 ||
 		lastSituation?.id === 5 || lastSituation?.id === 10
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
-			{showAlert && (
-				<div className="flex flex-row justify-between items-center gap-5 p-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-3xl">
+			{showFillOutAlert && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
 					<div>
-						<h4 className="text-lg text-orange-600 mb-2">Ações pendentes</h4>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
 						<p className="ml-3 text-base text-orange-400">
 							{lastSituation?.description}
 						</p>
@@ -245,7 +250,19 @@ const DetailsPresent = ({
 				onNewInteraction={refetchProposalData}
 			/>
 
-			<Archives token={token} uid={uid} />
+			<MedReports
+				token={token}
+				uid={uid}
+				userRole={role}
+				dpsStatus={lastSituation.id}
+			/>
+
+			<DfiReports
+				token={token}
+				uid={uid}
+				userRole={role}
+				dpsStatus={lastSituation.id}
+			/>
 
 			<DialogShowArchive
 				isModalOpen={isModalOpen}

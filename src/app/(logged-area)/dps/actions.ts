@@ -139,6 +139,34 @@ export async function getLmiOptions(token: string): Promise<{
 	return null
 }
 
+export async function getTipoImovelOptions(token: string): Promise<{
+	success: boolean
+	message: string
+	data: { id: number; description: string }[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Domain/group/TipoImovel', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
 export async function getProposalSituations(token: string): Promise<{
 	success: boolean
 	message: string

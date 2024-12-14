@@ -4,14 +4,14 @@ import React, { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { getProposalArchiveByUid, getProposalDocumentsByUid } from '../actions'
 import {
-	CloudDownloadIcon,
 	FileTextIcon,
+	SendIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 } from 'lucide-react'
-import { formatDate } from './interactions'
 import { Button } from '@/components/ui/button'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
+import UploadReport from './upload-report'
 
 export type DocumentType = {
 	uid: string
@@ -22,18 +22,22 @@ export type DocumentType = {
 	updated?: Date | string
 }
 
-export default function Archives({
+export default function DfiReports({
 	token,
 	uid,
+	userRole,
+	dpsStatus,
 }: {
 	token: string
 	uid: string
+	userRole?: string
+	dpsStatus?: number
 }) {
 	const [data, setData] = React.useState<DocumentType[]>([])
 	const [isModalOpen, setIsModalOpen] = React.useState(false)
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
-	const reloadInteractions = useCallback(async () => {
+	const reloadReports = useCallback(async () => {
 		const proposalResponse = await getProposalDocumentsByUid(token, uid)
 
 		if (!proposalResponse) return
@@ -57,25 +61,57 @@ export default function Archives({
 	)
 
 	useEffect(() => {
-		reloadInteractions()
-	}, [reloadInteractions])
+		reloadReports()
+	}, [reloadReports])
+
+	function finishReportUpload() {
+		//TODO
+	}
+
+	const showReportApproval =
+		userRole &&
+		dpsStatus &&
+		dpsStatus === 4 &&
+		(userRole.toLowerCase() === 'subscritor' ||
+			userRole.toLowerCase() === 'admin')
+
+	const showUploadReport =
+		userRole &&
+		dpsStatus &&
+		dpsStatus === 5 &&
+		(userRole.toLowerCase() === 'vendedor' ||
+			userRole.toLowerCase() === 'admin')
 
 	return data?.length > 0 ? (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 			<div className="flex justify-between gap-5">
-				<h4 className="basis-1 grow text-lg text-primary mb-2">
-					Laudos e Complementos
-				</h4>
-				<div className="flex gap-2 mb-3">
-					<Button variant="default">
-						<ThumbsUpIcon className="mr-2" size={18} />
-						Aprovar laudo DFI
-					</Button>
-					<Button variant="destructive">
-						<ThumbsDownIcon className="mr-2" size={18} />
-						Reprovar laudo DFI
-					</Button>
-				</div>
+				<h4 className="basis-1 grow text-lg text-primary mb-2">Laudos DFI</h4>
+				{showReportApproval && (
+					<div className="flex gap-2 mb-3">
+						<Button variant="default">
+							<ThumbsUpIcon className="mr-2" size={18} />
+							Aprovar laudo DFI
+						</Button>
+						<Button variant="destructive">
+							<ThumbsDownIcon className="mr-2" size={18} />
+							Reprovar laudo DFI
+						</Button>
+					</div>
+				)}
+				{showUploadReport && (
+					<div className="flex gap-2">
+						<UploadReport
+							token={token}
+							proposalUid={uid}
+							reportDescription={data[0]?.description}
+							onSubmit={reloadReports}
+						/>
+						<Button size="sm" onClick={finishReportUpload}>
+							<SendIcon size={14} className="mr-2" />
+							Concluir
+						</Button>
+					</div>
+				)}
 			</div>
 			<ul>
 				{data.map((document, index) => {
