@@ -73,9 +73,9 @@ const DpsProductForm = ({
 					name="product.lmi"
 					render={({ field: { onChange, value } }) => (
 						<label>
-							<div className="text-gray-500">LMI</div>
+							<div className="text-gray-500">Prazo</div>
 							<SelectComp
-								placeholder="LMI"
+								placeholder="Prazo"
 								options={lmiOptions}
 								triggerClassName="p-4 h-12 rounded-lg"
 								disabled={false}
