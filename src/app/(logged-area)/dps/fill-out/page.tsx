@@ -94,7 +94,7 @@ export default async function FillOutPage({
 						Para abertura da{' '}
 						<span className="text-primary-dark/60">DPS eletrônica</span>,
 						primeiramente precisamos de alguns dados. Insira o cpf do
-						proponente, selecione o produto e o valor da LMI.
+						proponente.
 					</AlertDescription>
 				</Alert>
 
