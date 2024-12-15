@@ -228,7 +228,7 @@ export default function MedReports({
 							disabled={isFinishing}
 						>
 							<ThumbsUpIcon className="mr-2" size={18} />
-							Aprovar laudo MIP
+							Aprovar DPS
 						</Button>
 						<Button
 							variant="destructive"
@@ -236,7 +236,7 @@ export default function MedReports({
 							disabled={isFinishing}
 						>
 							<ThumbsDownIcon className="mr-2" size={18} />
-							Reprovar laudo MIP
+							Reprovar DPS
 						</Button>
 					</div>
 				)}
@@ -247,7 +247,7 @@ export default function MedReports({
 							proposalUid={uid}
 							reportDescription={'Laudo/Complemento MIP'}
 							onSubmit={reloadReports}
-							disabled={data?.length <= 0 || isFinishing}
+							disabled={isFinishing}
 							type="MIP"
 						/>
 						<Button
