@@ -37,7 +37,7 @@ export default function NewInteractionDialog({
 
 		setIsLoading(true)
 
-		const response = await postStatus(token, uid, status, description)
+		const response = await postStatus(token, uid, status, description, 'MIP')
 
 		console.log('post interaction', response)
 
