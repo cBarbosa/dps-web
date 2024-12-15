@@ -17,7 +17,10 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import useSessionAuthorization from '@/hooks/useSessionAuthorization'
-import { ApiRoles } from '@/hooks/getServerSessionAuthorization'
+import {
+	ApiRoles,
+	ApiRoleEnum as Role,
+} from '@/hooks/getServerSessionAuthorization'
 
 export default function SideBar() {
 	const { session } = useSessionAuthorization()
@@ -46,13 +49,13 @@ export default function SideBar() {
 							Dashboard
 						</MenuItem>
 						<MenuSection title="DPS" Icon={FileTextIcon}>
-							<RoleBasedRender role={role} allowedRoles={['vendedor']}>
+							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
 								<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
 							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={['subscritor']}>
+							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR]}>
 								<MenuItem href="/dps/subscription">Subscrição</MenuItem>
 							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={['subscritor-med']}>
+							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
 								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
 							</RoleBasedRender>
 						</MenuSection>

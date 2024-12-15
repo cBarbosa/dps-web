@@ -1,8 +1,15 @@
-import { InfoIcon } from 'lucide-react'
+/*
+ */
+import { InfoIcon, PlusIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import SearchForm from './components/search-form'
 import { redirect } from 'next/navigation'
-import { getLmiOptions, getProductList, getProposals } from '../actions'
+import {
+	getLmiOptions,
+	getProductList,
+	getProposals,
+	getTipoImovelOptions,
+} from '../actions'
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -10,7 +17,7 @@ import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization
 
 export const revalidate = 0 // no cache
 // export const maxDuration = 300;
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 export default async function FillOutPage({
 	searchParams,
@@ -34,38 +41,22 @@ export default async function FillOutPage({
 	const produto =
 		searchParams.produto?.length > 0 ? searchParams.produto : undefined
 
-	const allowSearch = cpf && lmi && produto
+	const allowSearch = !!cpf
 
 	const urlParams = new URLSearchParams({
 		cpf: cpf ?? '',
-		produto: produto ?? '',
-		lmi: lmi?.toString() ?? '',
+		// produto: produto ?? '',
+		// lmi: lmi?.toString() ?? '',
 	})
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 
-	const status = undefined; // se quiser valor fixo 10;
-	const [data, lmiOptionsRaw, productListRaw] = await Promise.all([
-		allowSearch
-			? getProposals(token, cpf, lmi, produto, status, currentPage)
-			: { totalItems: 0, items: [] },
-		getLmiOptions(token),
-		getProductList(token),
-	])
+	const status = undefined // se quiser valor fixo 10;
+	const data = allowSearch
+		? await getProposals(token, cpf, lmi, produto, status, currentPage)
+		: { totalItems: 0, items: [] }
 
 	console.dir(data, { depth: Infinity })
-
-	const lmiOptions =
-		lmiOptionsRaw?.data.map(item => ({
-			value: item.id.toString(),
-			label: item.description,
-		})) ?? []
-
-	const productOptions =
-		productListRaw?.data.map(item => ({
-			value: item.uid,
-			label: item.name,
-		})) ?? []
 
 	const pageAmount = data?.totalItems ? Math.ceil(data?.totalItems / 10) : 1
 
@@ -107,10 +98,21 @@ export default async function FillOutPage({
 					</AlertDescription>
 				</Alert>
 
-				<SearchForm lmiOptions={lmiOptions} productOptions={productOptions} />
+				<SearchForm />
 
 				{data.totalItems > 0 ? (
 					<div className="mt-7 p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+						<div className="text-right">
+							<Button variant="default" className="ml-auto" asChild>
+								<Link
+									href={'/dps/fill-out/form?' + urlParams.toString()}
+									className="hover:text-white"
+								>
+									<PlusIcon size={20} className="mr-2" />
+									Preencher nova DPS
+								</Link>
+							</Button>
+						</div>
 						<DpsDataTable
 							data={tableRowsData}
 							currentPage={currentPage}
@@ -121,10 +123,8 @@ export default async function FillOutPage({
 					<div className="flex justify-between items-center mt-7 p-5 rounded-lg bg-white">
 						{allowSearch ? (
 							<>
-								Nenhuma DPS encontrada com os filtros informados.
-								<Button
-									variant="default"
-									asChild>
+								Nenhuma DPS encontrada para o CPF informado.
+								<Button variant="default" asChild>
 									<Link
 										href={'/dps/fill-out/form?' + urlParams.toString()}
 										className="hover:text-white"

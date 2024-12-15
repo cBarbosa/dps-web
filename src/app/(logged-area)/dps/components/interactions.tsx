@@ -13,10 +13,11 @@ import NewInteractionDialog from './new-interaction-dialog'
 import { getProposalByUid } from '../actions'
 import { set } from 'date-fns'
 import UploadComplement from './upload-complement'
+import { statusDescriptionDict } from './details-present'
 
 export type Interaction = {
 	description: string
-	status: { id: number; description: string }
+	statusId: number
 	created: Date | string
 }
 
@@ -70,14 +71,14 @@ export default function Interactions({
 							onSubmit={reloadInteractions}
 						/>
 					) : null}
-					{proposalSituationId === 5 ? (
+					{/* {proposalSituationId === 5 ? (
 						<UploadComplement
 							token={token}
 							proposalUid={uid}
 							interactionDescription={data[0]?.description}
 							onSubmit={reloadInteractions}
 						/>
-					) : null}
+					) : null} */}
 				</div>
 			</div>
 			<ul>
@@ -85,26 +86,11 @@ export default function Interactions({
 					if (!interaction.description) return null
 
 					return (
-						<li
+						<InteractionItem
 							key={index}
-							className="w-full flex mt-2 justify-between items-center p-2 border rounded-xl"
-						>
-							<div className="grow-0 basis-10">
-								<Badge variant="outline">{index + 1}</Badge>
-							</div>
-							<div className="pl-5 grow basis-1 text-left">
-								{interaction?.description}
-							</div>
-
-							<div className="grow-0 px-3">
-								<Badge variant="warn" shape="pill">
-									{interaction?.status?.description}
-								</Badge>
-							</div>
-							<div className="grow-0 px-3">
-								{formatDate(interaction?.created)}
-							</div>
-						</li>
+							index={index}
+							interaction={interaction}
+						/>
 					)
 				})}
 			</ul>
@@ -117,37 +103,6 @@ export default function Interactions({
 			<div className="text-muted-foreground">Nenhuma interação registrada</div>
 		</div>
 	)
-
-	// return (
-	// 	<div>
-	// 		<Accordion type="single" collapsible>
-	// 			<AccordionItem value="item-1" className="p-2 border rounded-xl">
-	// 				<AccordionTrigger hideArrow className="hover:no-underline p-1">
-	// 					<div className="grow-0 basis-10">
-	// 						<Badge variant="outline">1</Badge>
-	// 					</div>
-	// 					<div className="pl-5 grow basis-1 text-left">
-	// 						Responsáveis notificados para assinatura
-	// 					</div>
-	// 					<div className="grow basis-1">
-	// 						<Badge variant="warn" shape="pill">
-	// 							Pend. Assinatura
-	// 						</Badge>
-	// 					</div>
-	// 					<div className="grow basis-1">{formatDate(date)}</div>
-	// 					<div>
-	// 						<Button variant="ghost" size="icon" className="rounded-full">
-	// 							<EllipsisVerticalIcon />
-	// 						</Button>
-	// 					</div>
-	// 				</AccordionTrigger>
-	// 				<AccordionContent className="rounded-b-lg bg-gray-100">
-	// 					Proponente assinou
-	// 				</AccordionContent>
-	// 			</AccordionItem>
-	// 		</Accordion>
-	// 	</div>
-	// )
 }
 
 export function formatDate(date: Date | string) {
@@ -159,4 +114,32 @@ export function formatDate(date: Date | string) {
 		.getMinutes()
 		.toString()
 		.padStart(2, '0')} - ${date.toLocaleDateString('pt-BR')}`
+}
+
+function InteractionItem({
+	index,
+	interaction,
+}: {
+	index: number
+	interaction: Interaction
+}) {
+	return (
+		<li className="w-full flex mt-2 p-4 justify-between items-center border rounded-xl bg-[#F4F7F7]">
+			<div className="grow-0 basis-10">
+				<Badge variant="outline" className="text-muted-foreground bg-white">
+					{index + 1}
+				</Badge>
+			</div>
+			<div className="pl-5 grow basis-1 text-left">
+				{interaction?.description}
+			</div>
+
+			<div className="grow-0 px-3">
+				<Badge variant="warn" shape="pill">
+					{statusDescriptionDict[interaction?.statusId]}
+				</Badge>
+			</div>
+			<div className="grow-0 px-3">{formatDate(interaction?.created)}</div>
+		</li>
+	)
 }
