@@ -1,14 +1,19 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import DpsProfileForm, { ProfileForm } from './dps-profile-form'
+import DpsProfileForm, {
+	dpsProfileForm,
+	DpsProfileFormType,
+} from './dps-profile-form'
 import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useParams, useSearchParams } from 'next/navigation'
 import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
 import Link from 'next/link'
-import Archives from '../../components/archives'
+import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
+import { DpsInitialForm } from './dps-initial-form'
+import { ProposalByUid, signProposal } from '../../actions'
 
 export const diseaseNames = {
 	'1': 'Acidente Vascular Cerebral',
@@ -40,39 +45,7 @@ const DpsForm = ({
 	initialProposalData,
 	initialHealthData: initialHealthDataProp,
 }: {
-	initialProposalData: {
-		uid: string
-		code: string
-		created: string
-		customer: {
-			uid: string
-			document: string
-			name: string
-			socialName?: string | null
-			email: string
-			birthdate: string
-		}
-		product: {
-			uid: string
-			name: string
-		}
-		type: {
-			id: number
-			description: string
-		}
-		history: {
-			description: string
-			status: {
-				id: number
-				description: string
-			}
-			created: string
-		}[]
-		lmi: {
-			id: number
-			description: string
-		}
-	}
+	initialProposalData: ProposalByUid
 	initialHealthData?: {
 		code: string
 		question: string
@@ -103,10 +76,10 @@ const DpsForm = ({
 		: undefined
 
 	let initialStep: 'health' | 'attachments' | 'finished'
+	console.log('>:>>', initialProposalData)
 
-	if (initialProposalData.history[0].status.id === 10) initialStep = 'health'
-	else if (initialProposalData.history[0].status.id === 5)
-		initialStep = 'attachments'
+	if (initialProposalData.status.id === 10) initialStep = 'health'
+	else if (initialProposalData.status.id === 5) initialStep = 'attachments'
 	else initialStep = 'finished'
 
 	const [step, setStep] = useState<'health' | 'attachments' | 'finished'>(
@@ -115,21 +88,29 @@ const DpsForm = ({
 
 	const [dpsData, setDpsData] = useState<{
 		uid?: string
-		profile: ProfileForm
+		initial: DpsInitialForm
 		health: HealthForm | null | undefined
 		attachments: AttachmentsForm | null | undefined
 	}>({
 		uid: initialProposalData.uid,
-		profile: {
-			produto: initialProposalData.product.uid,
-			lmi: initialProposalData.lmi.id.toString(),
-			cpf: initialProposalData.customer.document,
-			name: initialProposalData.customer.name,
-			socialName: initialProposalData.customer.socialName ?? '',
-			birthdate: new Date(initialProposalData.customer.birthdate),
-			profession: '',
-			email: initialProposalData.customer.email,
-			phone: '',
+		initial: {
+			profile: {
+				cpf: initialProposalData.customer.document,
+				name: initialProposalData.customer.name,
+				socialName: initialProposalData.customer.socialName ?? '',
+				birthdate: new Date(initialProposalData.customer.birthdate),
+				profession: '',
+				email: initialProposalData.customer.email,
+				phone: '',
+				gender: '',
+			},
+			product: {
+				product: initialProposalData.product.uid,
+				deadline: initialProposalData.deadLineId?.toString() ?? '',
+				mip: '',
+				dfi: '',
+				propertyType: '',
+			},
 		},
 		health: initialHealthData,
 		attachments: undefined,
@@ -150,10 +131,14 @@ const DpsForm = ({
 				)
 		: []
 
-	function handleHealthSubmit(v: HealthForm) {
+	async function handleHealthSubmit(v: HealthForm) {
 		setDpsData(prev => ({ ...prev, health: v }))
-		const hasSomeDesease = Object.entries(v).some(x => x[1].has === 'yes')
-		setStep(hasSomeDesease ? 'attachments' : 'finished')
+
+		const responseSign = await signProposal(token, uid)
+		console.log('post signProposal', responseSign)
+		if (!responseSign) console.log(responseSign) //TODO add error alert
+
+		setStep('finished')
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
@@ -166,7 +151,7 @@ const DpsForm = ({
 		formToDisplay = (
 			<>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					<DpsProfileData data={dpsData.profile} />
+					<DpsProfileData data={dpsData.initial.profile} />
 				</div>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<DpsHealthForm
@@ -182,26 +167,26 @@ const DpsForm = ({
 		formToDisplay = (
 			<>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					<DpsProfileData data={dpsData.profile} />
+					<DpsProfileData data={dpsData.initial.profile} />
 				</div>
 				<div className="p-9 my-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<DpsAttachmentsForm
 						onSubmit={handleAttachmentsSubmit}
 						proposalUid={initialProposalData.uid}
-						dpsProfileData={dpsData.profile}
+						dpsProfileData={dpsData.initial.profile}
 						setStep={setStep}
 						diseaseList={diseaseList}
 					/>
 				</div>
 
-				<Archives token={token} uid={uid} />
+				<MedReports token={token} uid={uid} />
 			</>
 		)
 	} else if (step === 'finished') {
 		formToDisplay = (
 			<>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					<DpsProfileData data={dpsData.profile} />
+					<DpsProfileData data={dpsData.initial.profile} />
 				</div>
 				<div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					Preenchimento de DPS realizado com sucesso, encaminhado para

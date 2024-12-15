@@ -40,7 +40,7 @@ import {
 import { DiseaseKeys, diseaseNames } from './dps-form'
 import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
-import { ProfileForm } from './dps-profile-form'
+import { dpsProfileForm, DpsProfileFormType } from './dps-profile-form'
 import { getProposals, postAttachmentFile, signProposal } from '../../actions'
 import useAlertDialog from '@/hooks/use-alert-dialog'
 import { CheckCircleIcon, CheckIcon, LoaderIcon } from 'lucide-react'
@@ -75,7 +75,7 @@ const DpsAttachmentsForm = ({
 }: {
 	onSubmit: (v: AttachmentsForm) => void
 	proposalUid: string
-	dpsProfileData: ProfileForm
+	dpsProfileData: DpsProfileFormType
 	setStep: (step: 'health' | 'attachments') => void
 	diseaseList: Partial<
 		Record<DiseaseKeys, { has: boolean; description: string }>
@@ -283,7 +283,7 @@ function AttachmentField({
 }: {
 	token: string
 	proposalUid: string
-	dpsProfileData: ProfileForm
+	dpsProfileData: DpsProfileFormType
 	options: { label: string; value: string }[]
 	setPickedDiseases: (v: DiseaseKeys[]) => void
 	removeField: (i: number) => void

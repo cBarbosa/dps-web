@@ -38,7 +38,7 @@ import {
 	signProposal,
 } from '../../actions'
 import { useSession } from 'next-auth/react'
-import { ProfileForm } from './dps-profile-form'
+import { dpsProfileForm } from './dps-profile-form'
 
 const diseaseSchema = variant(
 	'has',
@@ -99,6 +99,8 @@ const DpsHealthForm = ({
 
 	console.log('>>>initialHealthData', initialHealthData)
 
+	const [formDisabled, setFormDisabled] = React.useState(false)
+
 	const {
 		handleSubmit,
 		getValues,
@@ -111,9 +113,12 @@ const DpsHealthForm = ({
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
+		disabled: formDisabled,
 	})
 
 	async function onSubmit(v: HealthForm) {
+		setFormDisabled(true)
+
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
 			question: diseaseNames[key as keyof typeof diseaseNames],
@@ -128,13 +133,6 @@ const DpsHealthForm = ({
 
 		console.log('post proposal', response)
 
-		const existsAnyDesease = postData.some(x => x.exists)
-		if (!existsAnyDesease) {
-			const responseSign = await signProposal(token, proposalUid)
-			console.log('post signProposal', responseSign)
-			if (!responseSign) console.log(responseSign) //TODO add error alert
-		}
-
 		if (response) {
 			reset()
 			if (response.success) {
@@ -142,6 +140,7 @@ const DpsHealthForm = ({
 			} else {
 				//TODO add error alert
 				console.error(response.message)
+				setFormDisabled(false)
 			}
 		}
 		onSubmitProp(v)

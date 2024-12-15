@@ -79,13 +79,17 @@ export async function postProposal(
 	data: {
 		document: string
 		name: string
-		socialName?: string | null
+		socialName?: string
+		gender: string
 		email: string
 		birthDate: string
-		profession?: string | null
 		productId: string
+		profession: string
 		typeId: number
-		lmiRangeId: number
+		deadlineId: number
+		propertyTypeId: number
+		capitalMip: number
+		capitalDfi: number
 	}
 ) {
 	try {
@@ -118,6 +122,62 @@ export async function getLmiOptions(token: string): Promise<{
 } | null> {
 	try {
 		const response = await axios.get('v1/Domain/group/ValoresLMI', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function getTipoImovelOptions(token: string): Promise<{
+	success: boolean
+	message: string
+	data: { id: number; description: string }[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Domain/group/TipoImovel', {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function getPrazosOptions(token: string): Promise<{
+	success: boolean
+	message: string
+	data: { id: number; description: string }[]
+} | null> {
+	try {
+		const response = await axios.get('v1/Domain/group/Prazos', {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
@@ -227,38 +287,52 @@ export async function getProductList(token: string): Promise<{
 	return null
 }
 
+export type ProposalByUid = {
+	uid: string
+	code: string
+	capitalMIP: number
+	capitalDFI: number
+	uploadMIP: boolean
+	uploadDFI: boolean
+	uploadReturnMIP: boolean
+	customer: {
+		uid: string
+		document: string
+		name: string
+		gender: string
+		cellphone: string
+		socialName?: string
+		email: string
+		birthdate: string
+	}
+	product: {
+		uid: string
+		name: string
+	}
+	deadLineId?: number
+	deadLine?: {
+		id: number
+		description: string
+	}
+	status: { id: number; description: string }
+	dfiStatus: { id: number; description: string }
+	type: { id: number; description: string }
+	propertyTypeId: number
+	created: string
+	history: {
+		description: string
+		statusId: number
+		created: string
+	}[]
+}
+
 export async function getProposalByUid(
 	token: string,
 	uid: string
 ): Promise<{
 	success: boolean
 	message: string
-	data: {
-		uid: string
-		code: string
-		customer: {
-			uid: string
-			document: string
-			name: string
-			email: string
-			birthdate: string
-		}
-		product: {
-			uid: string
-			name: string
-		}
-		type: { id: number; description: string }
-		lmi: { id: number; description: string }
-		created: string
-		history: {
-			description: string
-			status: {
-				id: number
-				description: string
-			}
-			created: string
-		}[]
-	}
+	data: ProposalByUid
 } | null> {
 	try {
 		const response = await axios.get('v1/Proposal/' + uid, {
@@ -421,11 +495,13 @@ export async function postStatus(
 	token: string,
 	uid: string,
 	statusId: number,
-	description: string
+	description: string,
+	type: 'MIP' | 'DFI'
 ) {
 	const requestData = {
 		statusId,
 		Description: description,
+		type,
 	}
 	try {
 		const response = await axios.post(
@@ -456,7 +532,8 @@ export async function postStatus(
 
 export async function getProposalDocumentsByUid(
 	token: string,
-	uid: string
+	uid: string,
+	type?: 'MIP' | 'DFI'
 ): Promise<
 	Promise<{
 		message: string
@@ -472,14 +549,61 @@ export async function getProposalDocumentsByUid(
 	} | null>
 > {
 	try {
-		const response = await axios.get(`v1/Proposal/${uid}/document`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
+		const response = await axios.get(
+			`v1/Proposal/${uid}/document${type ? `?type=${type}` : ''}`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		)
 
 		if (response.data) {
 			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+export async function postProposalDocumentsByUid(
+	token: string,
+	uid: string,
+	data: {
+		documentName: string
+		description: string
+		stringBase64: string
+		type: 'MIP' | 'DFI'
+	}
+) {
+	try {
+		if (data.stringBase64.startsWith('data:'))
+			data.stringBase64 = data.stringBase64.split(',')[1]
+
+		const response = await axios.post(
+			`v1/Proposal/${uid}/document${data.type ? `?type=${data.type}` : ''}`,
+			data,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		)
+
+		if (response.data) {
+			return response.data as {
+				message: string
+				success: boolean
+				data: number
+			}
 		} else {
 			throw new Error('Unsuccessful request')
 		}

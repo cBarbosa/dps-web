@@ -50,6 +50,7 @@ function SelectUi({
 	reset,
 	...props
 }: SelectUiProps) {
+	if (options == null) options = []
 	return (
 		<Select {...props}>
 			<SelectTrigger

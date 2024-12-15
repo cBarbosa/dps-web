@@ -1,6 +1,7 @@
 import React from 'react'
 import {
 	AlertDialog,
+	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -15,12 +16,16 @@ const DialogAlertComp = ({
 	onOpenChange,
 	title,
 	children,
+	onConfirm,
+	confirmText = 'Continuar',
 }: {
 	open?: boolean
 	defaultOpen?: boolean
 	onOpenChange?: (open: boolean) => void
 	title: string
 	children: React.ReactNode
+	onConfirm?: () => void
+	confirmText?: string
 }) => {
 	return (
 		<AlertDialog
@@ -35,7 +40,11 @@ const DialogAlertComp = ({
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel>Fechar</AlertDialogCancel>
-					{/* <AlertDialogAction>Continue</AlertDialogAction> */}
+					{onConfirm ? (
+						<AlertDialogAction onClick={onConfirm}>
+							{confirmText}
+						</AlertDialogAction>
+					) : null}
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

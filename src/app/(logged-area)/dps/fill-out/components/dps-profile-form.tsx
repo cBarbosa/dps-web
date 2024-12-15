@@ -1,14 +1,11 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
-import { valibotResolver } from '@hookform/resolvers/valibot'
-import { useSession } from 'next-auth/react'
 import React from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Control, Controller, FormState } from 'react-hook-form'
 import {
 	custom,
 	date,
@@ -22,12 +19,9 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import { postProposal } from '../../actions'
-import { useRouter } from 'next/navigation'
+import { DpsInitialForm } from './dps-initial-form'
 
-const profileForm = object({
-	produto: pipe(string(), nonEmpty('Campo obrigatório.')),
-	lmi: pipe(string(), nonEmpty('Campo obrigatório.')),
+export const dpsProfileForm = object({
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -46,135 +40,40 @@ const profileForm = object({
 		email('Email inválido.')
 	),
 	phone: pipe(string(), nonEmpty('Campo obrigatório.')),
+	gender: pipe(string(), nonEmpty('Campo obrigatório.')),
 })
 
-export type ProfileForm = InferInput<typeof profileForm>
+export type DpsProfileFormType = InferInput<typeof dpsProfileForm>
+
+const genderOptions = [
+	{ value: 'M', label: 'Masculino' },
+	{ value: 'F', label: 'Feminino' },
+]
 
 const DpsProfileForm = ({
 	data,
-	lmiOptions,
-	productOptions,
+	control,
+	// errors,
+	// isSubmitting,
+	formState,
 }: {
-	data?: Partial<ProfileForm>
-	lmiOptions: { value: string; label: string }[]
-	productOptions: { value: string; label: string }[]
+	data?: Partial<DpsProfileFormType>
+	control: Control<DpsInitialForm>
+	// errors: FieldErrors<DpsProfileFormType>
+	// isSubmitting: boolean
+	formState: FormState<DpsInitialForm>
 }) => {
-	const session = useSession()
-	const token = (session.data as any)?.accessToken
-
-	const {
-		handleSubmit,
-		getValues,
-		trigger,
-		setValue,
-		control,
-		reset,
-		formState: { isSubmitting, isSubmitted, errors, ...formState },
-	} = useForm<ProfileForm>({
-		resolver: valibotResolver(profileForm),
-		defaultValues: {
-			cpf: data?.cpf,
-			lmi: data?.lmi,
-			produto: data?.produto,
-			name: data?.name,
-			birthdate: data?.birthdate,
-			profession: data?.profession,
-			email: data?.email,
-			phone: data?.phone,
-			socialName: data?.socialName,
-		},
-	})
-
-	const router = useRouter()
-
-	if (!data || !data.cpf || !data.lmi || !data.produto)
-		router.replace('/dps/fill-out')
-
-	async function onSubmit(v: ProfileForm) {
-		if (!data || !data.cpf || !data.lmi || !data.produto)
-			return router.replace('/dps/fill-out')
-
-		const postData = {
-			document: data.cpf,
-			name: v.name,
-			socialName: v.socialName ?? '',
-			email: v.email,
-			birthDate: v.birthdate.toISOString(),
-			productId: v.produto,
-			profession: v.profession ?? '',
-			typeId: 2,
-			lmiRangeId: +data.lmi,
-		}
-		console.log('submitting', token, postData)
-
-		const response = await postProposal(token, postData)
-
-		console.log('post proposal', response)
-
-		if (response) {
-			reset()
-			if (response.success) {
-				router.push('/dps/fill-out/form/' + response.data)
-			} else {
-				console.error(response.message)
-			}
-		}
-	}
+	const errors = formState.errors?.profile
+	const isSubmitting = formState.isSubmitting
+	console.log('>errors', errors)
 
 	return (
-		<form
-			onSubmit={handleSubmit(onSubmit)}
-			className="flex flex-col gap-6 w-full"
-		>
+		<div className="flex flex-col gap-6 w-full">
 			<h3 className="text-primary text-lg">Dados do Proponente</h3>
 			<ShareLine>
 				<Controller
 					control={control}
-					defaultValue=""
-					name="produto"
-					render={({ field: { onChange, value } }) => (
-						<label>
-							<div className="text-gray-500">Produto</div>
-							<SelectComp
-								placeholder="Produto"
-								options={productOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={true}
-								onValueChange={onChange}
-								defaultValue={value}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.produto?.message}
-							</div>
-						</label>
-					)}
-				/>
-
-				<Controller
-					control={control}
-					defaultValue=""
-					name="lmi"
-					render={({ field: { onChange, value } }) => (
-						<label>
-							<div className="text-gray-500">LMI</div>
-							<SelectComp
-								placeholder="LMI"
-								options={lmiOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={true}
-								onValueChange={onChange}
-								defaultValue={value}
-							/>
-							<div className="text-xs text-red-500">{errors?.lmi?.message}</div>
-						</label>
-					)}
-				/>
-			</ShareLine>
-			<ShareLine>
-				<Controller
-					control={control}
-					defaultValue=""
-					name="cpf"
+					name="profile.cpf"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">CPF</div>
@@ -187,8 +86,8 @@ const DpsProfileForm = ({
 									'w-full px-4 py-6 rounded-lg',
 									errors?.cpf && 'border-red-500 focus-visible:border-red-500'
 								)}
+								disabled
 								autoComplete="cpf"
-								disabled={true}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -201,28 +100,10 @@ const DpsProfileForm = ({
 
 				<Controller
 					control={control}
-					name="birthdate"
+					name="profile.birthdate"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Data de Nascimento</div>
-							{/* <Input
-								id="birthdate"
-								type="text"
-								placeholder="01/01/1999"
-								mask="99/99/9999"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.birthdate &&
-										'border-red-500 focus-visible:border-red-500'
-								)}
-								autoComplete="birthdate"
-								disabled={isSubmitting}
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-							/> */}
-
 							<DatePicker
 								id="birthdate"
 								placeholder="01/01/1999"
@@ -249,7 +130,7 @@ const DpsProfileForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="name"
+					name="profile.name"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Nome do Proponente</div>
@@ -278,7 +159,7 @@ const DpsProfileForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="socialName"
+					name="profile.socialName"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Nome social do Proponente</div>
@@ -332,7 +213,7 @@ const DpsProfileForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="profession"
+					name="profile.profession"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Atividade profissional</div>
@@ -362,7 +243,7 @@ const DpsProfileForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="email"
+					name="profile.email"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">E-mail</div>
@@ -393,7 +274,7 @@ const DpsProfileForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="phone"
+					name="profile.phone"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Telefone</div>
@@ -419,13 +300,29 @@ const DpsProfileForm = ({
 						</label>
 					)}
 				/>
-				<div></div>
+				<Controller
+					control={control}
+					defaultValue=""
+					name="profile.gender"
+					render={({ field: { onChange, value } }) => (
+						<label>
+							<div className="text-gray-500">Sexo</div>
+							<SelectComp
+								placeholder="Sexo"
+								options={genderOptions}
+								triggerClassName="p-4 h-12 rounded-lg"
+								onValueChange={onChange}
+								defaultValue={value}
+								disabled={isSubmitting || data?.gender !== undefined}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.gender?.message}
+							</div>
+						</label>
+					)}
+				/>
 			</ShareLine>
-
-			<Button type="submit" className="w-40" disabled={isSubmitting}>
-				Salvar
-			</Button>
-		</form>
+		</div>
 	)
 }
 
