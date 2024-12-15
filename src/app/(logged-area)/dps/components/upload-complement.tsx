@@ -70,7 +70,8 @@ const UploadComplement = ({
 					token,
 					proposalUid,
 					postMessageData.statusId,
-					postMessageData.Description
+					postMessageData.Description,
+					'MIP'
 				),
 			])
 
@@ -101,7 +102,8 @@ const UploadComplement = ({
 				token,
 				proposalUid,
 				postMessageData.statusId,
-				postMessageData.Description
+				postMessageData.Description,
+				'MIP'
 			)
 
 			console.log('post message', response)
