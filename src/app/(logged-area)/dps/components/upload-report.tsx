@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { PlusIcon } from 'lucide-react'
-import { postAttachmentFile, postStatus } from '../actions'
+import { postProposalDocumentsByUid } from '../actions'
 import { getBase64 } from '@/lib/utils'
 import FileInput from '@/components/ui/file-input'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,12 +18,15 @@ import { Textarea } from '@/components/ui/textarea'
 const UploadReport = ({
 	token,
 	proposalUid,
-	reportDescription,
 	onSubmit: onSubmitProp,
+	type: typeProp,
+	disabled = false,
 }: {
 	token: string
 	proposalUid: string
 	reportDescription: string
+	type: 'MIP' | 'DFI'
+	disabled?: boolean
 	onSubmit?: () => void
 }) => {
 	const [isLoading, setIsLoading] = useState(false)
@@ -39,84 +42,47 @@ const UploadReport = ({
 	}
 
 	async function handleSubmit() {
-		if (message === '') return
+		if (message === '' || file == undefined) return
 
 		setIsLoading(true)
 
-		const postMessageData = {
-			statusId: 4,
-			Description: 'Laudo: ' + reportDescription + '. \n' + message,
+		const fileBase64 = (await getBase64(file)) as string
+
+		const postFileData = {
+			documentName: file.name,
+			description: (typeProp === 'DFI' ? 'DFI: ' : 'MIP: ') + message,
+			stringBase64: fileBase64.split(',')[1],
+			type: typeProp,
 		}
 
-		if (file) {
-			const fileBase64 = (await getBase64(file)) as string
+		console.log('uploading', postFileData)
 
-			const postFileData = {
-				documentName: file.name,
-				description: 'Laudo: ' + reportDescription,
-				stringBase64: fileBase64.split(',')[1],
-			}
+		const resAttachment = await postProposalDocumentsByUid(
+			token,
+			proposalUid,
+			postFileData
+		)
 
-			console.log('uploading', postFileData)
+		console.log('post file', resAttachment)
 
-			const [resAttachment, resStatus] = await Promise.all([
-				postAttachmentFile(token, proposalUid, postFileData),
-				postStatus(
-					token,
-					proposalUid,
-					postMessageData.statusId,
-					postMessageData.Description
-				),
-			])
-
-			console.log('post file', resAttachment)
-			console.log('post message', resStatus)
-
-			if (resAttachment && resStatus) {
-				if (resAttachment.success && resStatus.success) {
-					setIsLoading(false)
-					setIsOpen(false)
-					setFile(undefined)
-					setMessage('')
-					onSubmitProp?.()
-				} else {
-					setIsLoading(false)
-					setError(resAttachment.message)
-					console.error(resAttachment.message, resStatus.message)
-				}
+		if (resAttachment) {
+			if (resAttachment.success) {
+				setIsLoading(false)
+				setIsOpen(false)
+				setFile(undefined)
+				setMessage('')
+				setError(undefined)
+				onSubmitProp?.()
 			} else {
 				setIsLoading(false)
-				let errorMessage = ''
-				if (!resAttachment) errorMessage += 'Upload falhou\n'
-				if (!resStatus) errorMessage += 'Mudança de status falhou'
-				setError(errorMessage)
+				setError(resAttachment.message)
+				console.error(resAttachment.message)
 			}
 		} else {
-			const response = await postStatus(
-				token,
-				proposalUid,
-				postMessageData.statusId,
-				postMessageData.Description
-			)
-
-			console.log('post message', response)
-
-			if (response) {
-				if (response.success) {
-					setIsLoading(false)
-					setIsOpen(false)
-					setFile(undefined)
-					setMessage('')
-					onSubmitProp?.()
-				} else {
-					setIsLoading(false)
-					setError(response.message)
-					console.error(response.message)
-				}
-			} else {
-				setIsLoading(false)
-				setError('Upload falhou')
-			}
+			setIsLoading(false)
+			let errorMessage = ''
+			if (!resAttachment) errorMessage += 'Upload falhou\n'
+			setError(errorMessage)
 		}
 	}
 
@@ -126,16 +92,29 @@ const UploadReport = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={toggleDialog}>
-			<Button size="sm" variant="outline" onClick={toggleDialog}>
+			<Button
+				size="sm"
+				variant="outline"
+				onClick={toggleDialog}
+				disabled={disabled}
+			>
 				<PlusIcon size={14} className="mr-2" />
 				Adicionar laudo
 			</Button>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Envio de laudo</DialogTitle>
+					<DialogTitle>
+						{typeProp === 'DFI'
+							? 'Adicione o laudo'
+							: 'Adicione o laudo/complemento'}
+					</DialogTitle>
 				</DialogHeader>
 				<div>
-					<Label htmlFor="description">Descreva o laudo:</Label>
+					<Label htmlFor="description">
+						{typeProp === 'DFI'
+							? 'Descreva o laudo'
+							: 'Descreva o laudo/complemento:'}
+					</Label>
 					<Textarea
 						id="description"
 						placeholder="Descrição da interação"
@@ -146,7 +125,9 @@ const UploadReport = ({
 				</div>
 				<div>
 					<Label>
-						Anexe o laudo:{' '}
+						{typeProp === 'DFI'
+							? 'Anexe o laudo:'
+							: 'Anexe o laudo/complemento:'}{' '}
 						{/* <span className="text-xs text-muted-foreground">(opcional)</span> */}
 					</Label>
 					<FileInput
@@ -170,7 +151,7 @@ const UploadReport = ({
 					</Button>
 					<Button
 						type="submit"
-						disabled={isLoading || message === ''}
+						disabled={isLoading || message === '' || file == undefined}
 						onClick={handleSubmit}
 					>
 						Adicionar

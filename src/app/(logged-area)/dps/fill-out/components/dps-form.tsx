@@ -13,6 +13,7 @@ import Link from 'next/link'
 import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
+import { ProposalByUid, signProposal } from '../../actions'
 
 export const diseaseNames = {
 	'1': 'Acidente Vascular Cerebral',
@@ -44,39 +45,7 @@ const DpsForm = ({
 	initialProposalData,
 	initialHealthData: initialHealthDataProp,
 }: {
-	initialProposalData: {
-		uid: string
-		code: string
-		created: string
-		customer: {
-			uid: string
-			document: string
-			name: string
-			socialName?: string | null
-			email: string
-			birthdate: string
-		}
-		product: {
-			uid: string
-			name: string
-		}
-		type: {
-			id: number
-			description: string
-		}
-		history: {
-			description: string
-			status: {
-				id: number
-				description: string
-			}
-			created: string
-		}[]
-		lmi: {
-			id: number
-			description: string
-		}
-	}
+	initialProposalData: ProposalByUid
 	initialHealthData?: {
 		code: string
 		question: string
@@ -107,10 +76,10 @@ const DpsForm = ({
 		: undefined
 
 	let initialStep: 'health' | 'attachments' | 'finished'
+	console.log('>:>>', initialProposalData)
 
-	if (initialProposalData.history[0].status.id === 10) initialStep = 'health'
-	else if (initialProposalData.history[0].status.id === 5)
-		initialStep = 'attachments'
+	if (initialProposalData.status.id === 10) initialStep = 'health'
+	else if (initialProposalData.status.id === 5) initialStep = 'attachments'
 	else initialStep = 'finished'
 
 	const [step, setStep] = useState<'health' | 'attachments' | 'finished'>(
@@ -137,7 +106,7 @@ const DpsForm = ({
 			},
 			product: {
 				product: initialProposalData.product.uid,
-				lmi: initialProposalData.lmi.id.toString(),
+				deadline: initialProposalData.deadLineId?.toString() ?? '',
 				mip: '',
 				dfi: '',
 				propertyType: '',
@@ -162,10 +131,13 @@ const DpsForm = ({
 				)
 		: []
 
-	function handleHealthSubmit(v: HealthForm) {
+	async function handleHealthSubmit(v: HealthForm) {
 		setDpsData(prev => ({ ...prev, health: v }))
-		const hasSomeDesease = Object.entries(v).some(x => x[1].has === 'yes')
-		// setStep(hasSomeDesease ? 'attachments' : 'finished')
+
+		const responseSign = await signProposal(token, uid)
+		console.log('post signProposal', responseSign)
+		if (!responseSign) console.log(responseSign) //TODO add error alert
+
 		setStep('finished')
 	}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {

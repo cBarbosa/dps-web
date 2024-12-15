@@ -28,18 +28,29 @@ type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
 >['data']
 
+export const statusDescriptionDict: Record<number, string> = {
+	10: 'Aguardando preenchimento da DPS',
+	19: 'DPS Cadastrada',
+	20: 'DPS Enviada para assinatura',
+	21: 'DPS Assinada',
+	22: 'DPS Recusada',
+	23: 'DPS Cancelada por decurso',
+	30: 'Enviado para avaliação',
+	31: 'Complemento solicitado',
+	33: 'Enviado para subscrição',
+	34: 'DFI Avaliada',
+}
+
 const DetailsPresent = ({
 	proposalData: proposalDataProp,
 	token,
 	uid,
-	proposalTypeDescription,
-	lmiDescription,
+	propertyTypeDescription,
 }: {
 	token: string
 	uid: string
-	lmiDescription?: string
 	proposalData: ProposalDataType
-	proposalTypeDescription?: string
+	propertyTypeDescription?: string
 }) => {
 	const session = useSession()
 	const role = (session.data as any)?.role
@@ -49,7 +60,7 @@ const DetailsPresent = ({
 	const [isModalOpen, setIsModalOpen] = React.useState(false)
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
-	const proposalSituation = proposalData?.history[0]?.status
+	const proposalSituation = proposalData?.status
 
 	console.log('proposalData', proposalData)
 
@@ -58,20 +69,6 @@ const DetailsPresent = ({
 
 		if (response) {
 			setProposalData(response.data)
-		}
-	}
-
-	async function sendToEndinFlow() {
-		const response = await postStatus(token, uid, 6, 'Formulário aceito')
-
-		console.log('post sendToEndinFlow', response)
-
-		if (response) {
-			if (response.success) {
-				refetchProposalData()
-			} else {
-				console.error(response.message)
-			}
 		}
 	}
 
@@ -85,41 +82,18 @@ const DetailsPresent = ({
 		setPdfUrl(createPdfUrlFromBase64(response.data))
 	}, [token, uid])
 
-	const lastSituation: {
-		id: number
-		description: string
-	} | null = proposalData.history?.at(0)?.status ?? {
-		id: 10,
-		description: 'Aguardando Preenchimento do DPS',
-	}
+	const lastSituation: number | undefined =
+		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean =
 		// lastSituation?.id === 3 ||
-		lastSituation?.id === 5 || lastSituation?.id === 10
+		proposalSituation.id === 5 ||
+		proposalSituation.id === 10 ||
+		proposalData.uploadMIP ||
+		proposalData.uploadDFI
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
-			{showFillOutAlert && (
-				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
-					<div>
-						<h4 className="text-base font-semibold text-orange-600">
-							Ações pendentes
-						</h4>
-						<p className="ml-3 text-base text-orange-400">
-							{lastSituation?.description}
-						</p>
-					</div>
-					{lastSituation?.id === 10 && (
-						<Button
-							className="bg-orange-600 hover:bg-orange-500 hover:text-white"
-							asChild
-						>
-							<Link href={`/dps/fill-out/form/${uid}`}>Preencher</Link>
-						</Button>
-					)}
-				</div>
-			)}
-
 			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<GoBackButton>
 					<Undo2Icon className="mr-2" />
@@ -142,49 +116,40 @@ const DetailsPresent = ({
 					<h5 className="text-xl my-4">Produto: {proposalData.product.name}</h5>
 
 					<div className="flex gap-6 justify-between items-center">
-						{/* <div className="mt-4 flex gap-5 text-muted-foreground [&>div]:flex [&>div]:gap-2">
-						<DataCard>LMI: {lmiDescription}</DataCard>
-						<DataCard>
-							<FileTextIcon />
-							{proposalTypeDescription}
-						</DataCard>
-						<DataCard>
-							<UserIcon />
-							{formatCpf(proposalData.customer.document)}
-						</DataCard>
-					</div> */}
 						<div className="mt-4 flex gap-5 text-muted-foreground">
-							<DetailDataCard label="Prazo" value={lmiDescription}>
+							<DetailDataCard
+								label="Prazo"
+								value={proposalData.deadLine?.description}
+							>
 								<CalendarIcon />
 							</DetailDataCard>
 							<DetailDataCard
 								label="Tipo Imóvel"
-								value={proposalTypeDescription}
+								value={propertyTypeDescription}
 							>
 								<Building2Icon />
 							</DetailDataCard>
 							<DetailDataCard
 								label="Valor DFI"
-								value={formatCpf(proposalData.customer.document)}
+								value={Intl.NumberFormat('pt-BR', {
+									style: 'currency',
+									currency: 'BRL',
+								}).format(proposalData.capitalDFI)}
 							>
 								<DollarSignIcon />
 							</DetailDataCard>
 							<DetailDataCard
 								label="Valor da contratação"
-								value={'R$ 320.000,00'}
+								value={Intl.NumberFormat('pt-BR', {
+									style: 'currency',
+									currency: 'BRL',
+								}).format(proposalData.capitalMIP)}
 							>
 								<DollarSignIcon />
 							</DetailDataCard>
 						</div>
 
 						<div className="flex flex-col gap-3">
-							{proposalSituation?.id === 4 &&
-								(role === 'SUBSCRITOR' || role === 'ADMIN') && (
-									<Button onClick={sendToEndinFlow}>
-										Enviar para aceitação
-									</Button>
-								)}
-
 							<Button
 								onClick={handleViewArchive}
 								disabled={
@@ -225,43 +190,104 @@ const DetailsPresent = ({
 						>
 							<IdCardIcon />
 						</DetailDataCard>
-						<DetailDataCard label="Telefone" value={'-'}>
+						<DetailDataCard
+							label="Telefone"
+							value={proposalData.customer.cellphone}
+						>
 							<PhoneIcon />
 						</DetailDataCard>
-						<DetailDataCard label="Sexo" value={'-'}>
+						<DetailDataCard
+							label="Sexo"
+							value={
+								proposalData.customer.gender === 'M' ? 'Masculino' : 'Feminino'
+							}
+						>
 							<UserRoundIcon />
 						</DetailDataCard>
 					</div>
 				</div>
 			</div>
 
-			<Interactions
-				token={token}
-				uid={uid}
-				proposalSituationId={
-					lastSituation?.id === 4 && (role === 'SUBSCRITOR' || role === 'ADMIN')
-						? lastSituation?.id
-						: lastSituation?.id === 5 &&
-						  (role === 'SUBSCRITOR-MED' || role === 'ADMIN')
-						? lastSituation?.id
-						: undefined
-				}
-				data={proposalData.history ?? []}
-				onNewInteraction={refetchProposalData}
-			/>
+			{showFillOutAlert && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
+					<div>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
+						<ul className="ml-5 text-base text-orange-400 list-disc">
+							{proposalSituation.id === 5 || proposalSituation.id === 10 ? (
+								<li>{statusDescriptionDict[proposalSituation.id]}</li>
+							) : null}
+							{proposalData.uploadMIP ? (
+								<li>{'Upload de laudos/complementos MIP.'}</li>
+							) : null}
+							{proposalData.uploadDFI ? (
+								<li>{'Upload de laudos DFI.'}</li>
+							) : null}
+							{proposalSituation.id === 25 ? (
+								<li>
+									Exame de Sangue¹ + Exame de Urina I + Teste Ergométrico +
+									Ecocardiograma + ECG
+								</li>
+							) : null}
+							{proposalSituation.id === 26 ? (
+								<>
+									<li>
+										Exame de Sangue¹ + Exame de Urina I + Teste Ergométrico +
+										Ecocardiograma + ECG + USG Abdome (Superior) Total e
+										próstata
+									</li>
+									<li>Para Homens acima de 50 anos: Todos acima + PSA</li>
+									<li>
+										Para Mulheres acima de 50 anos: Todos acima + CA 19-9 + CA
+										125 + Papanicolau + US mama
+									</li>
+								</>
+							) : null}
+						</ul>
+					</div>
+					{proposalSituation.id === 10 && (
+						<Button
+							className="bg-orange-600 hover:bg-orange-500 hover:text-white"
+							asChild
+						>
+							<Link href={`/dps/fill-out/form/${uid}`}>Preencher</Link>
+						</Button>
+					)}
+				</div>
+			)}
 
 			<MedReports
 				token={token}
 				uid={uid}
 				userRole={role}
-				dpsStatus={lastSituation.id}
+				requireUpload={proposalData.uploadMIP}
+				dpsStatus={proposalData.status?.id}
+				onConfirm={refetchProposalData}
 			/>
 
 			<DfiReports
 				token={token}
 				uid={uid}
 				userRole={role}
-				dpsStatus={lastSituation.id}
+				requireUpload={proposalData.uploadDFI}
+				dfiStatus={proposalData.dfiStatus?.id}
+				onConfirm={refetchProposalData}
+			/>
+
+			<Interactions
+				token={token}
+				uid={uid}
+				proposalSituationId={
+					lastSituation === 4 && (role === 'SUBSCRITOR' || role === 'ADMIN')
+						? lastSituation
+						: lastSituation === 5 &&
+						  (role === 'SUBSCRITOR-MED' || role === 'ADMIN')
+						? lastSituation
+						: undefined
+				}
+				data={proposalData.history ?? []}
+				onNewInteraction={refetchProposalData}
 			/>
 
 			<DialogShowArchive

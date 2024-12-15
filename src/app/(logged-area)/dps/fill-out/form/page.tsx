@@ -1,10 +1,7 @@
 import React from 'react'
-import DpsForm from '../components/dps-form'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import {
 	getHealthDataByUid,
-	getLmiOptions,
+	getPrazosOptions,
 	getProductList,
 	getProponentDataByCpf,
 	getProposals,
@@ -12,7 +9,6 @@ import {
 } from '../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
-import DpsProfileForm from '../components/dps-profile-form'
 import DpsInitialForm from '../components/dps-initial-form'
 
 export default async function DpsFormPage({
@@ -31,17 +27,17 @@ export default async function DpsFormPage({
 	// const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
 	// const produto = searchParams.produto
 
-	if (!cpf) redirect('/dps/fill-out')
+	if (!cpf || cpf.length < 11) redirect('/dps/fill-out')
 
 	const [
 		data,
-		lmiOptionsRaw,
+		prazosOptionsRaw,
 		tipoImovelOptionsRaw,
 		productListRaw,
 		proponentDataRaw,
 	] = await Promise.all([
 		cpf ? getProposals(token, cpf) : null,
-		getLmiOptions(token),
+		getPrazosOptions(token),
 		getTipoImovelOptions(token),
 		getProductList(token),
 		cpf ? getProponentDataByCpf(cpf) : null,
@@ -49,8 +45,8 @@ export default async function DpsFormPage({
 	console.log('||||||||->>')
 	console.dir(proponentDataRaw, { depth: Infinity })
 
-	const lmiOptions =
-		lmiOptionsRaw?.data.map(item => ({
+	const prazosOptions =
+		prazosOptionsRaw?.data.map(item => ({
 			value: item.id.toString(),
 			label: item.description,
 		})) ?? []
@@ -72,10 +68,6 @@ export default async function DpsFormPage({
 	if (cpf && cpf.length >= 11 && data) {
 		proposalData = data.totalItems > 0 ? data.items?.[0] : null
 	}
-
-	const healthData = proposalData?.uid
-		? await getHealthDataByUid(token, proposalData.uid)
-		: undefined
 
 	/*
 
@@ -109,6 +101,7 @@ export default async function DpsFormPage({
 		socialName: undefined,
 		birthdate: proponentDataBirthdate,
 		profession: proponentDataRaw?.detalhes.profissao,
+		gender: proponentDataRaw?.detalhes.sexo,
 		email: undefined,
 		phone: undefined,
 	}
@@ -132,6 +125,7 @@ export default async function DpsFormPage({
 							name: autocompleteData?.name,
 							socialName: autocompleteData?.socialName,
 							email: autocompleteData?.email,
+							gender: autocompleteData?.gender,
 							birthdate: autocompleteData?.birthdate
 								? new Date(autocompleteData.birthdate)
 								: undefined,
@@ -139,7 +133,7 @@ export default async function DpsFormPage({
 							phone: autocompleteData?.phone,
 						},
 					}}
-					lmiOptions={lmiOptions}
+					prazosOptions={prazosOptions}
 					productOptions={productOptions}
 					tipoImovelOptions={tipoImovelOptions}
 				/>

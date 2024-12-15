@@ -1,6 +1,13 @@
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getServerSession, Session } from 'next-auth'
 
+export enum ApiRoleEnum {
+	ADMIN = 'admin',
+	VENDEDOR = 'vendedor',
+	SUBSCRITOR = 'subscritor',
+	SUBSCRITOR_MED = 'subscritor-med',
+}
+
 type ApiRolesAux = 'ADMIN' | 'VENDEDOR' | 'SUBSCRITOR' | 'SUBSCRITOR-MED'
 
 export type ApiRoles = Lowercase<ApiRolesAux> | Uppercase<ApiRolesAux>

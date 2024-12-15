@@ -1,20 +1,11 @@
 'use client'
-import { Button } from '@/components/ui/button'
 import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
-import { valibotResolver } from '@hookform/resolvers/valibot'
-import { useSession } from 'next-auth/react'
-import React, { useEffect } from 'react'
-import {
-	Control,
-	Controller,
-	FieldErrors,
-	FormState,
-	useForm,
-} from 'react-hook-form'
+import React from 'react'
+import { Control, Controller, FormState } from 'react-hook-form'
 import {
 	custom,
 	date,
@@ -28,8 +19,6 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import { postProposal } from '../../actions'
-import { useRouter } from 'next/navigation'
 import { DpsInitialForm } from './dps-initial-form'
 
 export const dpsProfileForm = object({
@@ -324,6 +313,7 @@ const DpsProfileForm = ({
 								triggerClassName="p-4 h-12 rounded-lg"
 								onValueChange={onChange}
 								defaultValue={value}
+								disabled={isSubmitting || data?.gender !== undefined}
 							/>
 							<div className="text-xs text-red-500">
 								{errors?.gender?.message}

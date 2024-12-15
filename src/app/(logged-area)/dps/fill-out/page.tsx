@@ -123,7 +123,7 @@ export default async function FillOutPage({
 					<div className="flex justify-between items-center mt-7 p-5 rounded-lg bg-white">
 						{allowSearch ? (
 							<>
-								Nenhuma DPS encontrada com os filtros informados.
+								Nenhuma DPS encontrada para o CPF informado.
 								<Button variant="default" asChild>
 									<Link
 										href={'/dps/fill-out/form?' + urlParams.toString()}

@@ -177,15 +177,14 @@ export default function SearchForm() {
 							Buscar
 						</Button>
 
-						{getValues('cpf') && (
+						{/* {getValues('cpf') && (
 							<Button type='button' className="w-full max-w-32 p-4 rounded-xl" onClick={
 							event => router.push(`/dps/fill-out/form?cpf=${getValues('cpf')}`)
 							}>
 								<PlusCircleIcon size={18} className="mr-2" />
 								Cadastrar DPS
 							</Button>
-						)}
-						
+						)} */}
 					</div>
 				</div>
 			</form>

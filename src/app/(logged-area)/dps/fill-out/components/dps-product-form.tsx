@@ -14,9 +14,23 @@ import { DpsInitialForm } from './dps-initial-form'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
-	lmi: pipe(string(), nonEmpty('Campo obrigatório.')),
-	mip: pipe(string(), nonEmpty('Campo obrigatório.')),
-	dfi: pipe(string(), nonEmpty('Campo obrigatório.')),
+	deadline: pipe(string(), nonEmpty('Campo obrigatório.')),
+	mip: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(
+			v => checkCapitalValue(v as string),
+			'Capital deve ser menor que R$ 10.000.000,00.'
+		)
+	),
+	dfi: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(
+			v => checkCapitalValue(v as string),
+			'Capital deve ser menor que R$ 10.000.000,00.'
+		)
+	),
 	propertyType: pipe(string(), nonEmpty('Campo obrigatório.')),
 })
 
@@ -24,14 +38,14 @@ export type DpsProductFormType = InferInput<typeof dpsProductForm>
 
 const DpsProductForm = ({
 	data,
-	lmiOptions,
+	prazosOptions,
 	productOptions,
 	tipoImovelOptions,
 	control,
 	formState,
 }: {
 	data?: Partial<DpsProductFormType>
-	lmiOptions: { value: string; label: string }[]
+	prazosOptions: { value: string; label: string }[]
 	productOptions: { value: string; label: string }[]
 	tipoImovelOptions: { value: string; label: string }[]
 	control: Control<DpsInitialForm>
@@ -70,19 +84,21 @@ const DpsProductForm = ({
 				<Controller
 					control={control}
 					defaultValue=""
-					name="product.lmi"
+					name="product.deadline"
 					render={({ field: { onChange, value } }) => (
 						<label>
 							<div className="text-gray-500">Prazo</div>
 							<SelectComp
 								placeholder="Prazo"
-								options={lmiOptions}
+								options={prazosOptions}
 								triggerClassName="p-4 h-12 rounded-lg"
 								disabled={false}
 								onValueChange={onChange}
 								defaultValue={value}
 							/>
-							<div className="text-xs text-red-500">{errors?.lmi?.message}</div>
+							<div className="text-xs text-red-500">
+								{errors?.deadline?.message}
+							</div>
 						</label>
 					)}
 				/>
@@ -174,3 +190,20 @@ const DpsProductForm = ({
 }
 
 export default DpsProductForm
+
+export function convertCapitalValue(value: string) {
+	if (value.length > 0) {
+		const toDigit = value.replace(/[^0-9]/g, '')
+		const number = +toDigit / 100
+		return number
+	}
+	return null
+}
+
+function checkCapitalValue(value: string) {
+	const converted = convertCapitalValue(value)
+	if (converted != null) {
+		return converted <= 10_000_000
+	}
+	return false
+}

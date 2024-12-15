@@ -1,20 +1,7 @@
-import { Button } from '@/components/ui/button'
-import Interactions from '../../components/interactions'
-import { Badge } from '@/components/ui/badge'
-import { FileTextIcon, Undo2Icon, UserIcon } from 'lucide-react'
-import {
-	getLmiOptions,
-	getProposalByUid,
-	getProposalSituations,
-	getProposalTypes,
-} from '../../actions'
+import { getProposalByUid, getTipoImovelOptions } from '../../actions'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getServerSession } from 'next-auth'
-import { redirect, useRouter } from 'next/navigation'
-import { formatCpf } from '@/lib/utils'
-import { GoBackButton } from '@/components/ui/go-back-button'
-import Link from 'next/link'
-import NewInteractionDialog from '../../components/new-interaction-dialog'
+import { redirect } from 'next/navigation'
 import DetailsPresent from '../../components/details-present'
 
 export default async function DetailPage({
@@ -27,23 +14,21 @@ export default async function DetailPage({
 
 	const [
 		proposalDataRaw,
-		lmiOptionsRaw,
 		// proposalSituationsRaw,
-		proposalTypesRaw,
+		propertyTypesRaw,
 	] = await Promise.all([
 		getProposalByUid(token, uid),
-		getLmiOptions(token),
 		// getProposalSituations(token),
-		getProposalTypes(token),
+		getTipoImovelOptions(token),
 	])
 	console.log('----------proposalData')
 	console.dir(proposalDataRaw, { depth: Infinity })
 
 	const proposalData = proposalDataRaw?.data
-	const lmi = lmiOptionsRaw?.data.find(item => item.id === proposalData?.lmi.id)
+
 	// const proposalSituation = proposalData?.history[0]?.status
-	const proposalType = proposalTypesRaw?.data.find(
-		item => item.id === proposalData?.type.id
+	const propertyType = propertyTypesRaw?.data.find(
+		item => item.id === proposalData?.propertyTypeId
 	)
 
 	if (!proposalData) redirect('/dashboard')
@@ -53,8 +38,7 @@ export default async function DetailPage({
 			token={token}
 			uid={uid}
 			proposalData={proposalData}
-			proposalTypeDescription={proposalType?.description}
-			lmiDescription={lmi?.description}
+			propertyTypeDescription={propertyType?.description}
 		/>
 	)
 }
