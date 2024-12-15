@@ -20,7 +20,7 @@ export const dpsProductForm = object({
 		nonEmpty('Campo obrigatório.'),
 		custom(
 			v => checkCapitalValue(v as string),
-			'Capital deve ser menor que R$ 10.000.000,00.'
+			'Capital máximo R$ 10.000.000,00'
 		)
 	),
 	dfi: pipe(
@@ -28,7 +28,7 @@ export const dpsProductForm = object({
 		nonEmpty('Campo obrigatório.'),
 		custom(
 			v => checkCapitalValue(v as string),
-			'Capital deve ser menor que R$ 10.000.000,00.'
+			'Capital máximo R$ 10.000.000,00'
 		)
 	),
 	propertyType: pipe(string(), nonEmpty('Campo obrigatório.')),

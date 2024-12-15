@@ -229,7 +229,7 @@ function DpsProfileData({
 					</div>
 					<span className="text-lg font-semibold">{data.name}</span>
 				</div>
-				<span className="grow-0 text-xs text-muted-foreground">
+				<span className="grow-0 text-xs text-muted-foreground hidden">
 					*dados recuperados automaticamente
 				</span>
 			</div>
