@@ -29,14 +29,16 @@ type ProposalDataType = NonNullable<
 >['data']
 
 export const statusDescriptionDict: Record<number, string> = {
+	5: 'Aguardando inclusão de complementos solicitado pelo subscritor médico',
 	10: 'Aguardando preenchimento da DPS',
 	19: 'DPS Cadastrada',
 	20: 'DPS Enviada para assinatura',
 	21: 'DPS Assinada',
 	22: 'DPS Recusada',
 	23: 'DPS Cancelada por decurso',
-	30: 'Enviado para avaliação',
+	30: 'DPS Avaliada',
 	31: 'Complemento solicitado',
+	32: 'Complemento enviado',
 	33: 'Enviado para subscrição',
 	34: 'DFI Avaliada',
 }
