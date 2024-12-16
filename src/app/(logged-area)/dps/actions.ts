@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 export async function getProposals(
 	token: string,
 	cpf = '',
-	lmi?: number,
+	dfiStatus?: number,
 	produto?: string,
 	status?: number,
 	page = 1,
@@ -17,7 +17,7 @@ export async function getProposals(
 				page: page,
 				size: size,
 				document: cpf ?? '',
-				lmiRange: lmi ?? '',
+				lmiRange: dfiStatus ?? '',
 				status: status ?? '',
 				productUid: produto ?? '',
 			},

@@ -31,14 +31,9 @@ import {
 	optional,
 } from 'valibot'
 import { diseaseNames } from './dps-form'
-import {
-	getProposalByUid,
-	getProposals,
-	postHealthDataByUid,
-	signProposal,
-} from '../../actions'
+import { postHealthDataByUid } from '../../actions'
 import { useSession } from 'next-auth/react'
-import { dpsProfileForm } from './dps-profile-form'
+import { Loader, Loader2Icon } from 'lucide-react'
 
 const diseaseSchema = variant(
 	'has',
@@ -99,7 +94,7 @@ const DpsHealthForm = ({
 
 	console.log('>>>initialHealthData', initialHealthData)
 
-	const [formDisabled, setFormDisabled] = React.useState(false)
+	const [submittingForm, setSubmittingForm] = React.useState(false)
 
 	const {
 		handleSubmit,
@@ -113,11 +108,11 @@ const DpsHealthForm = ({
 	} = useForm<HealthForm>({
 		resolver: valibotResolver(healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
-		disabled: formDisabled,
+		disabled: submittingForm,
 	})
 
 	async function onSubmit(v: HealthForm) {
-		setFormDisabled(true)
+		setSubmittingForm(true)
 
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
@@ -140,7 +135,7 @@ const DpsHealthForm = ({
 			} else {
 				//TODO add error alert
 				console.error(response.message)
-				setFormDisabled(false)
+				setSubmittingForm(false)
 			}
 		}
 		onSubmitProp(v)
@@ -165,7 +160,7 @@ const DpsHealthForm = ({
 						control={control}
 						watch={watch}
 						errors={errors}
-						isSubmitting={isSubmitting}
+						isSubmitting={isSubmitting || submittingForm}
 						trigger={trigger}
 						setValue={setValue}
 						key={key}
@@ -174,8 +169,15 @@ const DpsHealthForm = ({
 			</div>
 
 			<div className="flex justify-start items-center gap-5">
-				<Button type="submit" className="w-40" disabled={isSubmitting}>
+				<Button
+					type="submit"
+					className="w-40"
+					disabled={submittingForm || isSubmitting}
+				>
 					Salvar
+					{isSubmitting && (
+						<Loader2Icon className="w-4 h-4 ml-2 animate-spin" />
+					)}
 				</Button>
 				{errors ? (
 					<div className="text-red-500">

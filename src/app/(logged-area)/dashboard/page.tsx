@@ -10,30 +10,48 @@ import getServerSessionAuthorization, {
 } from '@/hooks/getServerSessionAuthorization'
 import { PieChartCard, DonutProgressCard } from '../components/data-card'
 import { ChartConfig } from '@/components/ui/chart'
+import Link from 'next/link'
 
 export const revalidate = 0 // no cache
 // export const maxDuration = 300;
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage({
-	searchParams,
-}: {
-	searchParams: { page: string; cpf: string }
-}) {
+export default async function DashboardPage() {
 	const { session, granted } = await getServerSessionAuthorization()
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
 		| undefined
 
 	const chartData = [
-		{ label: 'Anexar Documentação', value: 0, fill: 'hsl(var(--chart-1))' },
-		{ label: 'Em Análise', value: 0, fill: 'hsl(var(--chart-2))' },
-		{ label: 'Assinada', value: 55, fill: 'hsl(var(--chart-3))' },
-		{ label: 'Aceita', value: 35, fill: 'hsl(var(--chart-4))' },
+		{
+			label: 'Anexar Documentação',
+			value: 0,
+			fill: 'hsl(var(--chart-1))',
+			href: '/dashboard/table?status=5',
+		},
+		{
+			label: 'Em Análise',
+			value: 0,
+			fill: 'hsl(var(--chart-2))',
+			href: '/dashboard/table?status=4',
+		},
+		{
+			label: 'Assinada',
+			value: 55,
+			fill: 'hsl(var(--chart-3))',
+			href: '/dashboard/table?status=10',
+		},
+		{
+			label: 'Aceita',
+			value: 35,
+			fill: 'hsl(var(--chart-4))',
+			href: '/dashboard/table?status=6',
+		},
 		{
 			label: 'Pendente de Assinatura',
 			value: 10,
 			fill: 'hsl(var(--chart-5))',
+			href: '/dashboard/table?status=3',
 		},
 	]
 
@@ -182,8 +200,8 @@ async function EndingProposalList() {
 		<div className="mt-14">
 			<div className="flex gap-5 justify-between">
 				<h3 className="text-primary text-lg">{roleBasedData.title}</h3>
-				<Button variant="link" className="text-primary font-semibold">
-					Ver mais
+				<Button variant="link" className="text-primary font-semibold" asChild>
+					<Link href="/dashboard/table">Ver mais</Link>
 				</Button>
 			</div>
 			<DpsDataTable data={tableRowsData} currentPage={0} pageAmount={1} />

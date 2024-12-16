@@ -41,7 +41,7 @@ import { DiseaseKeys, diseaseNames } from './dps-form'
 import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { dpsProfileForm, DpsProfileFormType } from './dps-profile-form'
-import { getProposals, postAttachmentFile, signProposal } from '../../actions'
+import { postAttachmentFile, signProposal } from '../../actions'
 import useAlertDialog from '@/hooks/use-alert-dialog'
 import { CheckCircleIcon, CheckIcon, LoaderIcon } from 'lucide-react'
 

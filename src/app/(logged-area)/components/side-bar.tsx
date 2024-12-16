@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/accordion'
 import {
 	ArrowLeftFromLineIcon,
+	FilesIcon,
 	FileTextIcon,
 	LayoutDashboardIcon,
 	SettingsIcon,
@@ -47,6 +48,12 @@ export default function SideBar() {
 					<ul>
 						<MenuItem href="/dashboard" Icon={LayoutDashboardIcon}>
 							Dashboard
+						</MenuItem>
+						<MenuItem
+							href="/dashboard/table"
+							Icon={() => <FilesIcon size={20} />}
+						>
+							Lista de DPS&apos;s
 						</MenuItem>
 						<MenuSection title="DPS" Icon={FileTextIcon}>
 							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>

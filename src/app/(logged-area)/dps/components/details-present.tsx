@@ -29,14 +29,16 @@ type ProposalDataType = NonNullable<
 >['data']
 
 export const statusDescriptionDict: Record<number, string> = {
+	5: 'Aguardando inclusão de complementos solicitado pelo subscritor médico',
 	10: 'Aguardando preenchimento da DPS',
 	19: 'DPS Cadastrada',
 	20: 'DPS Enviada para assinatura',
 	21: 'DPS Assinada',
 	22: 'DPS Recusada',
 	23: 'DPS Cancelada por decurso',
-	30: 'Enviado para avaliação',
+	30: 'DPS Avaliada',
 	31: 'Complemento solicitado',
+	32: 'Complemento enviado',
 	33: 'Enviado para subscrição',
 	34: 'DFI Avaliada',
 }
@@ -53,7 +55,9 @@ const DetailsPresent = ({
 	propertyTypeDescription?: string
 }) => {
 	const session = useSession()
-	const role = (session.data as any)?.role
+	const role = (
+		(session.data as any)?.role as string | undefined
+	)?.toLowerCase()
 
 	const [proposalData, setProposalData] =
 		React.useState<ProposalDataType>(proposalDataProp)
@@ -86,11 +90,11 @@ const DetailsPresent = ({
 		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean =
-		// lastSituation?.id === 3 ||
-		proposalSituation.id === 5 ||
-		proposalSituation.id === 10 ||
-		proposalData.uploadMIP ||
-		proposalData.uploadDFI
+		role === 'vendedor' && // lastSituation?.id === 3 ||
+		(proposalSituation.id === 5 ||
+			proposalSituation.id === 10 ||
+			proposalData.uploadMIP ||
+			proposalData.uploadDFI)
 
 	return (
 		<div className="flex flex-col gap-5 p-5">

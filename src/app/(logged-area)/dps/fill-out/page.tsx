@@ -32,14 +32,6 @@ export default async function FillOutPage({
 	}
 
 	const cpf = searchParams.cpf?.length > 0 ? searchParams.cpf : undefined
-	const lmi =
-		searchParams.lmi?.length > 0
-			? isNaN(+searchParams.lmi)
-				? undefined
-				: +searchParams.lmi
-			: undefined
-	const produto =
-		searchParams.produto?.length > 0 ? searchParams.produto : undefined
 
 	const allowSearch = !!cpf
 
@@ -53,7 +45,7 @@ export default async function FillOutPage({
 
 	const status = undefined // se quiser valor fixo 10;
 	const data = allowSearch
-		? await getProposals(token, cpf, lmi, produto, status, currentPage)
+		? await getProposals(token, cpf, undefined, undefined, status, currentPage)
 		: { totalItems: 0, items: [] }
 
 	console.dir(data, { depth: Infinity })

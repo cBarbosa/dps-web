@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardTablePage({
 	searchParams,
 }: {
-	searchParams: { page: string; cpf: string }
+	searchParams: { page: string; cpf: string; status: string }
 }) {
 	const { session, granted } = await getServerSessionAuthorization()
 	const token = (session as any)?.accessToken
@@ -26,18 +26,18 @@ export default async function DashboardTablePage({
 
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 	const cpf = searchParams?.cpf
+	const status = searchParams?.status ? +searchParams.status : undefined
 
-	let status
-	if (role === 'vendedor') status = undefined
-	else if (role === 'subscritor') status = 4
-	else if (role === 'subscritor-med') status = 5
-	else if (role === 'admin') status = undefined
-	else redirect('/logout')
+	// if (role === 'vendedor') status = undefined
+	// else if (role === 'subscritor') status = 4
+	// else if (role === 'subscritor-med') status = 5
+	// else if (role === 'admin') status = undefined
+	// else redirect('/logout')
 
 	const data = await getProposals(
 		token,
 		cpf, //cpf
-		undefined, //lmi
+		undefined, //dfi status
 		undefined, //produto
 		status, //status
 		currentPage
