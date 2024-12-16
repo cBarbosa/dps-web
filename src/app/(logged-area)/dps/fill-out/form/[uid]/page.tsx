@@ -1,15 +1,6 @@
 import React from 'react'
 import DpsForm from '../../components/dps-form'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
-import {
-	getHealthDataByUid,
-	getLmiOptions,
-	getProductList,
-	getProponentDataByCpf,
-	getProposalByUid,
-	getProposals,
-} from '../../../actions'
+import { getHealthDataByUid, getProposalByUid } from '../../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 

@@ -44,6 +44,7 @@ export function PieChartCard({
 			label: string
 			value: number
 			fill: string
+			href?: string
 		}[]
 		config: ChartConfig
 	}
@@ -84,21 +85,36 @@ export function PieChartCard({
 					<ul>
 						{chartData.data.map((item, index) => (
 							<li key={index}>
-								<Link
-									href="dashboard/table"
-									className="font-normal text-foreground hover:text-foreground/80"
-								>
-									<span
-										className="inline-block w-4 h-1.5 mr-3 rounded-full"
-										style={{ backgroundColor: item.fill }}
-									/>
-									<span>
-										{item.label}{' '}
-										<span className="text-gray-400 text-xs">
-											({item.value}%)
+								{item.href ? (
+									<Link
+										href={item.href}
+										className="font-normal text-foreground hover:text-foreground/80"
+									>
+										<span
+											className="inline-block w-4 h-1.5 mr-3 rounded-full"
+											style={{ backgroundColor: item.fill }}
+										/>
+										<span>
+											{item.label}{' '}
+											<span className="text-gray-400 text-xs">
+												({item.value}%)
+											</span>
 										</span>
-									</span>
-								</Link>
+									</Link>
+								) : (
+									<div>
+										<span
+											className="inline-block w-4 h-1.5 mr-3 rounded-full"
+											style={{ backgroundColor: item.fill }}
+										/>
+										<span>
+											{item.label}{' '}
+											<span className="text-gray-400 text-xs">
+												({item.value}%)
+											</span>
+										</span>
+									</div>
+								)}
 							</li>
 						))}
 					</ul>

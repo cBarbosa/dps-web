@@ -77,3 +77,20 @@ export const maskToBrlCurrency = ({
 
 	return nextState
 }
+
+export function calculateAge(birthday: Date) {
+	if (!birthday) return null
+	if (!isValidDate(birthday)) return null
+
+	const today = new Date()
+	const birthDate = new Date(birthday)
+	const age = today.getFullYear() - birthDate.getFullYear()
+	const month = today.getMonth() - birthDate.getMonth()
+	const day = today.getDate() - birthDate.getDate()
+
+	if (month < 0 || (month === 0 && day < 0)) {
+		return age - 1
+	} else {
+		return age
+	}
+}
