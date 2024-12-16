@@ -53,7 +53,9 @@ const DetailsPresent = ({
 	propertyTypeDescription?: string
 }) => {
 	const session = useSession()
-	const role = (session.data as any)?.role
+	const role = (
+		(session.data as any)?.role as string | undefined
+	)?.toLowerCase()
 
 	const [proposalData, setProposalData] =
 		React.useState<ProposalDataType>(proposalDataProp)
@@ -86,11 +88,11 @@ const DetailsPresent = ({
 		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean =
-		// lastSituation?.id === 3 ||
-		proposalSituation.id === 5 ||
-		proposalSituation.id === 10 ||
-		proposalData.uploadMIP ||
-		proposalData.uploadDFI
+		role === 'vendedor' && // lastSituation?.id === 3 ||
+		(proposalSituation.id === 5 ||
+			proposalSituation.id === 10 ||
+			proposalData.uploadMIP ||
+			proposalData.uploadDFI)
 
 	return (
 		<div className="flex flex-col gap-5 p-5">

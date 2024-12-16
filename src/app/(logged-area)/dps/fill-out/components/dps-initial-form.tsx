@@ -1,14 +1,10 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import DatePicker from '@/components/ui/date-picker'
-import { Input } from '@/components/ui/input'
-import SelectComp from '@/components/ui/select-comp'
-import ShareLine from '@/components/ui/share-line'
-import { cn, RecursivePartial } from '@/lib/utils'
+import { calculateAge, RecursivePartial } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
-import React from 'react'
-import { Controller, FormState, useForm } from 'react-hook-form'
+import React, { use, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import {
 	custom,
 	date,
@@ -43,7 +39,7 @@ export type DpsInitialForm = InferInput<typeof dpsInitialForm>
 
 const DpsInitialForm = ({
 	data,
-	prazosOptions,
+	prazosOptions: prazosOptionsProp,
 	productOptions,
 	tipoImovelOptions,
 }: {
@@ -69,6 +65,7 @@ const DpsInitialForm = ({
 		getValues,
 		trigger,
 		setValue,
+		watch,
 		control,
 		reset,
 		formState: { isSubmitting, isSubmitted, errors, ...formStateRest },
@@ -89,6 +86,50 @@ const DpsInitialForm = ({
 	})
 
 	const formState = { ...formStateRest, errors, isSubmitting, isSubmitted }
+
+	const watchBirthdate = watch('profile.birthdate')
+
+	const [prazosOptions, setPrazosOptions] = useState<
+		{ value: string; label: string }[]
+	>([])
+
+	useEffect(() => {
+		const age = calculateAge(watchBirthdate)
+
+		if (age === null) return
+
+		switch (true) {
+			case age < 18:
+				setPrazosOptions([])
+				break
+			case age <= 50:
+				setPrazosOptions(prazosOptionsProp)
+				break
+			case age <= 55:
+				setPrazosOptions(
+					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 180)
+				)
+				break
+			case age <= 60:
+				setPrazosOptions(
+					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 150)
+				)
+				break
+			case age <= 65:
+				setPrazosOptions(
+					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 84)
+				)
+				break
+			case age <= 80:
+				setPrazosOptions(
+					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 60)
+				)
+				break
+			default:
+				setPrazosOptions([])
+				break
+		}
+	}, [watchBirthdate, prazosOptionsProp])
 
 	const router = useRouter()
 
@@ -162,3 +203,7 @@ const DpsInitialForm = ({
 }
 
 export default DpsInitialForm
+
+function getDigits(value: string) {
+	return value.replace(/[^0-9]/g, '')
+}
