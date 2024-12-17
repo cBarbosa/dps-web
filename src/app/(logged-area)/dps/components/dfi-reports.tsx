@@ -112,7 +112,7 @@ export default function DfiReports({
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
@@ -175,7 +175,7 @@ export default function DfiReports({
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
