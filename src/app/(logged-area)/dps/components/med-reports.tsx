@@ -116,7 +116,7 @@ export default function MedReports({
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
@@ -179,7 +179,7 @@ export default function MedReports({
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
@@ -221,7 +221,11 @@ export default function MedReports({
 				</h4>
 				{showReportApproval && (
 					<div className="flex gap-2 mb-3">
-						<RequestComplement token={token} proposalUid={uid} />
+						<RequestComplement
+							token={token}
+							proposalUid={uid}
+							onSubmit={onConfirmProp}
+						/>
 						<Button
 							variant="default"
 							onClick={() => reviewReport(true)}

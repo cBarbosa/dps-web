@@ -8,7 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EllipsisVerticalIcon, UploadIcon } from 'lucide-react'
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import NewInteractionDialog from './new-interaction-dialog'
 import { getProposalByUid } from '../actions'
 import { set } from 'date-fns'
@@ -35,8 +35,16 @@ export default function Interactions({
 	onNewInteraction: () => void
 }) {
 	const [data, setData] = useState<Interaction[]>(dataProp)
+	const [isFirstRender, setIsFirstRender] = useState(true)
+
+	useEffect(() => {
+		if (!isFirstRender) return
+		setIsFirstRender(false)
+	}, [isFirstRender])
 
 	async function reloadInteractions() {
+		if (isFirstRender) return
+
 		const proposalResponse = await getProposalByUid(token, uid)
 
 		if (!proposalResponse) return
@@ -62,6 +70,7 @@ export default function Interactions({
 						</Button>
 					) : null}
 				</div> */}
+				<>{new Date().toISOString()}</>
 				<div className="flex justify-end basis-1 grow">
 					{proposalSituationId === 4 ? (
 						<NewInteractionDialog
