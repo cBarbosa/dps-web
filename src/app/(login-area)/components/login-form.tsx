@@ -186,13 +186,14 @@ export default function LoginForm() {
 						{isSubmitting || isLoading ? 'Carregando...' : 'Entrar'}
 					</Button>
 
-					<LabeledSeparator label="OU" className="text-xs" />
+					<LabeledSeparator label="OU" className="text-xs hidden" />
 
 					<Button
 						disabled={isSubmitting}
 						onClick={() => signIn('google')}
 						variant="outline"
-						className="py-6 font-semibold"
+						className="py-6 font-semibold hidden"
+						hidden={true}
 					>
 						<Image
 							src={'/static/icons/ic_google_logo.svg'}

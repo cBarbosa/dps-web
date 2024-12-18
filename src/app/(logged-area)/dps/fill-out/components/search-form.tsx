@@ -28,7 +28,7 @@ const searchSchema =
 		cpf: pipe(
 			string(),
 			transform(input => input.replace(/\D/g, '')),
-			custom(v => validateCpf(v as string), 'CPF inválido.')
+			custom(v => validateCpf(v as string), 'Por favor forneça um CPF válido')
 			// nonEmpty('Campo obrigatório.')
 		),
 		// produto:
@@ -127,6 +127,7 @@ export default function SearchForm() {
 									value={value}
 									ref={ref}
 								/>
+								
 							)}
 						/>
 
@@ -186,6 +187,11 @@ export default function SearchForm() {
 							</Button>
 						)} */}
 					</div>
+				</div>
+				<div className='w-full text-right pr-5'>
+					<span className='text-red-500'>
+						{errors.cpf?.message}
+					</span>
 				</div>
 			</form>
 		</>

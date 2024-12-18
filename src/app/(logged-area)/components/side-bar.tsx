@@ -49,12 +49,6 @@ export default function SideBar() {
 						<MenuItem href="/dashboard" Icon={LayoutDashboardIcon}>
 							Dashboard
 						</MenuItem>
-						<MenuItem
-							href="/dashboard/table"
-							Icon={() => <FilesIcon size={20} />}
-						>
-							Lista de DPS&apos;s
-						</MenuItem>
 						<MenuSection title="DPS" Icon={FileTextIcon}>
 							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
 								<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
@@ -65,6 +59,12 @@ export default function SideBar() {
 							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
 								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
 							</RoleBasedRender>
+							<MenuItem
+								href="/dashboard/table"
+								Icon={() => <FilesIcon size={20} />}
+							>
+								Lista Completa
+							</MenuItem>
 						</MenuSection>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
