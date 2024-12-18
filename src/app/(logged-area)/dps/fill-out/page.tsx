@@ -80,7 +80,7 @@ export default async function FillOutPage({
 	return (
 		<div className="p-5">
 			<div className="px-5 w-full max-w-7xl mx-auto">
-				<Alert variant="info" disposable>
+				<Alert variant="info" disposable className='hidden'>
 					<InfoIcon size={20} className="text-primary-dark/60" />
 					<AlertDescription>
 						Para abertura da{' '}
