@@ -123,7 +123,7 @@ export default async function DashboardPage() {
 					</div>
 					<div className="col-span-2">
 						<PieChartCard
-							title="SLA DPS"
+							title="SLA MIP"
 							chartData={{ data: chartData, config: chartConfig }}
 						/>
 					</div>

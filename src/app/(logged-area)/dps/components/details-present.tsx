@@ -65,6 +65,7 @@ const DetailsPresent = ({
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
 	const proposalSituation = proposalData?.status
+	const proposalSituationDFI = proposalData?.dfiStatus;
 
 	console.log('proposalData', proposalData)
 
@@ -106,16 +107,37 @@ const DetailsPresent = ({
 
 				<div className="mx-5 mt-2">
 					<div className="w-full flex justify-between items-center">
-						<h4 className="text-lg text-primary">
-							Detalhes da DPS
-							<Badge shape="pill" variant="warn" className="ml-4">
-								{proposalSituation?.description ?? 'Estado desconhecido'}
-							</Badge>
-						</h4>
-						<span className="font-mono text-sm text-gray-500">
-							{proposalData.code}
-						</span>
+						<div className={``}>
+							<h4 className="text-lg text-primary">
+								Situação Processo
+								<Badge shape="pill" variant="warn" className="ml-4">
+									{proposalData.riskStatus ?? 'Em andamento'}
+								</Badge>
+							</h4>
+						</div>
+						<div className={``}>
+							<h4 className="text-lg text-primary">
+								Situação MIP
+								<Badge shape="pill" variant="warn" className="ml-4">
+									{proposalSituation?.description ?? 'Estado desconhecido'}
+								</Badge>
+							</h4>
+						</div>
+						{proposalSituationDFI?.description && (
+							<div className={``}>
+								<h4 className="text-lg text-primary">
+									Situação DFI
+									<Badge shape="pill" variant="warn" className="ml-4">
+										{proposalSituationDFI?.description ?? 'Estado desconhecido'}
+									</Badge>
+								</h4>
+							</div>
+						)}
+						
 					</div>
+					<span className="font-mono text-sm text-gray-500">
+						{proposalData.code}
+					</span>
 
 					<h5 className="text-xl my-4">Produto: {proposalData.product.name}</h5>
 
@@ -261,23 +283,29 @@ const DetailsPresent = ({
 				</div>
 			)}
 
-			<MedReports
-				token={token}
-				uid={uid}
-				userRole={role}
-				requireUpload={proposalData.uploadMIP}
-				dpsStatus={proposalData.status?.id}
-				onConfirm={refetchProposalData}
-			/>
+			{role}
 
-			<DfiReports
-				token={token}
-				uid={uid}
-				userRole={role}
-				requireUpload={proposalData.uploadDFI}
-				dfiStatus={proposalData.dfiStatus?.id}
-				onConfirm={refetchProposalData}
-			/>
+			{(role === `vendedor` || role === `subscritor-med`) && (
+				<MedReports
+					token={token}
+					uid={uid}
+					userRole={role}
+					requireUpload={proposalData.uploadMIP}
+					dpsStatus={proposalData.status?.id}
+					onConfirm={refetchProposalData}
+				/>
+			)}
+
+			{(role === `vendedor` || role === `subscritor`) && (
+				<DfiReports
+					token={token}
+					uid={uid}
+					userRole={role}
+					requireUpload={proposalData.uploadDFI}
+					dfiStatus={proposalData.dfiStatus?.id}
+					onConfirm={refetchProposalData}
+				/>
+			)}
 
 			<Interactions
 				token={token}
