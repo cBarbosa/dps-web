@@ -324,6 +324,7 @@ export type ProposalByUid = {
 		statusId: number
 		created: string
 	}[]
+	riskStatus?: string
 }
 
 export async function getProposalByUid(
