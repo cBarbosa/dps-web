@@ -43,7 +43,8 @@ import { useSession } from 'next-auth/react'
 import { dpsProfileForm, DpsProfileFormType } from './dps-profile-form'
 import { postAttachmentFile, signProposal } from '../../actions'
 import useAlertDialog from '@/hooks/use-alert-dialog'
-import { CheckCircleIcon, CheckIcon, LoaderIcon } from 'lucide-react'
+import { CheckCircleIcon, CheckIcon, InfoIcon, LoaderIcon } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const attachmentsForm = union([
 	object({
@@ -457,6 +458,11 @@ function AttachmentField({
 							<div className="text-xs text-red-500">
 								{errors?.attachments?.[inputIndex]?.file?.message}
 							</div>
+							<Alert variant="info" disposable className={`mt-4`}>
+								<InfoIcon size={20} className="text-primary-dark/60" />
+								<AlertDescription>
+									Inserrir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
+							</AlertDescription>
 						</div>
 					)}
 				/>
