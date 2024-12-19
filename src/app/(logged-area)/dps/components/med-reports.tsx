@@ -314,25 +314,26 @@ export default function MedReports({
 								)
 							})}
 						</ul>
-						<DialogShowArchive
-							isModalOpen={isModalOpen}
-							setIsModalOpen={setIsModalOpen}
-							pdfUrl={pdfUrl}
-						/>
-						<DialogAlertComp
-							open={alertDialog.open}
-							onOpenChange={() => setAlertDialog({ open: false })}
-							title={alertDialog.title ?? ''}
-							onConfirm={alertDialog.onConfirm}
-						>
-							{alertDialog.body}
-						</DialogAlertComp>
 					</>
 				) : (
 					<div className="text-muted-foreground">
 						Nenhuma documentação registrada
 					</div>
 				)}
+
+				<DialogShowArchive
+					isModalOpen={isModalOpen}
+					setIsModalOpen={setIsModalOpen}
+					pdfUrl={pdfUrl}
+				/>
+				<DialogAlertComp
+					open={alertDialog.open}
+					onOpenChange={() => setAlertDialog({ open: false })}
+					title={alertDialog.title ?? ''}
+					onConfirm={alertDialog.onConfirm}
+				>
+					{alertDialog.body}
+				</DialogAlertComp>
 
 				{isLoadingReports ? (
 					<div className="absolute inset-0 w-full h-full bg-white/60">

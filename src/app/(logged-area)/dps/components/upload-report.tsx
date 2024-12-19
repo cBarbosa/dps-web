@@ -42,16 +42,16 @@ const UploadReport = ({
 	}
 
 	async function handleSubmit() {
-		if (message === '' || file == undefined) return
+		if (message === '' || (typeProp === 'DFI' && !file)) return
 
 		setIsLoading(true)
 
-		const fileBase64 = (await getBase64(file)) as string
+		const fileBase64 = file ? ((await getBase64(file)) as string) : ''
 
 		const postFileData = {
-			documentName: file.name,
+			documentName: file?.name ?? '',
 			description: (typeProp === 'DFI' ? 'DFI: ' : 'MIP: ') + message,
-			stringBase64: fileBase64.split(',')[1],
+			stringBase64: fileBase64.split(',')[1] ?? '',
 			type: typeProp,
 		}
 
@@ -133,10 +133,11 @@ const UploadReport = ({
 					<FileInput
 						id="complement"
 						accept="application/pdf"
-						wrapperClassName=" w-full"
+						wrapperClassName="w-full max-w-[550px]"
 						disabled={isLoading}
 						onChange={handleSelectFile as any}
 						value={file}
+						sizeLimit={230000}
 						// afterChange={handleAttachmentAfterChange}
 					/>
 					{error && <p className="text-sm text-red-500">{error}</p>}
@@ -151,7 +152,11 @@ const UploadReport = ({
 					</Button>
 					<Button
 						type="submit"
-						disabled={isLoading || message === '' || file == undefined}
+						disabled={
+							isLoading ||
+							message === '' ||
+							(typeProp === 'DFI' && file == undefined)
+						}
 						onClick={handleSubmit}
 					>
 						Adicionar

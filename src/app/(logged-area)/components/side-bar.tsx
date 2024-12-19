@@ -59,12 +59,7 @@ export default function SideBar() {
 							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
 								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
 							</RoleBasedRender>
-							<MenuItem
-								href="/dashboard/table"
-								Icon={() => <FilesIcon size={20} />}
-							>
-								Lista Completa
-							</MenuItem>
+							<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
 						</MenuSection>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>

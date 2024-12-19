@@ -9,6 +9,7 @@ import {
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 import DpsInitialForm from '../components/dps-initial-form'
+import validateCpf from 'validar-cpf'
 
 export default async function DpsFormPage({
 	searchParams,
@@ -26,7 +27,7 @@ export default async function DpsFormPage({
 	// const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
 	// const produto = searchParams.produto
 
-	if (!cpf || cpf.length < 11) redirect('/dps/fill-out')
+	if (!cpf || cpf.length < 11 || !validateCpf(cpf)) redirect('/dps/fill-out')
 
 	const [
 		data,

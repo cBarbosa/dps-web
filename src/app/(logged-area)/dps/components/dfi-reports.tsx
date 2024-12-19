@@ -18,6 +18,8 @@ import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
 import UploadReport from './upload-report'
 import DialogAlertComp from '@/components/ui/alert-dialog-comp'
 import LoadingScreen from '@/components/loading-creen'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 export type DocumentType = {
 	uid: string
@@ -49,6 +51,9 @@ export default function DfiReports({
 	const [isFinishing, setIsFinishing] = React.useState(false)
 
 	const [isLoadingReports, setIsLoadingReports] = React.useState(false)
+
+	// JUSTIFICATIVA DE REJEIÇÃO
+	const [rejectJustification, setRejectJustification] = React.useState('')
 
 	const [alertDialog, setAlertDialog] = React.useState<{
 		open: boolean
@@ -133,68 +138,78 @@ export default function DfiReports({
 		}
 	}
 
-	async function reviewReport(isApproved: boolean) {
-		setAlertDialog({
-			open: true,
-			title: `Confirmação de ${isApproved ? 'Aprovação' : 'Reprovação'}`,
-			body: isApproved ? (
-				<>
-					Confirma a{' '}
-					<span className="text-base font-semibold text-primary">
-						APROVAÇÃO
-					</span>{' '}
-					da análise de DFI?
-				</>
-			) : (
-				<>
-					Confirma a{' '}
-					<span className="text-base font-semibold text-destructive">
-						REPROVAÇÃO
-					</span>{' '}
-					da análise de DFI?
-				</>
-			),
-			onConfirm: changeStatus,
-		})
-
-		async function changeStatus() {
+	const reviewReport = useCallback(
+		async function (isApproved: boolean) {
 			setAlertDialog({
-				open: false,
+				open: true,
+				title: `Confirmação de ${isApproved ? 'Aprovação' : 'Reprovação'}`,
+				body: isApproved ? (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-primary">
+							APROVAÇÃO
+						</span>{' '}
+						da análise de DFI?
+					</>
+				) : (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-destructive">
+							REPROVAÇÃO
+						</span>{' '}
+						da análise de DFI?
+						<JustificationTextarea
+							rejectJustification={rejectJustification}
+							setRejectJustification={setRejectJustification}
+						/>
+					</>
+				),
+				onConfirm: changeStatus,
 			})
-			setIsFinishing(true)
 
-			const newStatus = isApproved ? 35 : 36
+			async function changeStatus() {
+				setAlertDialog({
+					open: false,
+				})
+				setIsFinishing(true)
 
-			const response = await postStatus(
-				token,
-				uid,
-				newStatus,
-				'Análise de DFI concluída.',
-				'DFI'
-			)
+				const newStatus = isApproved ? 35 : 36
 
-			if (response) {
-				if (response.success) {
-					onConfirmProp?.()
-					reloadReports()
+				const response = await postStatus(
+					token,
+					uid,
+					newStatus,
+					'Análise de DFI concluída.',
+					'DFI'
+				)
+
+				if (response) {
+					if (response.success) {
+						onConfirmProp?.()
+						reloadReports()
+						setRejectJustification('')
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: 'Ocorreu um erro ao concluir análise de DFI.',
+						})
+					}
 				} else {
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de DFI.',
+						body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta).',
 					})
 				}
-			} else {
-				setAlertDialog({
-					open: true,
-					title: 'Erro',
-					body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta).',
-				})
-			}
 
-			setIsFinishing(false)
-		}
-	}
+				setIsFinishing(false)
+			}
+		},
+		[onConfirmProp, rejectJustification, reloadReports, token, uid]
+	)
+
+	console.log('reject message', rejectJustification)
 
 	const showReportApproval =
 		userRole &&
@@ -302,31 +317,66 @@ export default function DfiReports({
 								)
 							})}
 						</ul>
-						<DialogShowArchive
-							isModalOpen={isModalOpen}
-							setIsModalOpen={setIsModalOpen}
-							pdfUrl={pdfUrl}
-						/>
-						<DialogAlertComp
-							open={alertDialog.open}
-							onOpenChange={() => setAlertDialog({ open: false })}
-							title={alertDialog.title ?? ''}
-							onConfirm={alertDialog.onConfirm}
-						>
-							{alertDialog.body}
-						</DialogAlertComp>
 					</>
 				) : (
 					<div className="text-muted-foreground">
 						Nenhuma documentação registrada
 					</div>
 				)}
+
+				<DialogShowArchive
+					isModalOpen={isModalOpen}
+					setIsModalOpen={setIsModalOpen}
+					pdfUrl={pdfUrl}
+				/>
+				<DialogAlertComp
+					open={alertDialog.open}
+					onOpenChange={() => setAlertDialog({ open: false })}
+					title={alertDialog.title ?? ''}
+					onConfirm={alertDialog.onConfirm}
+				>
+					{alertDialog.body}
+				</DialogAlertComp>
+
 				{isLoadingReports ? (
 					<div className="absolute top-0 left-0 w-full h-full bg-white/60">
 						<LoadingScreen />
 					</div>
 				) : null}
 			</div>
+		</div>
+	)
+}
+
+function JustificationTextarea({
+	rejectJustification: rejectJustificationProp,
+	setRejectJustification: setRejectJustificationProp,
+}: {
+	rejectJustification: string
+	setRejectJustification: (value: string) => void
+}) {
+	const [justification, setJustification] = React.useState(
+		rejectJustificationProp
+	)
+
+	useEffect(() => {
+		setRejectJustificationProp(justification)
+	}, [justification, setRejectJustificationProp])
+
+	return (
+		<div className="mt-2">
+			<Label htmlFor="reject-justification-input" className="text-foreground">
+				Justificativa:{' '}
+				<span className="text-xs text-muted-foreground">(opcional)</span>
+			</Label>
+			<Textarea
+				id="reject-justification-input"
+				className="text-foreground"
+				value={justification}
+				onChange={e => {
+					setJustification(e.target.value)
+				}}
+			></Textarea>
 		</div>
 	)
 }
