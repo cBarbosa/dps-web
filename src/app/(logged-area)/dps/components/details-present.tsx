@@ -283,8 +283,6 @@ const DetailsPresent = ({
 				</div>
 			)}
 
-			{role}
-
 			{(role === `vendedor` || role === `subscritor-med`) && (
 				<MedReports
 					token={token}
