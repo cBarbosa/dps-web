@@ -462,7 +462,8 @@ function AttachmentField({
 								<InfoIcon size={20} className="text-primary-dark/60" />
 								<AlertDescription>
 									Inserrir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
-							</AlertDescription>
+								</AlertDescription>
+							</Alert>
 						</div>
 					)}
 				/>
