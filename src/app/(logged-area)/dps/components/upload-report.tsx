@@ -9,11 +9,12 @@ import {
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { PlusIcon } from 'lucide-react'
+import { InfoIcon, PlusIcon } from 'lucide-react'
 import { postProposalDocumentsByUid } from '../actions'
 import { getBase64 } from '@/lib/utils'
 import FileInput from '@/components/ui/file-input'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const UploadReport = ({
 	token,
@@ -141,6 +142,12 @@ const UploadReport = ({
 						// afterChange={handleAttachmentAfterChange}
 					/>
 					{error && <p className="text-sm text-red-500">{error}</p>}
+					<Alert variant="info" disposable className={`mt-4`}>
+						<InfoIcon size={20} className="text-primary-dark/60" />
+						<AlertDescription>
+							Inserir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
+					</AlertDescription>
+				</Alert>
 				</div>
 				<DialogFooter>
 					<Button
