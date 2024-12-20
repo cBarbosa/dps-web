@@ -256,7 +256,7 @@ const DpsProfileForm = ({
 									errors?.email && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="email"
-								disabled={isSubmitting || data?.email !== undefined}
+								disabled={isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -288,7 +288,7 @@ const DpsProfileForm = ({
 									errors?.phone && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="phone"
-								disabled={isSubmitting || data?.phone !== undefined}
+								disabled={isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
