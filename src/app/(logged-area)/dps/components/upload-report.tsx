@@ -138,7 +138,7 @@ const UploadReport = ({
 						disabled={isLoading}
 						onChange={handleSelectFile as any}
 						value={file}
-						sizeLimit={230000}
+						sizeLimit={100000000}
 						// afterChange={handleAttachmentAfterChange}
 					/>
 					{error && <p className="text-sm text-red-500">{error}</p>}

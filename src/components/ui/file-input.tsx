@@ -100,7 +100,7 @@ const FileInput = React.forwardRef<
 									alertFileSize ? 'text-red-500' : ''
 								)}
 							>
-								{sizeLimit ? '(Máx. ' + sizeLimit / 1000 + 'MB)' : ''}
+								{sizeLimit ? '(Máx. ' + sizeLimit / 1000 + 'Kb)' : ''}
 							</div>
 						) : null}
 					</div>

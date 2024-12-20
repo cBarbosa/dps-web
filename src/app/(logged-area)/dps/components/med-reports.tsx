@@ -173,7 +173,7 @@ export default function MedReports({
 				token,
 				uid,
 				newStatus,
-				'Análise de MIP concluída.',
+				'Análise de MIP concluída',
 				'MIP'
 			)
 
@@ -185,14 +185,14 @@ export default function MedReports({
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de MIP.',
+						body: 'Ocorreu um erro ao concluir análise de MIP',
 					})
 				}
 			} else {
 				setAlertDialog({
 					open: true,
 					title: 'Erro',
-					body: 'Ocorreu um erro ao concluir análise de MIP (sem resposta).',
+					body: 'Ocorreu um erro ao concluir análise de MIP (sem resposta)',
 				})
 			}
 
