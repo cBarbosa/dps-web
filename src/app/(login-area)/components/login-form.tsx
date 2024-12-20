@@ -186,13 +186,13 @@ export default function LoginForm() {
 						{isSubmitting || isLoading ? 'Carregando...' : 'Entrar'}
 					</Button>
 
-					<LabeledSeparator label="OU" className="text-xs hidden" />
+					{/* <LabeledSeparator label="OU" className="text-xs" />
 
 					<Button
 						disabled={isSubmitting}
 						onClick={() => signIn('google')}
 						variant="outline"
-						className="py-6 font-semibold hidden"
+						className="py-6 font-semibold"
 						hidden={true}
 					>
 						<Image
@@ -203,7 +203,7 @@ export default function LoginForm() {
 							className="mr-2"
 						/>
 						Google
-					</Button>
+					</Button> */}
 				</form>
 			</div>
 			<div className="p-3 my-3 text-sm text-slate-500">

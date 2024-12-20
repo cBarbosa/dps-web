@@ -10,6 +10,7 @@ const FileInput = React.forwardRef<
 		label?: string
 		value?: File | File[]
 		accept?: string
+		sizeLimit?: number // in Bytes
 		wrapperClassName?: string
 		onChange?: (files?: File[] | File) => void
 		afterChange?: (args: any) => void
@@ -23,6 +24,7 @@ const FileInput = React.forwardRef<
 			disabled,
 			label = 'Localizar no computador',
 			value,
+			sizeLimit,
 			onChange,
 			afterChange,
 			...props
@@ -32,6 +34,8 @@ const FileInput = React.forwardRef<
 		const [files, setFiles] = React.useState<File[]>(
 			value ? (Array.isArray(value) ? value : [value]) : []
 		)
+
+		const [alertFileSize, setAlertFileSize] = React.useState(false)
 
 		const inputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -52,7 +56,13 @@ const FileInput = React.forwardRef<
 		function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
 			const { files: targetFiles } = e.target
 			const files = Array.from(targetFiles || [])
+			if (sizeLimit && files.some(file => file.size > sizeLimit)) {
+				setFiles([])
+				setAlertFileSize(true)
+				return
+			}
 			setFiles(files)
+			setAlertFileSize(false)
 
 			onChange?.(multiple ? files : files[0])
 		}
@@ -79,9 +89,21 @@ const FileInput = React.forwardRef<
 						className
 					)}
 				>
-					<span className="leading-5 text-md text-ellipsis overflow-x-hidden whitespace-nowrap">
-						{files.length > 0 ? fileListText : label}
-					</span>
+					<div className="inline-flex flex-wrap gap-1 items-center">
+						<div className="leading-5 text-md text-ellipsis overflow-x-hidden whitespace-nowrap">
+							{files.length > 0 ? fileListText : label}
+						</div>
+						{files.length === 0 ? (
+							<div
+								className={cn(
+									'text-xs text-muted-foreground font-normal',
+									alertFileSize ? 'text-red-500' : ''
+								)}
+							>
+								{sizeLimit ? '(Máx. ' + sizeLimit / 1000 + 'Kb)' : ''}
+							</div>
+						) : null}
+					</div>
 					<span
 						className={cn(
 							'text-sm text-tertiary opacity-70 group-hover:opacity-100 whitespace-nowrap',
@@ -89,6 +111,7 @@ const FileInput = React.forwardRef<
 						)}
 					>
 						Selecionar arquivo
+						{props.accept === 'application/pdf' ? ' (PDF)' : ''}
 					</span>
 				</div>
 				<input

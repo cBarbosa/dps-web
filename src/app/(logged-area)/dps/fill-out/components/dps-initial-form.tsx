@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { calculateAge, RecursivePartial } from '@/lib/utils'
+import { calculateAge, cn, RecursivePartial } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
 import React, { use, useEffect, useState } from 'react'
@@ -17,7 +17,6 @@ import {
 	pipe,
 	string,
 } from 'valibot'
-import validateCpf from 'validar-cpf'
 import { postProposal } from '../../actions'
 import { useRouter } from 'next/navigation'
 import DpsProfileForm, {
@@ -29,6 +28,7 @@ import DpsProductForm, {
 	dpsProductForm,
 	DpsProductFormType,
 } from './dps-product-form'
+import { Loader2Icon } from 'lucide-react'
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,
@@ -59,6 +59,8 @@ const DpsInitialForm = ({
 }) => {
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
+
+	const [isLoading, setIsLoading] = useState(false)
 
 	const {
 		handleSubmit,
@@ -136,6 +138,8 @@ const DpsInitialForm = ({
 	async function onSubmit(v: DpsInitialForm) {
 		console.log('submitting', v)
 
+		setIsLoading(true)
+
 		const postData = {
 			document: data?.profile?.cpf ?? v.profile.cpf,
 			name: v.profile.name,
@@ -164,7 +168,10 @@ const DpsInitialForm = ({
 				router.push('/dps/fill-out/form/' + response.data)
 			} else {
 				console.error(response.message)
+				setIsLoading(false)
 			}
+		} else {
+			setIsLoading(false)
 		}
 	}
 
@@ -174,7 +181,10 @@ const DpsInitialForm = ({
 				console.log('>', e)
 				handleSubmit(onSubmit)(e)
 			}}
-			className="flex flex-col gap-6 w-full"
+			className={cn(
+				'flex flex-col gap-6 w-full',
+				isLoading ? 'opacity-60 pointer-events-none' : ''
+			)}
 		>
 			<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<DpsProfileForm
@@ -194,8 +204,15 @@ const DpsInitialForm = ({
 					formState={formState}
 				/>
 
-				<Button type="submit" className="w-40 mt-10" disabled={isSubmitting}>
+				<Button
+					type="submit"
+					className="w-40 mt-10"
+					disabled={isSubmitting || isLoading}
+				>
 					Salvar
+					{isLoading ? (
+						<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
+					) : null}
 				</Button>
 			</div>
 		</form>

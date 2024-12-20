@@ -17,7 +17,7 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
-	title: 'DPS Inteligente',
+	title: 'Subscrição Inteligente',
 	description: 'Plataforma de Subscrição de Riscos',
 }
 

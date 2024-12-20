@@ -32,10 +32,10 @@ export default function SideBar() {
 			<div>
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
-						src="/static/images/app-logo.png"
+						src="/static/images/app-logo-green.png"
 						width="153"
 						height="45"
-						alt="DPS Inteligente Logo"
+						alt="Subscrição Inteligente Logo"
 					/>
 					<ArrowLeftFromLineIcon className="text-primary-dark" />
 				</div>
@@ -59,12 +59,7 @@ export default function SideBar() {
 							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
 								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
 							</RoleBasedRender>
-							<MenuItem
-								href="/dashboard/table"
-								Icon={() => <FilesIcon size={20} />}
-							>
-								Lista Completa
-							</MenuItem>
+							<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
 						</MenuSection>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
