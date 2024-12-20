@@ -116,7 +116,7 @@ export default function MedReports({
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
@@ -173,26 +173,26 @@ export default function MedReports({
 				token,
 				uid,
 				newStatus,
-				'Análise de MIP concluída.',
+				'Análise de MIP concluída',
 				'MIP'
 			)
 
 			if (response) {
 				if (response.success) {
-					await onConfirmProp?.()
+					onConfirmProp?.()
 					reloadReports()
 				} else {
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de MIP.',
+						body: 'Ocorreu um erro ao concluir análise de MIP',
 					})
 				}
 			} else {
 				setAlertDialog({
 					open: true,
 					title: 'Erro',
-					body: 'Ocorreu um erro ao concluir análise de MIP (sem resposta).',
+					body: 'Ocorreu um erro ao concluir análise de MIP (sem resposta)',
 				})
 			}
 
@@ -221,7 +221,11 @@ export default function MedReports({
 				</h4>
 				{showReportApproval && (
 					<div className="flex gap-2 mb-3">
-						<RequestComplement token={token} proposalUid={uid} />
+						<RequestComplement
+							token={token}
+							proposalUid={uid}
+							onSubmit={onConfirmProp}
+						/>
 						<Button
 							variant="default"
 							onClick={() => reviewReport(true)}
@@ -310,25 +314,26 @@ export default function MedReports({
 								)
 							})}
 						</ul>
-						<DialogShowArchive
-							isModalOpen={isModalOpen}
-							setIsModalOpen={setIsModalOpen}
-							pdfUrl={pdfUrl}
-						/>
-						<DialogAlertComp
-							open={alertDialog.open}
-							onOpenChange={() => setAlertDialog({ open: false })}
-							title={alertDialog.title ?? ''}
-							onConfirm={alertDialog.onConfirm}
-						>
-							{alertDialog.body}
-						</DialogAlertComp>
 					</>
 				) : (
 					<div className="text-muted-foreground">
 						Nenhuma documentação registrada
 					</div>
 				)}
+
+				<DialogShowArchive
+					isModalOpen={isModalOpen}
+					setIsModalOpen={setIsModalOpen}
+					pdfUrl={pdfUrl}
+				/>
+				<DialogAlertComp
+					open={alertDialog.open}
+					onOpenChange={() => setAlertDialog({ open: false })}
+					title={alertDialog.title ?? ''}
+					onConfirm={alertDialog.onConfirm}
+				>
+					{alertDialog.body}
+				</DialogAlertComp>
 
 				{isLoadingReports ? (
 					<div className="absolute inset-0 w-full h-full bg-white/60">

@@ -1,18 +1,8 @@
 'use client'
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { EllipsisVerticalIcon, UploadIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import NewInteractionDialog from './new-interaction-dialog'
 import { getProposalByUid } from '../actions'
-import { set } from 'date-fns'
-import UploadComplement from './upload-complement'
 import { statusDescriptionDict } from './details-present'
 
 export type Interaction = {
@@ -35,8 +25,16 @@ export default function Interactions({
 	onNewInteraction: () => void
 }) {
 	const [data, setData] = useState<Interaction[]>(dataProp)
+	const [isFirstRender, setIsFirstRender] = useState(true)
+
+	useEffect(() => {
+		if (!isFirstRender) return
+		setIsFirstRender(false)
+	}, [isFirstRender])
 
 	async function reloadInteractions() {
+		if (isFirstRender) return
+
 		const proposalResponse = await getProposalByUid(token, uid)
 
 		if (!proposalResponse) return
@@ -71,14 +69,6 @@ export default function Interactions({
 							onSubmit={reloadInteractions}
 						/>
 					) : null}
-					{/* {proposalSituationId === 5 ? (
-						<UploadComplement
-							token={token}
-							proposalUid={uid}
-							interactionDescription={data[0]?.description}
-							onSubmit={reloadInteractions}
-						/>
-					) : null} */}
 				</div>
 			</div>
 			<ul>

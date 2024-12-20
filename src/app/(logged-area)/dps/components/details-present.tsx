@@ -65,7 +65,7 @@ const DetailsPresent = ({
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 
 	const proposalSituation = proposalData?.status
-	const proposalSituationDFI = proposalData?.dfiStatus;
+	const proposalSituationDFI = proposalData?.dfiStatus
 
 	console.log('proposalData', proposalData)
 
@@ -133,7 +133,6 @@ const DetailsPresent = ({
 								</h4>
 							</div>
 						)}
-						
 					</div>
 					<span className="font-mono text-sm text-gray-500">
 						{proposalData.code}
@@ -283,7 +282,9 @@ const DetailsPresent = ({
 				</div>
 			)}
 
-			{(role === `vendedor` || role === `subscritor-med`) && (
+			{(role === `vendedor` ||
+				role === `subscritor-med` ||
+				role === `admin`) && (
 				<MedReports
 					token={token}
 					uid={uid}
@@ -294,7 +295,7 @@ const DetailsPresent = ({
 				/>
 			)}
 
-			{(role === `vendedor` || role === `subscritor`) && (
+			{(role === `vendedor` || role === `subscritor` || role === `admin`) && (
 				<DfiReports
 					token={token}
 					uid={uid}
