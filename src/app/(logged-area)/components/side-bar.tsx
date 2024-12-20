@@ -32,10 +32,10 @@ export default function SideBar() {
 			<div>
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
-						src="/static/images/app-logo.png"
+						src="/static/images/app-logo-green.png"
 						width="153"
 						height="45"
-						alt="DPS Inteligente Logo"
+						alt="Subscrição Inteligente Logo"
 					/>
 					<ArrowLeftFromLineIcon className="text-primary-dark" />
 				</div>
