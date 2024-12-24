@@ -10,7 +10,7 @@ export default async function LoginPage() {
 	return (
 		<>
 			<div className="w-full flex justify-end text-sm">
-				<div>
+				<div className='hidden'>
 					Ainda não possui conta? <Link href="/">Registrar-se</Link>
 				</div>
 			</div>

@@ -106,6 +106,15 @@ export default async function DpsFormPage({
 		phone: undefined,
 	}
 
+	const getProfissionDescription = (input?: string): string | undefined => {
+
+		if (!input)	return;
+
+		const partes = input.split('-');
+
+		return partes[1]?.trim() ?? undefined;
+	};
+
 	console.log('autocompleteData', autocompleteData)
 
 	return (
@@ -129,7 +138,7 @@ export default async function DpsFormPage({
 							birthdate: autocompleteData?.birthdate
 								? new Date(autocompleteData.birthdate)
 								: undefined,
-							profession: autocompleteData?.profession,
+							profession: getProfissionDescription(autocompleteData?.profession),
 							phone: autocompleteData?.phone,
 						},
 					}}

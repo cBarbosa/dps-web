@@ -57,6 +57,9 @@ export default function ForgotPasswordForm() {
 				<Link href="/">Política de privacidade</Link> e{' '}
 				<Link href={'/'}>Termos de uso</Link>
 			</div>
+			<div>
+				Copyright © 2024 Techtrail - Todos os direitos reservados
+			</div>
 		</div>
 	)
 }
