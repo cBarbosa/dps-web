@@ -51,8 +51,6 @@ export default function DfiReports({
 	const [isFinishing, setIsFinishing] = React.useState(false)
 
 	const [isLoadingReports, setIsLoadingReports] = React.useState(false)
-
-	// JUSTIFICATIVA DE REJEIÇÃO
 	const [rejectJustification, setRejectJustification] = React.useState('')
 
 	const [alertDialog, setAlertDialog] = React.useState<{
@@ -348,7 +346,7 @@ export default function DfiReports({
 	)
 }
 
-function JustificationTextarea({
+export function JustificationTextarea({
 	rejectJustification: rejectJustificationProp,
 	setRejectJustification: setRejectJustificationProp,
 }: {

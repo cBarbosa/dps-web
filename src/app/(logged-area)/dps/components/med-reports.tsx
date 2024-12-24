@@ -21,6 +21,7 @@ import DialogAlertComp from '@/components/ui/alert-dialog-comp'
 import { AlertDialog } from '@radix-ui/react-alert-dialog'
 import LoadingScreen from '@/components/loading-creen'
 import RequestComplement from './request-complement'
+import { JustificationTextarea } from './dfi-reports'
 
 export type DocumentType = {
 	uid: string
@@ -53,6 +54,7 @@ export default function MedReports({
 	const [isFinishing, setIsFinishing] = React.useState(false)
 
 	const [isLoadingReports, setIsLoadingReports] = React.useState(false)
+	const [rejectJustification, setRejectJustification] = React.useState('');
 
 	const [alertDialog, setAlertDialog] = React.useState<{
 		open: boolean
@@ -156,6 +158,10 @@ export default function MedReports({
 						REPROVAÇÃO
 					</span>{' '}
 					da análise de MIP?
+					<JustificationTextarea
+						rejectJustification={rejectJustification}
+						setRejectJustification={setRejectJustification}
+					/>
 				</>
 			),
 			onConfirm: changeStatus,

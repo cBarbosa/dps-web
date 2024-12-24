@@ -49,7 +49,7 @@ export default function SideBar() {
 						<MenuItem href="/dashboard" Icon={LayoutDashboardIcon}>
 							Dashboard
 						</MenuItem>
-						<MenuSection title="DPS" Icon={FileTextIcon}>
+						<MenuSection title="Seg. Habitacional" Icon={FileTextIcon}>
 							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
 								<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
 							</RoleBasedRender>

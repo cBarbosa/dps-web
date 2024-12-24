@@ -210,6 +210,9 @@ export default function LoginForm() {
 				Protegido por reCAPTCHA e sujeito as normas de{' '}
 				<Link href="/">Política de privacidade</Link> e{' '}
 				<Link href={'/'}>Termos de uso</Link>
+				<p>
+					Copyright © 2024 Techtrail - Todos os direitos reservados
+				</p>
 			</div>
 
 			<DialogAlertComp

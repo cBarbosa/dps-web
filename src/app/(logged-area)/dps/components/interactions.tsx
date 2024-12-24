@@ -1,9 +1,11 @@
 'use client'
+
 import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import NewInteractionDialog from './new-interaction-dialog'
 import { getProposalByUid } from '../actions'
 import { statusDescriptionDict } from './details-present'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 export type Interaction = {
 	description: string
@@ -45,45 +47,53 @@ export default function Interactions({
 		onNewInteraction?.()
 	}
 
-	console.log(data)
 	if (!data) return null
 
 	return data.length > 0 ? (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-			<div className="flex justify-between gap-5">
-				<h4 className="basis-1 grow text-lg text-primary mb-2">Interações</h4>
-				{/* <div className="flex justify-center basis-1 grow">
-					{proposalSituationId === 5 ? (
-						<Button size="sm">
-							<UploadIcon size={14} className="mr-2" />
-							Upload complemento
-						</Button>
-					) : null}
-				</div> */}
-				<div className="flex justify-end basis-1 grow">
-					{proposalSituationId === 4 ? (
-						<NewInteractionDialog
-							token={token}
-							uid={uid}
-							status={5}
-							onSubmit={reloadInteractions}
-						/>
-					) : null}
-				</div>
-			</div>
-			<ul>
-				{data.map((interaction, index) => {
-					if (!interaction.description) return null
+			<Accordion type="single" collapsible>
+			<AccordionItem value="item-1">
+				<AccordionTrigger>
+					<h4 className="basis-1 grow text-lg text-primary mb-2 text-left">Interações</h4>
+				</AccordionTrigger>
+				<AccordionContent>
+					<div className="flex justify-between gap-5">
+						{/* <h4 className="basis-1 grow text-lg text-primary mb-2">Interações</h4> */}
+						{/* <div className="flex justify-center basis-1 grow">
+							{proposalSituationId === 5 ? (
+								<Button size="sm">
+									<UploadIcon size={14} className="mr-2" />
+									Upload complemento
+								</Button>
+							) : null}
+						</div> */}
+						<div className="flex justify-end basis-1 grow">
+							{proposalSituationId === 4 ? (
+								<NewInteractionDialog
+									token={token}
+									uid={uid}
+									status={5}
+									onSubmit={reloadInteractions}
+								/>
+							) : null}
+						</div>
+					</div>
+					<ul>
+						{data.map((interaction, index) => {
+							if (!interaction.description) return null
 
-					return (
-						<InteractionItem
-							key={index}
-							index={index}
-							interaction={interaction}
-						/>
-					)
-				})}
-			</ul>
+							return (
+								<InteractionItem
+									key={index}
+									index={index}
+									interaction={interaction}
+								/>
+							)
+						})}
+					</ul>	
+				</AccordionContent>
+			</AccordionItem>
+			</Accordion>
 		</div>
 	) : (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">

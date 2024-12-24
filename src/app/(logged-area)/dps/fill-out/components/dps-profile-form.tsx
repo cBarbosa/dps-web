@@ -65,7 +65,6 @@ const DpsProfileForm = ({
 }) => {
 	const errors = formState.errors?.profile
 	const isSubmitting = formState.isSubmitting
-	console.log('>errors', errors)
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -227,7 +226,7 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="profession"
-								disabled={isSubmitting || data?.profession !== undefined}
+								// disabled={isSubmitting || data?.profession !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}

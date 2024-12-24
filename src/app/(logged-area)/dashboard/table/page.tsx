@@ -59,6 +59,8 @@ export default async function DashboardTablePage({
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
 			status: item.status,
+			dfiStatus: item.dfiStatus,
+			riskStatus: item.riskStatus
 		}
 	})
 
