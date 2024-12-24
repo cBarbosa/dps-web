@@ -14,7 +14,7 @@ import {
 	UserRoundIcon,
 } from 'lucide-react'
 import { getProposalByUid, getProposalSignByUid, postStatus } from '../actions'
-import { formatCpf } from '@/lib/utils'
+import { cn, formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Interactions from './interactions'
@@ -67,8 +67,6 @@ const DetailsPresent = ({
 	const proposalSituation = proposalData?.status
 	const proposalSituationDFI = proposalData?.dfiStatus
 
-	console.log('proposalData', proposalData)
-
 	async function refetchProposalData() {
 		const response = await getProposalByUid(token, uid)
 
@@ -90,12 +88,19 @@ const DetailsPresent = ({
 	const lastSituation: number | undefined =
 		proposalData.history?.at(0)?.statusId
 
-	const showFillOutAlert: boolean =
-		role === 'vendedor' && // lastSituation?.id === 3 ||
+	const showFillOutAlert: boolean | undefined =
+		role === 'vendedor' &&
 		(proposalSituation.id === 5 ||
 			proposalSituation.id === 10 ||
 			proposalData.uploadMIP ||
 			proposalData.uploadDFI)
+
+	const showMipAlertMinToMedic: boolean | undefined =
+		role === 'subscritor-med' && proposalData.status.id === 4 && (proposalData.capitalMIP >= 3000000 && proposalData.capitalMIP < 5000000);
+	const showMipAlertCompleteToMedic: boolean | undefined =
+		role === 'subscritor-med' && proposalData.status.id === 4 && proposalData.capitalMIP > 5000000;
+	const showDfiAlertToSubscriber: boolean | undefined =
+		role === 'subscritor' && proposalData.dfiStatus.id === 29;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -110,15 +115,46 @@ const DetailsPresent = ({
 						<div className={``}>
 							<h4 className="text-lg text-primary">
 								Situação Processo
-								<Badge shape="pill" variant="warn" className="ml-4">
-									{proposalData.riskStatus ?? 'Em andamento'}
+								<Badge
+									shape="pill"
+									variant={
+										!proposalData?.riskStatus
+											? `warn`
+											: proposalData?.riskStatus === `APPROVED`
+												? `success`
+												: `destructive`
+									}
+									className={cn("ml-4",
+										proposalData?.riskStatus === `APPROVED`
+										? `text-zinc-600`
+										: `text-white`
+									)}
+								>
+									{!proposalData?.riskStatus ? `Em andamento`
+										: proposalData?.riskStatus === `APPROVED`
+											? `Aprovado`
+											: `Recusado`}
 								</Badge>
 							</h4>
 						</div>
 						<div className={``}>
 							<h4 className="text-lg text-primary">
 								Situação MIP
-								<Badge shape="pill" variant="warn" className="ml-4">
+								<Badge
+									shape="pill"
+									variant={
+										proposalSituation?.description === `DPS Aprovada`
+											? `success`
+											: proposalSituation?.description === `DPS Reprovada`
+												? `destructive`
+												: `warn`
+									}
+									className={cn("ml-4",
+										proposalSituation?.description === `DPS Aprovada`
+										? `text-zinc-600`
+										: `text-white`
+									)}
+								>
 									{proposalSituation?.description ?? 'Estado desconhecido'}
 								</Badge>
 							</h4>
@@ -127,7 +163,21 @@ const DetailsPresent = ({
 							<div className={``}>
 								<h4 className="text-lg text-primary">
 									Situação DFI
-									<Badge shape="pill" variant="warn" className="ml-4">
+									<Badge
+										shape="pill"
+										variant={
+											proposalSituationDFI?.description === `Laudo DFI aprovado`
+												? `success`
+												: proposalSituationDFI?.description === `Laudo DFI reprovado`
+													? `destructive`
+													: `warn`
+										}
+										className={cn("ml-4",
+											proposalSituationDFI?.description === `Laudo DFI aprovado`
+											? `text-zinc-600`
+											: `text-white`
+										)}
+									>
 										{proposalSituationDFI?.description ?? 'Estado desconhecido'}
 									</Badge>
 								</h4>
@@ -279,6 +329,59 @@ const DetailsPresent = ({
 							<Link href={`/dps/fill-out/form/${uid}`}>Preencher</Link>
 						</Button>
 					)}
+				</div>
+			)}
+
+			{showMipAlertMinToMedic && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
+					<div>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
+						<ul className="ml-5 text-base text-orange-400 list-disc">
+							<li>
+								Exame de Sangue¹ + Exame de Urina I + Teste Ergométrico +
+								Ecocardiograma + ECG
+							</li>
+						</ul>
+					</div>
+				</div>
+			)}
+
+			{showMipAlertCompleteToMedic && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
+					<div>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
+						<ul className="ml-5 text-base text-orange-400 list-disc">
+							<li>
+								Exame de Sangue¹ + Exame de Urina I + Teste Ergométrico +
+								Ecocardiograma + ECG + USG Abdome (Superior) Total e
+								próstata
+							</li>
+							<li>Para Homens acima de 50 anos: Todos acima + PSA</li>
+							<li>
+								Para Mulheres acima de 50 anos: Todos acima + CA 19-9 + CA
+								125 + Papanicolau + US mama
+							</li>
+						</ul>
+					</div>
+				</div>
+			)}
+
+			{showDfiAlertToSubscriber && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
+					<div>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
+						<ul className="ml-5 text-base text-orange-400 list-disc">
+							<li>
+								Necessário validar o laudo DFI inserido.
+							</li>
+						</ul>
+					</div>
 				</div>
 			)}
 

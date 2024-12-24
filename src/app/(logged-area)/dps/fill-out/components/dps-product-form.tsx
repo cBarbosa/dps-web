@@ -57,7 +57,7 @@ const DpsProductForm = ({
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
-			<h3 className="text-primary text-lg">Dados do DPS</h3>
+			<h3 className="text-primary text-lg">Dados do Produto</h3>
 			<ShareLine>
 				<Controller
 					control={control}

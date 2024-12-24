@@ -34,6 +34,7 @@ export async function getProposals(
 				items: {
 					uid: string
 					code: string
+					riskStatus?: string
 					customer: {
 						uid: string
 						document: string
@@ -53,10 +54,14 @@ export async function getProposals(
 						id: number
 						description: string
 					}
-					lmi: {
-						code: number
+					dfiStatus: {
+						id: number
 						description: string
 					}
+					// lmi: {
+					// 	code: number
+					// 	description: string
+					// }
 					createdAt: string
 				}[]
 			}
@@ -292,9 +297,8 @@ export type ProposalByUid = {
 	code: string
 	capitalMIP: number
 	capitalDFI: number
-	uploadMIP: boolean
-	uploadDFI: boolean
-	uploadReturnMIP: boolean
+	uploadMIP?: boolean
+	uploadDFI?: boolean
 	customer: {
 		uid: string
 		document: string
@@ -317,7 +321,7 @@ export type ProposalByUid = {
 	status: { id: number; description: string }
 	dfiStatus: { id: number; description: string }
 	type: { id: number; description: string }
-	propertyTypeId: number
+	propertyTypeId?: number
 	created: string
 	history: {
 		description: string

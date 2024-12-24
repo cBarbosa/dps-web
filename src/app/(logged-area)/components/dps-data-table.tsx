@@ -10,7 +10,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { formatCpf } from '@/lib/utils'
+import { cn, formatCpf } from '@/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { InfoIcon, Trash2Icon } from 'lucide-react'
 import Link from 'next/link'
@@ -25,6 +25,8 @@ export type DPS = {
 	dataCadastro: Date
 	tipoDoc: 'simples' | 'completa'
 	status: DpsStatus
+	dfiStatus?: DpsStatus,
+	riskStatus?: string
 }
 
 type DpsStatus = {
@@ -41,16 +43,33 @@ export const columns: ColumnDef<DPS>[] = [
 	{
 		accessorKey: 'cpf',
 		header: 'CPF Proponente',
-		cell: ({ getValue }) => {
-			const cpf = getValue<string>()
+		cell: ({ getValue, row }) => {
+			const cpf = getValue<string>();
+
 			return formatCpf(cpf)
 		},
 	},
 	{
 		accessorKey: 'dataCadastro',
 		header: () => <div className="w-full text-center">SLA</div>,
-		cell: ({ getValue }) => {
+		cell: ({ getValue, row }) => {
 			const date = getValue<Date>()
+
+			const riskStatus = row.original['riskStatus'];
+
+			if(riskStatus)
+				return <div className='w-full flex justify-center'>
+					<Badge
+						variant={riskStatus === 'APPROVED' ? `success` : `destructive`}
+						shape="pill"
+						className={
+							cn(`font-medium`,
+								riskStatus === 'APPROVED' ? `text-zinc-600` : `text-white`
+							)}
+					>
+						{(riskStatus === `APPROVED` ? `Aprovado` : `Recusado`)}
+					</Badge>
+				</div>;
 
 			const days14inMs = 14 * 24 * 60 * 60 * 1000
 			const endDate = new Date(date.getTime() + days14inMs)
@@ -64,30 +83,56 @@ export const columns: ColumnDef<DPS>[] = [
 			// 	})
 			// }
 
-			return <ProgressBar value={(1 - remaining / days14inMs) * 100} />
+			return <ProgressBar value={Math.round((1 - remaining / days14inMs) * 100)} />
 		},
 	},
-	{
-		accessorKey: 'tipoDoc',
-		header: 'Tipo de Documento',
-		cell: ({ getValue }) => {
-			const type = getValue<'simples' | 'completa'>()
-			return type === 'simples' ? 'DPS Simples' : 'DPS Completa'
-		},
-	},
+	// {
+	// 	accessorKey: 'tipoDoc',
+	// 	header: 'Tipo de Documento',
+	// 	cell: ({ getValue }) => {
+	// 		const type = getValue<'simples' | 'completa'>()
+	// 		return type === 'simples' ? 'DPS Simples' : 'DPS Completa'
+	// 	}
+	// },
 	{
 		accessorKey: 'status',
-		header: 'Status',
+		header: () => <div className="w-full text-center">Status MIP</div>,
 		cell: ({ getValue }) => {
 			const status = getValue<DpsStatus>()
 
+			if(!status)
+				return (<div>-</div>)
+
 			return (
-				<StatusBadge
-					status={{
-						code: status.id ?? 0,
-						description: status.description,
-					}}
-				/>
+				<div className='flex justify-center'>
+					<StatusBadge
+						status={{
+							code: status.id ?? 0,
+							description: status.description,
+						}}
+					/>
+				</div>
+			)
+		},
+	},
+	{
+		accessorKey: 'dfiStatus',
+		header: () => <div className="w-full text-center">Status DFI</div>,
+		cell: ({ getValue }) => {
+			const status = getValue<DpsStatus>()
+
+			if(!status)
+				return (<div className='text-center'>-</div>)
+
+			return (
+				<div className='flex justify-center'>
+					<StatusBadge
+						status={{
+							code: status.id ?? 0,
+							description: status.description,
+						}}
+					/>
+				</div>
 			)
 		},
 	},
@@ -211,20 +256,11 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 			| 'outline'
 			| null
 		className: string
-	} = { variant: null, className: 'font-normal text-black' }
+	} = { variant: null, className: 'font-normal text-black line-clamp-1' }
 
 	switch (status.code) {
-		case 1:
-			badgeProps.variant = 'warn'
-			break
-		case 2:
-			badgeProps.variant = 'warn'
-			break
 		case 3:
-			badgeProps.variant = 'warn'
-			break
-		case 4:
-			badgeProps.variant = 'destructive'
+			badgeProps.variant = 'outline'
 			break
 		case 5:
 			badgeProps.variant = 'success'
@@ -232,10 +268,13 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 		case 6:
 			badgeProps.variant = 'success'
 			break
-		case 10:
-			badgeProps.variant = 'warn'
+		case 36:
+			badgeProps.variant = 'destructive'
+		case 37:
+			badgeProps.variant = 'destructive'
 			break
 		default:
+			badgeProps.variant = 'warn'
 	}
 
 	return (

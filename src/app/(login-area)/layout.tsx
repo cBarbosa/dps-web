@@ -16,14 +16,14 @@ export default async function LoginAreaLayout({
 				>
 					<div>
 						<Image
-							src="/static/images/app-logo-white2.png"
+							src="/static/images/app-logo-white.png"
 							width="272"
 							height="81"
 							alt="Logo"
 						/>
 					</div>
 					<h2 className="text-4xl font-semibold text-white">
-						Plataforma de Subscrição de Riscos
+						Módulo de Subscrição de Riscos
 					</h2>
 				</div>
 			</div>
