@@ -10,6 +10,7 @@ import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
 import { ProposalByUid, signProposal } from '../../actions'
+import { DpsAddressFormType } from './dps-address-form'
 
 export const diseaseNames = {
 	'1': 'Acidente Vascular Cerebral',
@@ -107,9 +108,18 @@ const DpsForm = ({
 				dfi: '',
 				propertyType: '',
 			},
+			address: {
+				zipcode: '',
+				number: '',
+				city: '',
+				complement: '',
+				neighborhood: '',
+				state: '',
+				street: ''
+			}
 		},
 		health: initialHealthData,
-		attachments: undefined,
+		attachments: undefined
 	})
 
 	const diseaseList = dpsData.health
