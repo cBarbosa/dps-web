@@ -1,4 +1,5 @@
 'use server'
+import { string } from 'valibot'
 import axios from '../../../lib/axios'
 import { redirect } from 'next/navigation'
 
@@ -329,6 +330,13 @@ export type ProposalByUid = {
 		created: string
 	}[]
 	riskStatus?: string
+	addressZipcode?: string
+	addressStreet?: string
+	addressNumber?: string
+	addressComplement?: string
+	addressNeighborhood?: string
+	addressCity?: string
+	addressState?: string
 }
 
 export async function getProposalByUid(
@@ -782,3 +790,41 @@ export async function getProponentDataByCpf(cpf: string): Promise<{
 		return null
 	}
 }
+
+export async function getAddressByZipcode(
+	zipcode: string,
+): Promise<{
+		logradouro: string
+		complemento: string
+		unidade: string
+		bairro: string
+		localidade: string
+		uf: string
+		estado: string
+		regiao: string
+		ibge: string
+		gia: string
+		ddd: string
+		siafi: string
+	} | null
+> {
+	try {
+		const response = await axios.get(
+			`https://viacep.com.br/ws/${zipcode}/json`
+		)
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null;
+};

@@ -29,10 +29,12 @@ import DpsProductForm, {
 	DpsProductFormType,
 } from './dps-product-form'
 import { Loader2Icon } from 'lucide-react'
+import DpsAddressForm, { dpsAddressForm, DpsAddressFormType } from './dps-address-form'
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,
 	product: dpsProductForm,
+	address: dpsAddressForm
 })
 
 export type DpsInitialForm = InferInput<typeof dpsInitialForm>
@@ -82,7 +84,7 @@ const DpsInitialForm = ({
 				email: data?.profile?.email ?? '',
 				phone: data?.profile?.phone ?? '',
 				socialName: data?.profile?.socialName ?? '',
-				gender: data?.profile?.gender ?? '',
+				gender: data?.profile?.gender ?? ''
 			},
 		},
 	})
@@ -155,7 +157,9 @@ const DpsInitialForm = ({
 			propertyTypeId: Number(v.product.propertyType),
 			capitalMip: convertCapitalValue(v.product.mip) ?? 0,
 			capitalDfi: convertCapitalValue(v.product.dfi) ?? 0,
-		}
+			address: v.address
+		};
+
 		console.log('submitting', token, postData)
 
 		const response = await postProposal(token, postData)
@@ -194,7 +198,7 @@ const DpsInitialForm = ({
 				/>
 			</div>
 
-			<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+			<div className="px-9 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<DpsProductForm
 					data={data?.product as Partial<DpsProductFormType>}
 					prazosOptions={prazosOptions}
@@ -202,6 +206,13 @@ const DpsInitialForm = ({
 					tipoImovelOptions={tipoImovelOptions}
 					control={control}
 					formState={formState}
+				/>
+
+				<DpsAddressForm
+					data={data?.address as Partial<DpsAddressFormType>}
+					control={control}
+					formState={formState}
+					setValue={setValue}
 				/>
 
 				<Button
