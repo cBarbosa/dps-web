@@ -23,8 +23,9 @@ import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
 import { useSession } from 'next-auth/react'
 import { DataCard } from '../../components/data-card'
 import DfiReports from './dfi-reports'
+import AddressProposal from './address-proposal'
 
-type ProposalDataType = NonNullable<
+export type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
 >['data']
 
@@ -281,6 +282,13 @@ const DetailsPresent = ({
 						</DetailDataCard>
 					</div>
 				</div>
+
+				{proposalData.addressZipcode && (
+					<AddressProposal
+						data={proposalData}
+					/>
+				)}
+
 			</div>
 
 			{showFillOutAlert && (
@@ -435,7 +443,7 @@ const DetailsPresent = ({
 
 export default DetailsPresent
 
-function DetailDataCard({
+export function DetailDataCard({
 	children,
 	label,
 	value,
