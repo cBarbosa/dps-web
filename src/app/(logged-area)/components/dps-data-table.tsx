@@ -268,8 +268,15 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 		case 6:
 			badgeProps.variant = 'success'
 			break
+		case 24:
+			badgeProps.variant = 'destructive';
+			break;
+		case 35:
+			badgeProps.variant = 'success';
+			break;
 		case 36:
-			badgeProps.variant = 'destructive'
+			badgeProps.variant = 'destructive';
+			break;
 		case 37:
 			badgeProps.variant = 'destructive'
 			break

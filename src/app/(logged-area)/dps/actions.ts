@@ -1,5 +1,5 @@
-'use server'
-import { string } from 'valibot'
+'use server';
+
 import axios from '../../../lib/axios'
 import { redirect } from 'next/navigation'
 
@@ -9,6 +9,7 @@ export async function getProposals(
 	dfiStatus?: number,
 	produto?: string,
 	status?: number,
+	orderBy?: string,
 	page = 1,
 	size = 10
 ) {
@@ -18,9 +19,10 @@ export async function getProposals(
 				page: page,
 				size: size,
 				document: cpf ?? '',
-				lmiRange: dfiStatus ?? '',
+				dfiStatus: dfiStatus ?? '',
 				status: status ?? '',
 				productUid: produto ?? '',
+				orderBy: orderBy ?? ``
 			},
 			headers: {
 				Authorization: `Bearer ${token}`,

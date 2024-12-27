@@ -106,10 +106,15 @@ const DetailsPresent = ({
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<GoBackButton>
-					<Undo2Icon className="mr-2" />
-					Voltar
-				</GoBackButton>
+				<div className='w-full flex justify-between'>
+					<GoBackButton>
+						<Undo2Icon className="mr-2" />
+						Voltar
+					</GoBackButton>
+					<span className="font-mono text-sm text-gray-500">
+						{proposalData.code}
+					</span>
+				</div>
 
 				<div className="mx-5 mt-2">
 					<div className="w-full flex justify-between items-center">
@@ -185,9 +190,6 @@ const DetailsPresent = ({
 							</div>
 						)}
 					</div>
-					<span className="font-mono text-sm text-gray-500">
-						{proposalData.code}
-					</span>
 
 					<h5 className="text-xl my-4">Produto: {proposalData.product.name}</h5>
 
