@@ -195,36 +195,48 @@ const DetailsPresent = ({
 
 					<div className="flex gap-6 justify-between items-center">
 						<div className="mt-4 flex gap-5 text-muted-foreground">
-							<DetailDataCard
-								label="Prazo"
-								value={proposalData.deadLine?.description}
-							>
-								<CalendarIcon />
-							</DetailDataCard>
-							<DetailDataCard
-								label="Tipo Imóvel"
-								value={propertyTypeDescription}
-							>
-								<Building2Icon />
-							</DetailDataCard>
-							<DetailDataCard
-								label="Valor DFI"
-								value={Intl.NumberFormat('pt-BR', {
-									style: 'currency',
-									currency: 'BRL',
-								}).format(proposalData.capitalDFI)}
-							>
-								<DollarSignIcon />
-							</DetailDataCard>
-							<DetailDataCard
-								label="Valor da contratação"
-								value={Intl.NumberFormat('pt-BR', {
-									style: 'currency',
-									currency: 'BRL',
-								}).format(proposalData.capitalMIP)}
-							>
-								<DollarSignIcon />
-							</DetailDataCard>
+							{proposalData.deadLine && (
+								<DetailDataCard
+									label="Prazo"
+									value={proposalData.deadLine?.description}
+								>
+									<CalendarIcon />
+								</DetailDataCard>
+							)}
+
+							{propertyTypeDescription && (
+								<DetailDataCard
+									label="Tipo Imóvel"
+									value={propertyTypeDescription}
+								>
+									<Building2Icon />
+								</DetailDataCard>
+							)}
+
+							{proposalData.capitalDFI && (
+								<DetailDataCard
+									label="Valor DFI"
+									value={proposalData.capitalDFI && Intl.NumberFormat('pt-BR', {
+										style: 'currency',
+										currency: 'BRL',
+									}).format(proposalData.capitalDFI)}
+								>
+									<DollarSignIcon />
+								</DetailDataCard>
+							)}
+
+							{proposalData.capitalMIP && (
+								<DetailDataCard
+									label="Valor da contratação"
+									value={proposalData.capitalMIP && Intl.NumberFormat('pt-BR', {
+										style: 'currency',
+										currency: 'BRL',
+									}).format(proposalData.capitalMIP)}
+								>
+									<DollarSignIcon />
+								</DetailDataCard>
+							)}
+
 						</div>
 
 						<div className="flex flex-col gap-3">
@@ -268,20 +280,25 @@ const DetailsPresent = ({
 						>
 							<IdCardIcon />
 						</DetailDataCard>
-						<DetailDataCard
-							label="Telefone"
-							value={proposalData.customer.cellphone}
-						>
-							<PhoneIcon />
-						</DetailDataCard>
-						<DetailDataCard
-							label="Sexo"
-							value={
-								proposalData.customer.gender === 'M' ? 'Masculino' : 'Feminino'
-							}
-						>
-							<UserRoundIcon />
-						</DetailDataCard>
+						{proposalData.customer.cellphone && (
+							<DetailDataCard
+								label="Telefone"
+								value={proposalData.customer.cellphone}
+							>
+								<PhoneIcon />
+							</DetailDataCard>
+						)}
+
+						{proposalData.customer.gender && (
+							<DetailDataCard
+								label="Sexo"
+								value={
+									proposalData.customer.gender === 'M' ? 'Masculino' : 'Feminino'
+								}
+							>
+								<UserRoundIcon />
+							</DetailDataCard>
+						)}
 					</div>
 				</div>
 
