@@ -27,7 +27,8 @@ export default async function SubscriptionPage({
 		undefined,
 		undefined,
 		undefined,
-		5,
+		4,
+		`desc`,
 		currentPage
 	)
 
@@ -41,6 +42,8 @@ export default async function SubscriptionPage({
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
 			status: item.status,
+			dfiStatus: item.dfiStatus,
+			riskStatus: item.riskStatus
 		}
 	})
 
