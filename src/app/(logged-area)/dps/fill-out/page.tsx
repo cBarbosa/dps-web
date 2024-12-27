@@ -45,7 +45,7 @@ export default async function FillOutPage({
 
 	const status = undefined // se quiser valor fixo 10;
 	const data = allowSearch
-		? await getProposals(token, cpf, undefined, undefined, status, currentPage)
+		? await getProposals(token, cpf, undefined, undefined, status, `desc`, currentPage)
 		: { totalItems: 0, items: [] }
 
 	console.dir(data, { depth: Infinity })
