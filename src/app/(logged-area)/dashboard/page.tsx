@@ -178,10 +178,11 @@ async function EndingProposalList() {
 	const data = await getProposals(
 		token,
 		undefined, //cpf
-		undefined, //lmi
+		undefined, //dfiStatus
 		undefined, //produto
-		roleBasedData.status //status
-	)
+		roleBasedData.status, //status
+		`asc` // orderBy
+	);
 
 	if (data === null) return redirect('/logout')
 

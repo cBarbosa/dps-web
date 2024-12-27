@@ -40,6 +40,7 @@ export default async function DashboardTablePage({
 		undefined, //dfi status
 		undefined, //produto
 		status, //status
+		`desc`, // orderBy
 		currentPage
 	)
 

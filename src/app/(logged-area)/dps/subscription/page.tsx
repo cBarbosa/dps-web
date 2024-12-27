@@ -20,20 +20,19 @@ export default async function SubscriptionMedPage({
 		redirect('/dashboard')
 	}
 
-	const currentPage = searchParams?.page ? +searchParams.page : 1
+	const currentPage = searchParams?.page ? +searchParams.page : 1;
 
 	const dataRaw = await getProposals(
 		token,
 		undefined,
+		29,
 		undefined,
 		undefined,
-		4,
+		`desc`,
 		currentPage
 	)
 
 	if (!dataRaw) return redirect('/dashboard')
-
-	console.log('~~~~dataRaw', dataRaw)
 
 	const data: DPS[] = dataRaw.items?.map((item: any) => {
 		return {
@@ -43,6 +42,8 @@ export default async function SubscriptionMedPage({
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
 			status: item.status,
+			dfiStatus: item.dfiStatus,
+			riskStatus: item.riskStatus
 		}
 	})
 
