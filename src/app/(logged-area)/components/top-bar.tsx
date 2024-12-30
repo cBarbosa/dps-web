@@ -46,23 +46,7 @@ export function TopBar({ session }: { session: Session | null }) {
 		console.log(cpf)
 	}
 
-	const notifications = [
-		{
-			title: 'Notificação 1',
-			date: new Date(),
-			description: 'Descrição da notificação 1',
-		},
-		{
-			title: 'Notificação 2',
-			date: new Date(),
-			description: 'Descrição da notificação 2',
-		},
-		{
-			title: 'Notificação 3',
-			date: new Date(),
-			description: 'Descrição da notificação 3',
-		},
-	]
+	const notifications = undefined;
 
 	return (
 		<div className="relative flex h-[90px] w-full px-5 py-2 gap-8 justify-between items-center">

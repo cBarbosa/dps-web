@@ -42,7 +42,7 @@ export default async function DpsFormPage({
 		getProductList(token),
 		cpf ? getProponentDataByCpf(cpf) : null,
 	])
-	console.log('||||||||->>')
+
 	console.dir(proponentDataRaw, { depth: Infinity })
 
 	const prazosOptions =
@@ -114,8 +114,6 @@ export default async function DpsFormPage({
 
 		return partes[1]?.trim() ?? undefined;
 	};
-
-	console.log('autocompleteData', autocompleteData)
 
 	return (
 		// <DpsForm
