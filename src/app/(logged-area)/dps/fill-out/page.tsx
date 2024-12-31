@@ -13,7 +13,9 @@ import {
 import DpsDataTable, { DPS } from '../../components/dps-data-table'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
+import getServerSessionAuthorization, {
+	ApiRoles,
+} from '@/hooks/getServerSessionAuthorization'
 
 export const revalidate = 0 // no cache
 // export const maxDuration = 300;
@@ -26,6 +28,9 @@ export default async function FillOutPage({
 }) {
 	const { session, granted } = await getServerSessionAuthorization(['vendedor'])
 	const token = (session as any)?.accessToken
+	const role = (session as any)?.role?.toLowerCase() as
+		| Lowercase<ApiRoles>
+		| undefined
 
 	if (!granted) {
 		redirect('/dashboard')
@@ -45,7 +50,15 @@ export default async function FillOutPage({
 
 	const status = undefined // se quiser valor fixo 10;
 	const data = allowSearch
-		? await getProposals(token, cpf, undefined, undefined, status, `desc`, currentPage)
+		? await getProposals(
+				token,
+				cpf,
+				undefined,
+				undefined,
+				status,
+				`desc`,
+				currentPage
+		  )
 		: { totalItems: 0, items: [] }
 
 	console.dir(data, { depth: Infinity })
@@ -80,7 +93,7 @@ export default async function FillOutPage({
 	return (
 		<div className="p-5">
 			<div className="px-5 w-full max-w-7xl mx-auto">
-				<Alert variant="info" disposable className='hidden'>
+				<Alert variant="info" disposable className="hidden">
 					<InfoIcon size={20} className="text-primary-dark/60" />
 					<AlertDescription>
 						Para abertura da{' '}
@@ -119,6 +132,18 @@ export default async function FillOutPage({
 								<Button variant="default" asChild>
 									<Link
 										href={'/dps/fill-out/form?' + urlParams.toString()}
+										className="hover:text-white"
+									>
+										Preencher nova DPS
+									</Link>
+								</Button>
+							</>
+						) : role === 'vendedor' ? (
+							<>
+								Informe os filtros para buscar proponentes.
+								<Button variant="default" asChild>
+									<Link
+										href={'/dps/fill-out/form'}
 										className="hover:text-white"
 									>
 										Preencher nova DPS
