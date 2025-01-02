@@ -101,7 +101,7 @@ const DetailsPresent = ({
 	const showMipAlertCompleteToMedic: boolean | undefined =
 		role === 'subscritor-med' && proposalData.status.id === 4 && proposalData.capitalMIP > 5000000;
 	const showDfiAlertToSubscriber: boolean | undefined =
-		role === 'subscritor' && proposalData.dfiStatus.id === 29;
+		role === 'subscritor' && proposalData.dfiStatus?.id === 29;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">

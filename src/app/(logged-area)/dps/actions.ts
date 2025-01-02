@@ -830,3 +830,34 @@ export async function getAddressByZipcode(
 
 	return null;
 };
+
+export async function deleteArchive(
+	token: string,
+	archiveUid: string
+) {
+
+	try {
+		const response = await axios.delete(
+			`v1/Proposal/${archiveUid}/document`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				}
+			}
+		);
+
+		if (response.data) {
+			return response.data;
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.log(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null;
+};
