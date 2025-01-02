@@ -138,7 +138,6 @@ const DpsInitialForm = ({
 	const router = useRouter()
 
 	async function onSubmit(v: DpsInitialForm) {
-		console.log('submitting', v)
 
 		setIsLoading(true)
 
@@ -160,11 +159,7 @@ const DpsInitialForm = ({
 			address: v.address
 		};
 
-		console.log('submitting', token, postData)
-
 		const response = await postProposal(token, postData)
-
-		console.log('post proposal', response)
 
 		if (response) {
 			reset()
@@ -182,7 +177,6 @@ const DpsInitialForm = ({
 	return (
 		<form
 			onSubmit={e => {
-				console.log('>', e)
 				handleSubmit(onSubmit)(e)
 			}}
 			className={cn(

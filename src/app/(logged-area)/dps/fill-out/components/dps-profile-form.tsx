@@ -85,7 +85,7 @@ const DpsProfileForm = ({
 									'w-full px-4 py-6 rounded-lg',
 									errors?.cpf && 'border-red-500 focus-visible:border-red-500'
 								)}
-								disabled
+								disabled={data?.cpf ? true : false}
 								autoComplete="cpf"
 								onChange={onChange}
 								onBlur={onBlur}
