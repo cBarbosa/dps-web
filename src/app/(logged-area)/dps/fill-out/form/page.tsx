@@ -27,7 +27,7 @@ export default async function DpsFormPage({
 	// const lmi = isNaN(+searchParams.lmi) ? undefined : +searchParams.lmi
 	// const produto = searchParams.produto
 
-	if (!cpf || cpf.length < 11 || !validateCpf(cpf)) redirect('/dps/fill-out')
+	if (cpf && (cpf.length < 11 || !validateCpf(cpf))) redirect('/dps/fill-out')
 
 	const [
 		data,
@@ -42,7 +42,7 @@ export default async function DpsFormPage({
 		getProductList(token),
 		cpf ? getProponentDataByCpf(cpf) : null,
 	])
-	console.log('||||||||->>')
+
 	console.dir(proponentDataRaw, { depth: Infinity })
 
 	const prazosOptions =
@@ -107,15 +107,12 @@ export default async function DpsFormPage({
 	}
 
 	const getProfissionDescription = (input?: string): string | undefined => {
+		if (!input) return
 
-		if (!input)	return;
+		const partes = input.split('-')
 
-		const partes = input.split('-');
-
-		return partes[1]?.trim() ?? undefined;
-	};
-
-	console.log('autocompleteData', autocompleteData)
+		return partes[1]?.trim() ?? undefined
+	}
 
 	return (
 		// <DpsForm
@@ -138,7 +135,9 @@ export default async function DpsFormPage({
 							birthdate: autocompleteData?.birthdate
 								? new Date(autocompleteData.birthdate)
 								: undefined,
-							profession: getProfissionDescription(autocompleteData?.profession),
+							profession: getProfissionDescription(
+								autocompleteData?.profession
+							),
 							phone: autocompleteData?.phone,
 						},
 					}}

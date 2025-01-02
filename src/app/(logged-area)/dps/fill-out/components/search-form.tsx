@@ -74,13 +74,9 @@ export default function SearchForm() {
 		},
 	})
 
-	console.log(errors)
-	console.log(getValues())
-
 	const router = useRouter()
 
 	function onSubmit(v: SearchSchema) {
-		console.log('submit', v)
 
 		trigger()
 
