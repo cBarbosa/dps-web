@@ -52,7 +52,7 @@ export default async function Page({
         const cpf = cpfRaw?.toString().replace(/[^\d]/g, '');
         console.log('filtering', cpf);
 
-        redirect(`/dps/saler-supe?cpf=${cpf}`);
+        redirect(`/dps/saler-sup?cpf=${cpf}`);
     }
 
     return(
@@ -61,7 +61,7 @@ export default async function Page({
 				<div className="flex justify-start items-center gap-6 mt-2 mb-7">
 					<h2 className="text-xl text-primary">Painel de Reanálise</h2>
 					<span className="text-muted-foreground text-sm">
-						Aqui listamos as DPS&apos;s que aguardam abertura para reanálise.
+						Aqui listamos as DPS&apos;s que aguardam reanálise.
 					</span>
 				</div>
 				<form action={filterResults} className="mb-3 flex gap-5 items-center">

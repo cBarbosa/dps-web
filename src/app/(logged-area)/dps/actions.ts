@@ -339,6 +339,7 @@ export type ProposalByUid = {
 	addressNeighborhood?: string
 	addressCity?: string
 	addressState?: string
+	closed?: string
 }
 
 export async function getProposalByUid(
