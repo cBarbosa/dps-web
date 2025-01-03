@@ -180,7 +180,7 @@ export default function DfiReports({
 					token,
 					uid,
 					newStatus,
-					'Análise de DFI concluída.',
+					'Análise de DFI concluída',
 					'DFI'
 				)
 
@@ -193,14 +193,14 @@ export default function DfiReports({
 						setAlertDialog({
 							open: true,
 							title: 'Erro',
-							body: 'Ocorreu um erro ao concluir análise de DFI.',
+							body: 'Ocorreu um erro ao concluir análise de DFI',
 						})
 					}
 				} else {
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta).',
+						body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta)',
 					})
 				}
 
@@ -262,8 +262,6 @@ export default function DfiReports({
 		},
 		[reloadReports, token]
 	);
-
-	console.log('reject message', rejectJustification)
 
 	const showReportApproval =
 		userRole &&

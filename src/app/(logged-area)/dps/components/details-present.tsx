@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
 import {
@@ -8,7 +8,10 @@ import {
 	DollarSignIcon,
 	FileTextIcon,
 	IdCardIcon,
+	LucideAlertOctagon,
 	PhoneIcon,
+	ThumbsDownIcon,
+	ThumbsUpIcon,
 	Undo2Icon,
 	UserIcon,
 	UserRoundIcon,
@@ -24,6 +27,7 @@ import { useSession } from 'next-auth/react'
 import { DataCard } from '../../components/data-card'
 import DfiReports from './dfi-reports'
 import AddressProposal from './address-proposal'
+import DialogReanalisys from './dialog-reanalisys'
 
 export type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -42,6 +46,8 @@ export const statusDescriptionDict: Record<number, string> = {
 	32: 'Complemento enviado',
 	33: 'Enviado para subscrição',
 	34: 'DFI Avaliada',
+	40: 'Processo em reanálise',
+	41: 'Processo reanalisado',
 }
 
 const DetailsPresent = ({
@@ -64,6 +70,15 @@ const DetailsPresent = ({
 		React.useState<ProposalDataType>(proposalDataProp)
 	const [isModalOpen, setIsModalOpen] = React.useState(false)
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
+	const [alertDialog, setAlertDialog] = React.useState<{
+		open: boolean
+		title?: string
+		body?: ReactNode
+		onConfirm?: () => void
+		confirmText?: string
+	}>({
+		open: false
+	});
 
 	const proposalSituation = proposalData?.status
 	const proposalSituationDFI = proposalData?.dfiStatus
@@ -86,6 +101,111 @@ const DetailsPresent = ({
 		setPdfUrl(createPdfUrlFromBase64(response.data))
 	}, [token, uid])
 
+	const reportAnalisys = React.useCallback(
+	
+			async function () {
+	
+				setAlertDialog({
+					open: true,
+					title: `Confirmação abertura de reanálise`,
+					body:
+						<>
+							Confirma a{' '}
+							<span className="text-base font-semibold text-destructive">
+								REABERTURA DA ANÁLISE
+							</span>{' '}
+							do processo?
+						</>,
+					onConfirm: handleReanalisys,
+					confirmText: 'Reabrir'
+				});
+	
+				async function handleReanalisys() {
+					setAlertDialog({
+						open: false
+					});
+	
+					const response = { success: true, message: 'Processo reaberto para análise' };
+	
+					if (response) {
+						if (response.success) {
+							refetchProposalData();
+						} else {
+							setAlertDialog({
+								open: true,
+								title: 'Erro',
+								body: response.message,
+							});
+						}
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: 'Ocorreu um erro ao deletar um arquivo.',
+						})
+					}
+				}
+			},
+			[refetchProposalData, uid]
+		);
+
+	const reportApprovalAnalisys = React.useCallback(
+	
+			async function (isApproved: boolean) {
+	
+				setAlertDialog({
+					open: true,
+					title: `Confirmação de ${isApproved ? 'Aprovação' : 'Reprovação'} de processo de reanálise`,
+					body:isApproved ? (
+							<>
+									Confirma a{' '}
+									<span className="text-base font-semibold text-primary">
+										APROVAÇÃO
+									</span>{' '}
+									do processo?
+								</>
+							) : (
+								<>
+									Confirma a{' '}
+									<span className="text-base font-semibold text-destructive">
+										REPROVAÇÃO
+									</span>{' '}
+									do processo?
+								</>
+							),
+					onConfirm: handleReanalisys,
+					confirmText: 'Reabrir'
+				});
+	
+				async function handleReanalisys() {
+					setAlertDialog({
+						open: false
+					});
+	
+					const response = { success: true, message: 'Processo reaberto para análise' };
+	
+					if (response) {
+						if (response.success) {
+							refetchProposalData();
+						} else {
+							setAlertDialog({
+								open: true,
+								title: 'Erro',
+								body: response.message,
+							});
+						}
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: 'Ocorreu um erro ao deletar um arquivo.',
+						})
+					}
+				}
+			},
+			[refetchProposalData, uid]
+		);
+
 	const lastSituation: number | undefined =
 		proposalData.history?.at(0)?.statusId
 
@@ -102,6 +222,10 @@ const DetailsPresent = ({
 		role === 'subscritor-med' && proposalData.status.id === 4 && proposalData.capitalMIP > 5000000;
 	const showDfiAlertToSubscriber: boolean | undefined =
 		role === 'subscritor' && proposalData.dfiStatus?.id === 29;
+	const showReanalisys:boolean =
+		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED';
+	const showAproveAnalisysDps: boolean =
+		role === 'subscritor-sup' && proposalData.riskStatus === 'REFUSED';
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -248,6 +372,33 @@ const DetailsPresent = ({
 							>
 								Visualizar DPS
 							</Button>
+							{showReanalisys && (
+								<Button
+									variant={`secondary`}
+									onClick={() => reportAnalisys() }
+								>
+									<LucideAlertOctagon className="mr-2" size={18} />
+									Reanálise
+								</Button>
+							)}
+							{showAproveAnalisysDps && (
+								<div className="flex gap-2 mb-3">
+									<Button
+										variant="default"
+										// onClick={() => reviewReport(true)}
+									>
+										<ThumbsUpIcon className="mr-2" size={18} />
+										Aprovar
+									</Button>
+									<Button
+										variant="destructive"
+										// onClick={() => reviewReport(false)}
+									>
+										<ThumbsDownIcon className="mr-2" size={18} />
+										Reprovar
+									</Button>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
@@ -456,6 +607,16 @@ const DetailsPresent = ({
 				setIsModalOpen={setIsModalOpen}
 				pdfUrl={pdfUrl}
 			/>
+
+			<DialogReanalisys
+				open={alertDialog.open}
+				onOpenChange={() => setAlertDialog({ open: false })}
+				title={alertDialog.title ?? ''}
+				onConfirm={alertDialog.onConfirm}
+				confirmText={alertDialog.confirmText ?? 'Continuar'}
+			>
+				{alertDialog.body}
+			</DialogReanalisys>
 		</div>
 	)
 }

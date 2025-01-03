@@ -67,7 +67,12 @@ export const columns: ColumnDef<DPS>[] = [
 								riskStatus === 'APPROVED' ? `text-zinc-600` : `text-white`
 							)}
 					>
-						{(riskStatus === `APPROVED` ? `Aprovado` : `Recusado`)}
+						{(riskStatus === `APPROVED`
+							? `Aprovado`
+							: riskStatus === `REFUSED`
+								? `Recusado`
+								: `Reanálise`
+							)}
 					</Badge>
 				</div>;
 

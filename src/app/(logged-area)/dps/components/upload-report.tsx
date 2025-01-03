@@ -56,15 +56,11 @@ const UploadReport = ({
 			type: typeProp,
 		}
 
-		console.log('uploading', postFileData)
-
 		const resAttachment = await postProposalDocumentsByUid(
 			token,
 			proposalUid,
 			postFileData
 		)
-
-		console.log('post file', resAttachment)
 
 		if (resAttachment) {
 			if (resAttachment.success) {

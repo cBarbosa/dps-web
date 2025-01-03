@@ -168,7 +168,7 @@ async function EndingProposalList() {
 	// 		status: undefined,
 	// 		title: 'Passíveis de reanálise - Menores que 30 dias corridos da recusa',
 	// 	}
-	else if (role === 'admin')
+	else if (role === 'admin' || role === 'vendedor-sup' || role === 'subscritor-sup')
 		roleBasedData = {
 			status: undefined,
 			title: "SLA's - Iminência de finalização de prazo de 15 dias",

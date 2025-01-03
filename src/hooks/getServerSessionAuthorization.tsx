@@ -6,11 +6,13 @@ export enum ApiRoleEnum {
 	VENDEDOR = 'vendedor',
 	SUBSCRITOR = 'subscritor',
 	SUBSCRITOR_MED = 'subscritor-med',
-}
+	VENDEDOR_SUP = 'vendedor-sup',
+	SUBSCRITOR_SUP = 'subscritor-sup'
+};
 
-type ApiRolesAux = 'ADMIN' | 'VENDEDOR' | 'SUBSCRITOR' | 'SUBSCRITOR-MED'
+type ApiRolesAux = 'ADMIN' | 'VENDEDOR' | 'SUBSCRITOR' | 'SUBSCRITOR-MED' | 'VENDEDOR-SUP' | 'SUBSCRITOR-SUP';
 
-export type ApiRoles = Lowercase<ApiRolesAux> | Uppercase<ApiRolesAux>
+export type ApiRoles = Lowercase<ApiRolesAux> | Uppercase<ApiRolesAux>;
 
 export default async function getServerSessionAuthorization(
 	roles?: ApiRoles[]
@@ -23,7 +25,7 @@ export default async function getServerSessionAuthorization(
 				accessToken: string
 				role: ApiRoles
 		  })
-		| null
+		| null;
 
 	if (!roles || roles.length === 0) {
 		return {
@@ -36,9 +38,9 @@ export default async function getServerSessionAuthorization(
 
 	if (session) {
 		const { accessToken, role: roleRaw } = session as
-			| Session & { accessToken: string; role: string }
+			| Session & { accessToken: string; role: string };
 
-		const role = roleRaw?.toLowerCase() as Lowercase<ApiRoles>
+		const role = roleRaw?.toLowerCase() as Lowercase<ApiRoles>;
 
 		// ALWAYS ALLOW ADMIN
 		if (role === 'admin') {
