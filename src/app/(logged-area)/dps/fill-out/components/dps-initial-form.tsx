@@ -17,7 +17,7 @@ import {
 	pipe,
 	string,
 } from 'valibot'
-import { postProposal } from '../../actions'
+import { getProponentDataByCpf, postProposal } from '../../actions'
 import { useRouter } from 'next/navigation'
 import DpsProfileForm, {
 	DpsProfileFormType,
@@ -29,12 +29,17 @@ import DpsProductForm, {
 	DpsProductFormType,
 } from './dps-product-form'
 import { Loader2Icon } from 'lucide-react'
-import DpsAddressForm, { dpsAddressForm, DpsAddressFormType } from './dps-address-form'
+import DpsAddressForm, {
+	dpsAddressForm,
+	DpsAddressFormType,
+} from './dps-address-form'
+import { getProfissionDescription } from '../form/page'
+import validarCpf from 'validar-cpf'
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,
 	product: dpsProductForm,
-	address: dpsAddressForm
+	address: dpsAddressForm,
 })
 
 export type DpsInitialForm = InferInput<typeof dpsInitialForm>
@@ -63,6 +68,11 @@ const DpsInitialForm = ({
 	const token = (session.data as any)?.accessToken
 
 	const [isLoading, setIsLoading] = useState(false)
+	const [isLoadingData, setIsLoadingData] = useState(false)
+
+	const [prazosOptions, setPrazosOptions] = useState<
+		{ value: string; label: string }[]
+	>([])
 
 	const {
 		handleSubmit,
@@ -84,18 +94,15 @@ const DpsInitialForm = ({
 				email: data?.profile?.email ?? '',
 				phone: data?.profile?.phone ?? '',
 				socialName: data?.profile?.socialName ?? '',
-				gender: data?.profile?.gender ?? ''
+				gender: data?.profile?.gender ?? '',
 			},
 		},
+		disabled: isLoading || isLoadingData,
 	})
 
 	const formState = { ...formStateRest, errors, isSubmitting, isSubmitted }
 
 	const watchBirthdate = watch('profile.birthdate')
-
-	const [prazosOptions, setPrazosOptions] = useState<
-		{ value: string; label: string }[]
-	>([])
 
 	useEffect(() => {
 		const age = calculateAge(watchBirthdate)
@@ -138,7 +145,6 @@ const DpsInitialForm = ({
 	const router = useRouter()
 
 	async function onSubmit(v: DpsInitialForm) {
-
 		setIsLoading(true)
 
 		const postData = {
@@ -156,8 +162,8 @@ const DpsInitialForm = ({
 			propertyTypeId: Number(v.product.propertyType),
 			capitalMip: convertCapitalValue(v.product.mip) ?? 0,
 			capitalDfi: convertCapitalValue(v.product.dfi) ?? 0,
-			address: v.address
-		};
+			address: v.address,
+		}
 
 		const response = await postProposal(token, postData)
 
@@ -172,6 +178,60 @@ const DpsInitialForm = ({
 		} else {
 			setIsLoading(false)
 		}
+	}
+
+	async function getDataByCpf(cpf: string) {
+		if (!validarCpf(cpf)) return
+
+		console.log('>', cpf)
+		setIsLoadingData(true)
+		const proponentDataRaw = await getProponentDataByCpf(cpf)
+
+		if (proponentDataRaw) {
+			const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
+				? proponentDataRaw?.detalhes.nascimento.split('/')
+				: undefined
+
+			const proponentDataBirthdate = proponentDataBirthdateAux
+				? new Date(
+						Number(proponentDataBirthdateAux[2]),
+						Number(proponentDataBirthdateAux[1]) - 1,
+						Number(proponentDataBirthdateAux[0])
+				  )
+				: undefined
+
+			const autocompleteData = {
+				cpf: proponentDataRaw?.detalhes.cpf,
+				name: proponentDataRaw?.detalhes.nome,
+				socialName: undefined,
+				birthdate: proponentDataBirthdate,
+				profession: proponentDataRaw?.detalhes.profissao,
+				gender: proponentDataRaw?.detalhes.sexo,
+				email: undefined,
+				phone: undefined,
+			}
+			console.log(autocompleteData)
+
+			if (autocompleteData.name) setValue('profile.name', autocompleteData.name)
+			if (autocompleteData.birthdate)
+				setValue('profile.birthdate', autocompleteData.birthdate)
+			if (autocompleteData.profession)
+				setValue(
+					'profile.profession',
+					getProfissionDescription(autocompleteData.profession)
+				)
+			if (autocompleteData.email)
+				setValue('profile.email', autocompleteData.email)
+			if (autocompleteData.phone)
+				setValue('profile.phone', autocompleteData.phone)
+			if (autocompleteData.socialName)
+				setValue('profile.socialName', autocompleteData.socialName)
+			if (autocompleteData.gender)
+				setValue('profile.gender', autocompleteData.gender)
+		} else {
+			console.error('Could not get proponent data by CPF')
+		}
+		setIsLoadingData(false)
 	}
 
 	return (
@@ -189,6 +249,8 @@ const DpsInitialForm = ({
 					data={data?.profile as Partial<DpsProfileFormType>}
 					control={control}
 					formState={formState}
+					getDataByCpf={getDataByCpf}
+					disabled={isLoadingData}
 				/>
 			</div>
 

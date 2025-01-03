@@ -39,6 +39,13 @@ function DatePicker(
 	)
 	const inputRef = React.useRef<HTMLInputElement>(null)
 
+	React.useEffect(() => {
+		if (valueProp) {
+			setDate(valueProp)
+			setInputValue(valueProp.toLocaleDateString('pt-BR'))
+		}
+	}, [valueProp])
+
 	function handleOpen(open: boolean) {
 		if (open) {
 			requestAnimationFrame(() => {
