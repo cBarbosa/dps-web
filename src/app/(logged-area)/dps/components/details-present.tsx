@@ -223,9 +223,9 @@ const DetailsPresent = ({
 	const showDfiAlertToSubscriber: boolean | undefined =
 		role === 'subscritor' && proposalData.dfiStatus?.id === 29;
 	const showReanalisys:boolean =
-		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED';
+		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED' && proposalData.closed === undefined;
 	const showAproveAnalisysDps: boolean =
-		role === 'subscritor-sup' && proposalData.riskStatus === 'REFUSED';
+		role === 'subscritor-sup' && proposalData.riskStatus === 'REOPENED' && proposalData.closed !== undefined;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
