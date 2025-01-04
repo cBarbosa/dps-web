@@ -33,7 +33,6 @@ import DpsAddressForm, {
 	dpsAddressForm,
 	DpsAddressFormType,
 } from './dps-address-form'
-import { getProfissionDescription } from '../form/page'
 import validarCpf from 'validar-cpf'
 
 export const dpsInitialForm = object({
@@ -290,4 +289,12 @@ export default DpsInitialForm
 
 function getDigits(value: string) {
 	return value.replace(/[^0-9]/g, '')
+}
+
+export function getProfissionDescription(input?: string): string {
+	if (!input) return ''
+
+	const partes = input.split('-')
+
+	return partes[1]?.trim() ?? ''
 }
