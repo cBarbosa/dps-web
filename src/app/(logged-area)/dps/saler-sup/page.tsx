@@ -4,7 +4,10 @@ import React from 'react';
 import { getReopenedProposals } from '../actions';
 import DpsDataTable, { DPS } from '../../components/dps-data-table';
 import { Input } from '@/components/ui/input';
-import { ListFilterIcon, SearchIcon } from 'lucide-react';
+import {
+    ListFilterIcon,
+    SearchIcon
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default async function Page({
@@ -26,7 +29,6 @@ export default async function Page({
 
     const dataRaw = await getReopenedProposals(
             token,
-            undefined,
             undefined,
             currentPage
     );

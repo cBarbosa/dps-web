@@ -27,7 +27,6 @@ export default async function Page({
     const dataRaw = await getReopenedProposals(
             token,
             undefined,
-            undefined,
             currentPage
     );
 
