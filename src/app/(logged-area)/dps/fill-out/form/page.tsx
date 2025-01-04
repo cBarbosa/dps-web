@@ -106,14 +106,6 @@ export default async function DpsFormPage({
 		phone: undefined,
 	}
 
-	const getProfissionDescription = (input?: string): string | undefined => {
-		if (!input) return
-
-		const partes = input.split('-')
-
-		return partes[1]?.trim() ?? undefined
-	}
-
 	return (
 		// <DpsForm
 		// 	initialProposalData={proposalData}
@@ -148,4 +140,12 @@ export default async function DpsFormPage({
 			</div>
 		</div>
 	)
+}
+
+export function getProfissionDescription(input?: string): string {
+	if (!input) return ''
+
+	const partes = input.split('-')
+
+	return partes[1]?.trim() ?? ''
 }
