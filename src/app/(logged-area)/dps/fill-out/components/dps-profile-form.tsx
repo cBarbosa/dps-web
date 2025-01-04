@@ -56,15 +56,23 @@ const DpsProfileForm = ({
 	// errors,
 	// isSubmitting,
 	formState,
+	getDataByCpf,
+	disabled,
 }: {
 	data?: Partial<DpsProfileFormType>
 	control: Control<DpsInitialForm>
 	// errors: FieldErrors<DpsProfileFormType>
 	// isSubmitting: boolean
 	formState: FormState<DpsInitialForm>
+	getDataByCpf: (cpf: string) => void
+	disabled?: boolean
 }) => {
 	const errors = formState.errors?.profile
 	const isSubmitting = formState.isSubmitting
+
+	const completeDataOnCpfBlur = (e: any) => {
+		getDataByCpf(e.target.value)
+	}
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -85,10 +93,13 @@ const DpsProfileForm = ({
 									'w-full px-4 py-6 rounded-lg',
 									errors?.cpf && 'border-red-500 focus-visible:border-red-500'
 								)}
-								disabled={data?.cpf ? true : false}
+								disabled={disabled || (data?.cpf ? true : false)}
 								autoComplete="cpf"
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={e => {
+									completeDataOnCpfBlur(e)
+									onBlur()
+								}}
 								value={value}
 								ref={ref}
 							/>
@@ -111,7 +122,9 @@ const DpsProfileForm = ({
 									errors?.birthdate &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
-								disabled={isSubmitting || data?.birthdate !== undefined}
+								disabled={
+									disabled || isSubmitting || data?.birthdate !== undefined
+								}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -142,7 +155,7 @@ const DpsProfileForm = ({
 									errors?.name && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="name"
-								disabled={isSubmitting || data?.name !== undefined}
+								disabled={disabled || isSubmitting || data?.name !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -172,7 +185,9 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="socialName"
-								disabled={isSubmitting || data?.socialName !== undefined}
+								disabled={
+									disabled || isSubmitting || data?.socialName !== undefined
+								}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -226,6 +241,7 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="profession"
+								disabled={disabled}
 								// disabled={isSubmitting || data?.profession !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -255,7 +271,7 @@ const DpsProfileForm = ({
 									errors?.email && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="email"
-								disabled={isSubmitting}
+								disabled={disabled || isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -287,7 +303,7 @@ const DpsProfileForm = ({
 									errors?.phone && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="phone"
-								disabled={isSubmitting}
+								disabled={disabled || isSubmitting}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
@@ -312,7 +328,10 @@ const DpsProfileForm = ({
 								triggerClassName="p-4 h-12 rounded-lg"
 								onValueChange={onChange}
 								defaultValue={value}
-								disabled={isSubmitting || data?.gender !== undefined}
+								value={value}
+								disabled={
+									disabled || isSubmitting || data?.gender !== undefined
+								}
 							/>
 							<div className="text-xs text-red-500">
 								{errors?.gender?.message}

@@ -8,7 +8,9 @@ import {
 } from '../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
-import DpsInitialForm from '../components/dps-initial-form'
+import DpsInitialForm, {
+	getProfissionDescription,
+} from '../components/dps-initial-form'
 import validateCpf from 'validar-cpf'
 
 export default async function DpsFormPage({
@@ -104,14 +106,6 @@ export default async function DpsFormPage({
 		gender: proponentDataRaw?.detalhes.sexo,
 		email: undefined,
 		phone: undefined,
-	}
-
-	const getProfissionDescription = (input?: string): string | undefined => {
-		if (!input) return
-
-		const partes = input.split('-')
-
-		return partes[1]?.trim() ?? undefined
 	}
 
 	return (

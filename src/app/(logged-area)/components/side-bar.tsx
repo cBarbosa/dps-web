@@ -27,6 +27,8 @@ export default function SideBar() {
 	const { session } = useSessionAuthorization()
 	const role = session?.data?.role
 
+	console.log('role', role)
+
 	return (
 		<div className="flex flex-col justify-between w-full h-full p-4">
 			<div>
@@ -58,6 +60,12 @@ export default function SideBar() {
 							</RoleBasedRender>
 							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
 								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
+							</RoleBasedRender>
+							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
+								<MenuItem href="/dps/saler-sup">Reanálise</MenuItem>
+							</RoleBasedRender>
+							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_SUP]}>
+								<MenuItem href="/dps/subscription-sup">Reanálise</MenuItem>
 							</RoleBasedRender>
 							<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
 						</MenuSection>

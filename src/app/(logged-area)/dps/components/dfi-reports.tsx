@@ -3,15 +3,18 @@
 import React, { ReactNode, useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import {
+	deleteArchive,
 	getProposalArchiveByUid,
 	getProposalDocumentsByUid,
 	postStatus,
 } from '../actions'
 import {
+	DeleteIcon,
 	FileTextIcon,
 	SendIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
+	Trash2Icon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
@@ -177,7 +180,7 @@ export default function DfiReports({
 					token,
 					uid,
 					newStatus,
-					'Análise de DFI concluída.',
+					'Análise de DFI concluída',
 					'DFI'
 				)
 
@@ -190,14 +193,14 @@ export default function DfiReports({
 						setAlertDialog({
 							open: true,
 							title: 'Erro',
-							body: 'Ocorreu um erro ao concluir análise de DFI.',
+							body: 'Ocorreu um erro ao concluir análise de DFI',
 						})
 					}
 				} else {
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta).',
+						body: 'Ocorreu um erro ao concluir análise de DFI (sem resposta)',
 					})
 				}
 
@@ -207,7 +210,58 @@ export default function DfiReports({
 		[onConfirmProp, rejectJustification, reloadReports, token, uid]
 	)
 
-	console.log('reject message', rejectJustification)
+	const reportDeleteArchive = useCallback(
+
+		async function (archiveUid: string) {
+
+			setAlertDialog({
+				open: true,
+				title: `Confirmação de deleção de arquivo`,
+				body:
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-destructive">
+							DELEÇÃO
+						</span>{' '}
+						do arquivo?
+					</>,
+				onConfirm: handleDeleteFile,
+			});
+
+			async function handleDeleteFile() {
+				setAlertDialog({
+					open: false
+				});
+
+				const response = await deleteArchive(
+					token,
+					archiveUid
+				);
+
+				if (response) {
+					if (response.success) {
+						onConfirmProp?.();
+						reloadReports();
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: response.message,
+						});
+					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao deletar um arquivo.',
+					})
+				}
+
+				setIsFinishing(false);
+			}
+		},
+		[reloadReports, token]
+	);
 
 	const showReportApproval =
 		userRole &&
@@ -244,6 +298,13 @@ export default function DfiReports({
 							<ThumbsDownIcon className="mr-2" size={18} />
 							Reprovar laudo DFI
 						</Button>
+						<UploadReport
+							token={token}
+							proposalUid={uid}
+							reportDescription={'Laudo DFI'}
+							onSubmit={reloadReports}
+							type="DFI"
+						/>
 					</div>
 				)}
 				{showUploadReport && (
@@ -302,6 +363,7 @@ export default function DfiReports({
 										{/* <div className="grow-0 px-3">{formatDate(document?.created)}</div> */}
 
 										{document.documentName && (
+											<>
 											<Button
 												className="grow-0 basis-10 text-teal-900 hover:text-teal-600"
 												variant={`ghost`}
@@ -310,6 +372,21 @@ export default function DfiReports({
 												<FileTextIcon className="mr-2" />
 												Abrir Arquivo
 											</Button>
+											{showReportApproval && (
+												<Button
+													type="button"
+													variant="destructive"
+													size="iconSm"
+													className="rounded-full text-zinc-200"
+													onClick={() => reportDeleteArchive(document.uid)}
+												>
+													<Trash2Icon
+														size={20}
+														className="text-foreground p-0.5 hover:text-teal-600"
+													/>
+												</Button>
+											)}
+											</>
 										)}
 									</li>
 								)

@@ -21,7 +21,6 @@ export default async function DetailPage({
 		// getProposalSituations(token),
 		getTipoImovelOptions(token),
 	])
-	console.log('----------proposalData')
 	console.dir(proposalDataRaw, { depth: Infinity })
 
 	const proposalData = proposalDataRaw?.data
