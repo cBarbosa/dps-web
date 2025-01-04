@@ -340,7 +340,8 @@ export type ProposalByUid = {
 	addressCity?: string
 	addressState?: string
 	closed?: string
-}
+	refused?: string
+};
 
 export async function getProposalByUid(
 	token: string,
@@ -351,7 +352,7 @@ export async function getProposalByUid(
 	data: ProposalByUid
 } | null> {
 	try {
-		const response = await axios.get('v1/Proposal/' + uid, {
+		const response = await axios.get(`v1/Proposal/${uid}`, {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
@@ -363,7 +364,6 @@ export async function getProposalByUid(
 			throw new Error('Unsuccessful request')
 		}
 	} catch (err) {
-		console.log(err)
 
 		if ((err as any)?.status === 401) {
 			redirect('/logout')
@@ -916,6 +916,46 @@ export async function getReopenedProposals(
 					}
 					createdAt: string
 				}[];
+			}
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.log(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout');
+		}
+	}
+
+	return null;
+};
+
+export async function putProposalAnalysis(
+	token: string,
+	uid: string,
+	data: {
+		Action: string
+		IsApproved: boolean
+	}
+) {
+	try {
+
+		const response = await axios.put(
+			`v1/Proposal/${uid}/analysis`,
+			data,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				}
+			}
+		);
+
+		if (response.data) {
+			return response.data as {
+				message: string
+				success: boolean
+				data: number
 			}
 		} else {
 			throw new Error('Unsuccessful request');

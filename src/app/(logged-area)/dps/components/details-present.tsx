@@ -6,17 +6,15 @@ import {
 	Building2Icon,
 	CalendarIcon,
 	DollarSignIcon,
-	FileTextIcon,
 	IdCardIcon,
 	LucideAlertOctagon,
 	PhoneIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 	Undo2Icon,
-	UserIcon,
 	UserRoundIcon,
 } from 'lucide-react'
-import { getProposalByUid, getProposalSignByUid, postStatus } from '../actions'
+import { getProposalByUid, getProposalSignByUid, putProposalAnalysis } from '../actions'
 import { cn, formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -85,7 +83,6 @@ const DetailsPresent = ({
 
 	async function refetchProposalData() {
 		const response = await getProposalByUid(token, uid)
-
 		if (response) {
 			setProposalData(response.data)
 		}
@@ -103,7 +100,7 @@ const DetailsPresent = ({
 
 	const reportAnalisys = React.useCallback(
 	
-			async function () {
+			async function (action: `REOPEN`) {
 	
 				setAlertDialog({
 					open: true,
@@ -111,7 +108,7 @@ const DetailsPresent = ({
 					body:
 						<>
 							Confirma a{' '}
-							<span className="text-base font-semibold text-destructive">
+							<span className="text-base font-semibold text-primary">
 								REABERTURA DA ANÁLISE
 							</span>{' '}
 							do processo?
@@ -121,11 +118,16 @@ const DetailsPresent = ({
 				});
 	
 				async function handleReanalisys() {
+
 					setAlertDialog({
 						open: false
 					});
-	
-					const response = { success: true, message: 'Processo reaberto para análise' };
+
+					const response = await putProposalAnalysis(
+										token,
+										uid,
+										{ Action: action, IsApproved: false }
+									);
 	
 					if (response) {
 						if (response.success) {
@@ -141,7 +143,7 @@ const DetailsPresent = ({
 						setAlertDialog({
 							open: true,
 							title: 'Erro',
-							body: 'Ocorreu um erro ao deletar um arquivo.',
+							body: 'Ocorreu um erro ao alterar o processo',
 						})
 					}
 				}
@@ -151,7 +153,7 @@ const DetailsPresent = ({
 
 	const reportApprovalAnalisys = React.useCallback(
 	
-			async function (isApproved: boolean) {
+			async function (isApproved: boolean, action: `APPROVE` | `REFUSE`) {
 	
 				setAlertDialog({
 					open: true,
@@ -174,15 +176,22 @@ const DetailsPresent = ({
 								</>
 							),
 					onConfirm: handleReanalisys,
-					confirmText: 'Reabrir'
+					confirmText: 'Confirmar'
 				});
 	
 				async function handleReanalisys() {
+
 					setAlertDialog({
 						open: false
 					});
+
+					console.log({ Action: action, IsApproved: isApproved })
 	
-					const response = { success: true, message: 'Processo reaberto para análise' };
+					const response = await putProposalAnalysis(
+						token,
+						uid,
+						{ Action: action, IsApproved: isApproved }
+					);
 	
 					if (response) {
 						if (response.success) {
@@ -206,15 +215,46 @@ const DetailsPresent = ({
 			[refetchProposalData, uid]
 		);
 
+	const calculateDaysBetween = (dateString?: string, thresholdDays: number = 10): boolean => {
+
+		try {
+			if(!dateString)
+				throw new Error("Date string cannot be undefined.");
+
+			// Convert the input string to a Date object
+			const inputDate = new Date(dateString);
+	
+			// Validate the input date
+			if (isNaN(inputDate.getTime()))
+				throw new Error("Invalid date format. Please provide a valid date string (e.g., 'YYYY-MM-DDTHH:mm:ss.sss').");
+	
+			// Get the current date
+			const currentDate = new Date();
+	
+			// Calculate the difference in time (milliseconds)
+			const timeDifference = currentDate.getTime() - inputDate.getTime();
+	
+			// Convert the difference from milliseconds to days
+			const daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+	
+			console.log(`Days difference: ${daysDifference}`);
+			// Return whether the difference exceeds the threshold
+			return daysDifference > thresholdDays;
+		} catch (error) {
+			console.error(error);
+			return false;
+		}
+	};
+
 	const lastSituation: number | undefined =
-		proposalData.history?.at(0)?.statusId
+		proposalData.history?.at(0)?.statusId;
 
 	const showFillOutAlert: boolean | undefined =
 		role === 'vendedor' &&
 		(proposalSituation.id === 5 ||
 			proposalSituation.id === 10 ||
 			proposalData.uploadMIP ||
-			proposalData.uploadDFI)
+			proposalData.uploadDFI);
 
 	const showMipAlertMinToMedic: boolean | undefined =
 		role === 'subscritor-med' && proposalData.status.id === 4 && (proposalData.capitalMIP >= 3000000 && proposalData.capitalMIP < 5000000);
@@ -223,9 +263,9 @@ const DetailsPresent = ({
 	const showDfiAlertToSubscriber: boolean | undefined =
 		role === 'subscritor' && proposalData.dfiStatus?.id === 29;
 	const showReanalisys:boolean =
-		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED' && proposalData.closed === undefined;
+		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED' && proposalData.closed === undefined && !calculateDaysBetween(proposalData.refused, 15);
 	const showAproveAnalisysDps: boolean =
-		role === 'subscritor-sup' && proposalData.riskStatus === 'REOPENED' && proposalData.closed !== undefined;
+		role === 'subscritor-sup' && proposalData.riskStatus === 'REOPENED' && proposalData.closed === undefined;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -375,7 +415,7 @@ const DetailsPresent = ({
 							{showReanalisys && (
 								<Button
 									variant={`secondary`}
-									onClick={() => reportAnalisys() }
+									onClick={() => reportAnalisys(`REOPEN`) }
 								>
 									<LucideAlertOctagon className="mr-2" size={18} />
 									Reanálise
@@ -385,14 +425,14 @@ const DetailsPresent = ({
 								<div className="flex gap-2 mb-3">
 									<Button
 										variant="default"
-										// onClick={() => reviewReport(true)}
+										onClick={() => reportApprovalAnalisys(true, `APPROVE`)}
 									>
 										<ThumbsUpIcon className="mr-2" size={18} />
 										Aprovar
 									</Button>
 									<Button
 										variant="destructive"
-										// onClick={() => reviewReport(false)}
+										onClick={() => reportApprovalAnalisys(false, `REFUSE`)}
 									>
 										<ThumbsDownIcon className="mr-2" size={18} />
 										Reprovar
@@ -565,7 +605,7 @@ const DetailsPresent = ({
 
 			{(role === `vendedor` ||
 				role === `subscritor-med` ||
-				role === `admin`) && (
+				role === `admin` || role === `subscritor-sup` || role === `vendedor-sup`) && (
 				<MedReports
 					token={token}
 					uid={uid}
@@ -576,7 +616,8 @@ const DetailsPresent = ({
 				/>
 			)}
 
-			{(role === `vendedor` || role === `subscritor` || role === `admin`) && (
+			{(role === `vendedor` || role === `subscritor` || role === `admin`||
+				role === `subscritor-sup` || role === `vendedor-sup`) && (
 				<DfiReports
 					token={token}
 					uid={uid}
