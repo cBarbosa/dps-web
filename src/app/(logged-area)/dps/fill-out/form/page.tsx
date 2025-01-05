@@ -8,10 +8,16 @@ import {
 } from '../../actions'
 import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
-import DpsInitialForm, {
-	getProfissionDescription,
-} from '../components/dps-initial-form'
+import DpsInitialForm from '../components/dps-initial-form'
 import validateCpf from 'validar-cpf'
+
+export function getProfissionDescription(input?: string): string {
+	if (!input) return ''
+
+	const partes = input.split('-')
+
+	return partes[1]?.trim() ?? ''
+}
 
 export default async function DpsFormPage({
 	searchParams,
@@ -102,7 +108,7 @@ export default async function DpsFormPage({
 		name: proponentDataRaw?.detalhes.nome,
 		socialName: undefined,
 		birthdate: proponentDataBirthdate,
-		profession: proponentDataRaw?.detalhes.profissao,
+		profession: getProfissionDescription(proponentDataRaw?.detalhes.profissao),
 		gender: proponentDataRaw?.detalhes.sexo,
 		email: undefined,
 		phone: undefined,
@@ -129,10 +135,7 @@ export default async function DpsFormPage({
 							birthdate: autocompleteData?.birthdate
 								? new Date(autocompleteData.birthdate)
 								: undefined,
-							profession: getProfissionDescription(
-								autocompleteData?.profession
-							),
-							phone: autocompleteData?.phone,
+							profession: autocompleteData.profession
 						},
 					}}
 					prazosOptions={prazosOptions}
