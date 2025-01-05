@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { calculateAge, cn, RecursivePartial } from '@/lib/utils'
+import { calculateAge, cn, getProfissionDescription, RecursivePartial } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
 import React, { use, useEffect, useState } from 'react'
@@ -35,7 +35,7 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
-import { getProfissionDescription } from '../form/page'
+
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,

@@ -10,14 +10,7 @@ import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 import DpsInitialForm from '../components/dps-initial-form'
 import validateCpf from 'validar-cpf'
-
-export function getProfissionDescription(input?: string): string {
-	if (!input) return ''
-
-	const partes = input.split('-')
-
-	return partes[1]?.trim() ?? ''
-}
+import { getProfissionDescription } from '@/lib/utils'
 
 export default async function DpsFormPage({
 	searchParams,
