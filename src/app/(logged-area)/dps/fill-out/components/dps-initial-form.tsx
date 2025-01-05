@@ -1,6 +1,7 @@
 'use client'
+
 import { Button } from '@/components/ui/button'
-import { calculateAge, cn, RecursivePartial } from '@/lib/utils'
+import { calculateAge, cn, getProfissionDescription, RecursivePartial } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
 import React, { use, useEffect, useState } from 'react'
@@ -34,6 +35,7 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
+
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,
@@ -182,7 +184,6 @@ const DpsInitialForm = ({
 	async function getDataByCpf(cpf: string) {
 		if (!validarCpf(cpf)) return
 
-		console.log('>', cpf)
 		setIsLoadingData(true)
 		const proponentDataRaw = await getProponentDataByCpf(cpf)
 
@@ -209,7 +210,6 @@ const DpsInitialForm = ({
 				email: undefined,
 				phone: undefined,
 			}
-			console.log(autocompleteData)
 
 			if (autocompleteData.name) setValue('profile.name', autocompleteData.name)
 			if (autocompleteData.birthdate)
@@ -289,12 +289,4 @@ export default DpsInitialForm
 
 function getDigits(value: string) {
 	return value.replace(/[^0-9]/g, '')
-}
-
-export function getProfissionDescription(input?: string): string {
-	if (!input) return ''
-
-	const partes = input.split('-')
-
-	return partes[1]?.trim() ?? ''
 }

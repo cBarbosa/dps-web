@@ -94,3 +94,11 @@ export function calculateAge(birthday: Date) {
 		return age
 	}
 }
+
+export function getProfissionDescription(input?: string): string {
+	if (!input) return ''
+
+	const partes = input.split('-')
+
+	return partes[1]?.trim() ?? ''
+};
