@@ -46,6 +46,7 @@ export const statusDescriptionDict: Record<number, string> = {
 	34: 'DFI Avaliada',
 	40: 'Processo em reanálise',
 	41: 'Processo reanalisado',
+	42: 'MIP Avaliada'
 }
 
 const DetailsPresent = ({
