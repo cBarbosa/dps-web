@@ -4,11 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-	font-family: 'Poppins', Arial, Helvetica, sans-serif;
-	font-weight: 400;
-}
-
 @layer utilities {
 	.text-balance {
 		text-wrap: balance;
@@ -54,10 +49,30 @@ body {
 	}
 	body {
 		@apply bg-background text-foreground;
+		font-family: 'Poppins', Arial, Helvetica, sans-serif;
+		font-weight: 400;
 	}
 
 	a {
 		@apply text-primary font-semibold hover:text-primary/90;
+	}
+}
+
+@layer components {
+	.custom-scrollbar {
+		&::-webkit-scrollbar-track {
+			border-radius: 10px;
+			background-color: #f5f5f5;
+		}
+
+		&::-webkit-scrollbar {
+			width: 6px;
+			background-color: #f5f5f5;
+		}
+		&::-webkit-scrollbar-thumb {
+			border-radius: 10px;
+			background-color: #cfcfcf;
+		}
 	}
 }
 
