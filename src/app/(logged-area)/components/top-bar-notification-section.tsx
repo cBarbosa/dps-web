@@ -28,7 +28,7 @@ export function NotificationSection({
 	})
 
 	const fetchNotifications = useCallback(async () => {
-		const notifications = await getNotifications(token, 1, 10)
+		const notifications = await getNotifications(token)
 
 		if (notifications?.success === false) {
 			return setNotifications({
