@@ -132,7 +132,7 @@ function NotificationButton({
 						<ul className="divide-y">
 							{newsList.map((n, i) => (
 								<li
-									key={i + n.title + n.date.toString()}
+									key={n.id + i + n.title + n.date.toString()}
 									className=" *:first:rounded-t-md *:last:rounded-b-md"
 								>
 									<Button
