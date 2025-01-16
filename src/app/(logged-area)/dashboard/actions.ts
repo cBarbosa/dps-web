@@ -1,5 +1,4 @@
 'use server'
-import { signOut } from 'next-auth/react'
 import axios from '../../../lib/axios'
 import { redirect } from 'next/navigation'
 
