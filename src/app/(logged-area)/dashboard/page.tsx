@@ -104,7 +104,8 @@ export default async function DashboardPage() {
 	const mipChartData =
 		dashboardData.mipSituation?.map((item, i) => ({
 			label: item.Descricao,
-			value: item.Quantidade,
+			value: item.Percentual,
+			count: item.Quantidade,
 			fill: `hsl(var(--chart-${i + 1}))`,
 			href: `/dashboard/table?status=${item.MipId}`,
 		})) ?? []
@@ -112,7 +113,8 @@ export default async function DashboardPage() {
 	const dfiChartData =
 		dashboardData.dfiSituation?.map((item, i) => ({
 			label: item.Descricao,
-			value: item.Quantidade,
+			value: item.Percentual,
+			count: item.Quantidade,
 			fill: `hsl(var(--chart-${i + 1}))`,
 			href: `/dashboard/table?dfiStatus=${item.DfiId}`,
 		})) ?? []
@@ -155,7 +157,7 @@ export default async function DashboardPage() {
 						/>
 						<DonutProgressCard
 							label="Pend. de Assinatura"
-							value={dashboardData.pendingSign?.Total}
+							value={dashboardData.pendingSign?.Apurado}
 							chartData={
 								dashboardData.pendingSign?.Percentual != null
 									? {
@@ -169,7 +171,7 @@ export default async function DashboardPage() {
 					<div className="contents">
 						<DonutProgressCard
 							label="Pend. de Documentação"
-							value={dashboardData.pendingDocs?.Total}
+							value={dashboardData.pendingDocs?.Apurado}
 							chartData={
 								dashboardData.pendingDocs?.Percentual != null
 									? {

@@ -43,6 +43,7 @@ export function PieChartCard({
 		data: {
 			label: string
 			value: number
+			count: number
 			fill: string
 			href?: string
 		}[]
@@ -97,7 +98,7 @@ export function PieChartCard({
 										<span>
 											{item.label}{' '}
 											<span className="text-gray-400 text-xs">
-												({item.value}%)
+												({item.count})
 											</span>
 										</span>
 									</Link>
@@ -110,7 +111,7 @@ export function PieChartCard({
 										<span>
 											{item.label}{' '}
 											<span className="text-gray-400 text-xs">
-												({item.value}%)
+												({item.count})
 											</span>
 										</span>
 									</div>
@@ -127,7 +128,7 @@ function renderLabel({ value }: { value: number }) {
 	if (value === 0) {
 		return null
 	}
-	return `${value}%`
+	return `${(Math.round(value * 100) / 100).toLocaleString()}%`
 }
 
 export function DonutProgressCard({
