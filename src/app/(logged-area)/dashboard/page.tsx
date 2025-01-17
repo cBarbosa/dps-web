@@ -11,6 +11,7 @@ import getServerSessionAuthorization, {
 import { PieChartCard, DonutProgressCard } from '../components/data-card'
 import { ChartConfig } from '@/components/ui/chart'
 import Link from 'next/link'
+import { DashboardDataType, getFilledDps } from './actions'
 
 export const revalidate = 0 // no cache
 // export const maxDuration = 300;
@@ -21,6 +22,51 @@ export default async function DashboardPage() {
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
 		| undefined
+	const token = (session as any)?.accessToken
+
+	if (!granted) {
+		redirect('/logout')
+	}
+
+	const dashboardDataTypes: DashboardDataType[] = [
+		'filledDps',
+		'pendingSign',
+		'pendingDocs',
+		'reanalysis',
+		'mipSituation',
+		'dfiSituation',
+	]
+
+	const dashboardDataRaw = await Promise.allSettled([
+		getFilledDps(token, 'filledDps'),
+		getFilledDps(token, 'pendingSign'),
+		getFilledDps(token, 'pendingDocs'),
+		getFilledDps(token, 'reanalysis'),
+		getFilledDps(token, 'mipSituation'),
+		getFilledDps(token, 'dfiSituation'),
+	])
+
+	const dashboardData = dashboardDataRaw.reduce(
+		(acc, response, i) => {
+			if (response.status === 'fulfilled') {
+				acc[dashboardDataTypes[i]] = response.value?.data as any
+			}
+
+			return acc
+		},
+		{
+			filledDps: null,
+			pendingSign: null,
+			pendingDocs: null,
+			reanalysis: null,
+			mipSituation: null,
+			dfiSituation: null,
+		} as {
+			[T in DashboardDataType]:
+				| Exclude<Awaited<ReturnType<typeof getFilledDps<T>>>, null>['data']
+				| null
+		}
+	)
 
 	const chartData = [
 		{
@@ -55,6 +101,22 @@ export default async function DashboardPage() {
 		},
 	]
 
+	const mipChartData =
+		dashboardData.mipSituation?.map((item, i) => ({
+			label: item.Descricao,
+			value: item.Quantidade,
+			fill: `hsl(var(--chart-${i + 1}))`,
+			href: `/dashboard/table?status=${item.MipId}`,
+		})) ?? []
+
+	const dfiChartData =
+		dashboardData.dfiSituation?.map((item, i) => ({
+			label: item.Descricao,
+			value: item.Quantidade,
+			fill: `hsl(var(--chart-${i + 1}))`,
+			href: `/dashboard/table?status=${item.DfiId}`,
+		})) ?? []
+
 	const chartConfig = {
 		value: {
 			label: 'Value',
@@ -88,49 +150,61 @@ export default async function DashboardPage() {
 					<div className="contents">
 						<DonutProgressCard
 							label="DPS's preenchidas"
-							value={150}
-							change={2.4}
+							value={dashboardData.filledDps?.TotalMesAtual}
+							change={dashboardData.filledDps?.PercentualCrescimento}
 						/>
 						<DonutProgressCard
 							label="Pend. de Assinatura"
-							value={150}
-							change={2.4}
-							chartData={{
-								value: 8,
-								fill: 'hsl(var(--chart-2))',
-							}}
+							value={dashboardData.pendingSign?.Total}
+							change={dashboardData.pendingSign?.Percentual}
+							chartData={
+								dashboardData.pendingSign?.Percentual != null
+									? {
+											value: dashboardData.pendingSign?.Percentual,
+											fill: 'hsl(var(--chart-2))',
+									  }
+									: undefined
+							}
 						/>
 					</div>
 					<div className="contents">
 						<DonutProgressCard
 							label="Pend. de Documentação"
-							value={23}
-							chartData={{
-								value: 21,
-								fill: 'hsl(var(--chart-3))',
-							}}
-							change={2.2}
+							value={dashboardData.pendingDocs?.Total}
+							change={dashboardData.pendingDocs?.Percentual}
+							chartData={
+								dashboardData.pendingDocs?.Percentual != null
+									? {
+											value: dashboardData.pendingDocs?.Percentual,
+											fill: 'hsl(var(--chart-3))',
+									  }
+									: undefined
+							}
 						/>
 						<DonutProgressCard
 							label="Em Reanálise"
-							value={5}
-							chartData={{
-								value: 2,
-								fill: 'hsl(var(--chart-4))',
-							}}
-							change={0.2}
+							value={dashboardData.reanalysis?.Total}
+							change={dashboardData.reanalysis?.Percentual}
+							chartData={
+								dashboardData.reanalysis?.Percentual != null
+									? {
+											value: dashboardData.reanalysis?.Percentual,
+											fill: 'hsl(var(--chart-4))',
+									  }
+									: undefined
+							}
 						/>
 					</div>
 					<div className="col-span-2">
 						<PieChartCard
 							title="SLA MIP"
-							chartData={{ data: chartData, config: chartConfig }}
+							chartData={{ data: mipChartData, config: chartConfig }}
 						/>
 					</div>
 					<div className="col-span-2">
 						<PieChartCard
 							title="SLA DFI"
-							chartData={{ data: chartData, config: chartConfig }}
+							chartData={{ data: dfiChartData, config: chartConfig }}
 						/>
 					</div>
 				</div>

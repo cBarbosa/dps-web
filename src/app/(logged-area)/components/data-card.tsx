@@ -137,13 +137,15 @@ export function DonutProgressCard({
 	chartData,
 }: {
 	label: string
-	value: number
+	value: number | null | undefined
 	change?: number
 	chartData?: {
 		value: number
 		fill: string
 	}
 }) {
+	if (value == null) return <NoDataCard label={label} />
+
 	const data = {
 		data: {
 			label: 'percent',
@@ -193,9 +195,9 @@ export function DonutProgressCard({
 										<tspan
 											x={viewBox.cx}
 											y={viewBox.cy}
-											className="fill-foreground text-base font-normal"
+											className="fill-foreground text-[0.9375rem] font-normal"
 										>
-											{data.data.value.toLocaleString()}%
+											{data.data.value.toLocaleString().substring(0, 5)}%
 										</tspan>
 									</text>
 								)
@@ -217,13 +219,13 @@ export function DonutProgressCard({
 					</div>
 					<div className="grow-0 shrink-0 w-[85px]">{chart}</div>
 				</div>
-				{change && (
+				{change ? (
 					<div className="text-sm text-gray-400">
 						{change > 0 ? (
 							<p>
 								<span className="text-green-600 font-semibold">
 									<TrendingUpIcon size={18} className="inline" />{' '}
-									{change.toLocaleString()}%
+									{change.toLocaleString().substring(0, 6)}%
 								</span>{' '}
 								a mais que o mês passado
 							</p>
@@ -231,13 +233,30 @@ export function DonutProgressCard({
 							<p>
 								<span className="text-red-600 font-semibold">
 									<TrendingDownIcon size={18} className="inline" />{' '}
-									{change.toLocaleString()}%
+									{change.toLocaleString().substring(0, 6)}%
 								</span>{' '}
 								a menos que o mês passado
 							</p>
 						)}
 					</div>
-				)}
+				) : null}
+			</div>
+		</DataCard>
+	)
+}
+
+function NoDataCard({ label }: { label: string }) {
+	return (
+		<DataCard>
+			<div className="h-full flex flex-col gap-2">
+				<div className="grow flex justify-between items-center gap-5">
+					<div className="grow">
+						<h5 className="text-md">{label}</h5>
+						<p className="mt-2 text-sm text-muted-foreground">
+							Não foi possível recuperar dados
+						</p>
+					</div>
+				</div>
 			</div>
 		</DataCard>
 	)
