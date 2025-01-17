@@ -116,7 +116,7 @@ export async function getFilledDps<T extends DashboardDataType>(
 			},
 		})
 
-		console.log(response)
+		console.dir(response.data)
 
 		if (response.data) {
 			return response.data

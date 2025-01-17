@@ -53,7 +53,7 @@ export function PieChartCard({
 	const chart = chartData ? (
 		<ChartContainer
 			config={chartData.config}
-			className="mx-auto aspect-square max-h-[175px] pb-0 [&_.recharts-pie-label-text]:fill-foreground"
+			className="mx-auto aspect-square max-h-[200px] pb-0 [&_.recharts-pie-label-text]:fill-foreground"
 		>
 			<PieChart>
 				<PolarGrid
@@ -81,7 +81,7 @@ export function PieChartCard({
 		<DataCard>
 			<h5 className="font-semibold text-xl">{title}</h5>
 			<div className="flex justify-between items-center gap-10">
-				<div className="grow-0 shrink-0 w-[175px]">{chart}</div>
+				<div className="grow-0 shrink-0 w-[200px]">{chart}</div>
 				<div className="grow pr-4">
 					<ul>
 						{chartData.data.map((item, index) => (

@@ -68,49 +68,41 @@ export default async function DashboardPage() {
 		}
 	)
 
-	const chartData = [
-		{
-			label: 'Anexar Documentação',
-			value: 0,
-			fill: 'hsl(var(--chart-1))',
-			href: '/dashboard/table?status=5',
-		},
-		{
-			label: 'Em Análise',
-			value: 0,
-			fill: 'hsl(var(--chart-2))',
-			href: '/dashboard/table?status=4',
-		},
-		{
-			label: 'Assinada',
-			value: 55,
-			fill: 'hsl(var(--chart-3))',
-			href: '/dashboard/table?status=10',
-		},
-		{
-			label: 'Aceita',
-			value: 35,
-			fill: 'hsl(var(--chart-4))',
-			href: '/dashboard/table?status=6',
-		},
-		{
-			label: 'Pendente de Assinatura',
-			value: 10,
-			fill: 'hsl(var(--chart-5))',
-			href: '/dashboard/table?status=3',
-		},
-	]
+	type ChartData = {
+		label: string
+		value: number
+		count: number
+		fill: string
+		href?: string
+	}
 
-	const mipChartData =
+	const mipChartData: ChartData[] =
 		dashboardData.mipSituation?.map((item, i) => ({
 			label: item.Descricao,
 			value: item.Percentual,
 			count: item.Quantidade,
+			total: item.Total,
 			fill: `hsl(var(--chart-${i + 1}))`,
 			href: `/dashboard/table?status=${item.MipId}`,
 		})) ?? []
 
-	const dfiChartData =
+	if (mipChartData && mipChartData.length > 0) {
+		const itemCount = mipChartData.reduce((acc, item) => acc + item.count, 0)
+		const mipTotal = dashboardData.mipSituation?.[0]?.Total ?? 0
+
+		if (itemCount < mipTotal) {
+			const restCount = mipTotal - itemCount
+
+			mipChartData.push({
+				label: 'Outros',
+				value: 100 - (100 * restCount) / mipTotal,
+				count: restCount,
+				fill: 'hsl(var(--chart-6))',
+			})
+		}
+	}
+
+	const dfiChartData: ChartData[] =
 		dashboardData.dfiSituation?.map((item, i) => ({
 			label: item.Descricao,
 			value: item.Percentual,
@@ -118,6 +110,22 @@ export default async function DashboardPage() {
 			fill: `hsl(var(--chart-${i + 1}))`,
 			href: `/dashboard/table?dfiStatus=${item.DfiId}`,
 		})) ?? []
+
+	if (dfiChartData && dfiChartData.length > 0) {
+		const itemCount = dfiChartData.reduce((acc, item) => acc + item.count, 0)
+		const dfiTotal = dashboardData.dfiSituation?.[0]?.Total ?? 0
+
+		if (itemCount < dfiTotal) {
+			const restCount = dfiTotal - itemCount
+
+			dfiChartData.push({
+				label: 'Outros',
+				value: 100 - (100 * restCount) / dfiTotal,
+				count: restCount,
+				fill: `hsl(var(--chart-${dfiChartData.length + 1}))`,
+			})
+		}
+	}
 
 	const chartConfig = {
 		value: {
