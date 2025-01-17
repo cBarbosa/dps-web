@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardTablePage({
 	searchParams,
 }: {
-	searchParams: { page: string; cpf: string; status: string }
+	searchParams: { page: string; cpf: string; status: string; dfiStatus: string }
 }) {
 	const { session, granted } = await getServerSessionAuthorization()
 	const token = (session as any)?.accessToken
@@ -27,6 +27,9 @@ export default async function DashboardTablePage({
 	const currentPage = searchParams?.page ? +searchParams.page : 1
 	const cpf = searchParams?.cpf
 	const status = searchParams?.status ? +searchParams.status : undefined
+	const dfiStatus = searchParams?.dfiStatus
+		? +searchParams.dfiStatus
+		: undefined
 
 	// if (role === 'vendedor') status = undefined
 	// else if (role === 'subscritor') status = 4
@@ -37,7 +40,7 @@ export default async function DashboardTablePage({
 	const data = await getProposals(
 		token,
 		cpf, //cpf
-		undefined, //dfi status
+		dfiStatus, //dfi status
 		undefined, //produto
 		status, //status
 		`desc`, // orderBy
@@ -61,7 +64,7 @@ export default async function DashboardTablePage({
 			tipoDoc: item.type?.description,
 			status: item.status,
 			dfiStatus: item.dfiStatus,
-			riskStatus: item.riskStatus
+			riskStatus: item.riskStatus,
 		}
 	})
 

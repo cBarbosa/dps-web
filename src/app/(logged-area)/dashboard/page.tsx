@@ -114,7 +114,7 @@ export default async function DashboardPage() {
 			label: item.Descricao,
 			value: item.Quantidade,
 			fill: `hsl(var(--chart-${i + 1}))`,
-			href: `/dashboard/table?status=${item.DfiId}`,
+			href: `/dashboard/table?dfiStatus=${item.DfiId}`,
 		})) ?? []
 
 	const chartConfig = {
@@ -156,7 +156,6 @@ export default async function DashboardPage() {
 						<DonutProgressCard
 							label="Pend. de Assinatura"
 							value={dashboardData.pendingSign?.Total}
-							change={dashboardData.pendingSign?.Percentual}
 							chartData={
 								dashboardData.pendingSign?.Percentual != null
 									? {
@@ -171,7 +170,6 @@ export default async function DashboardPage() {
 						<DonutProgressCard
 							label="Pend. de Documentação"
 							value={dashboardData.pendingDocs?.Total}
-							change={dashboardData.pendingDocs?.Percentual}
 							chartData={
 								dashboardData.pendingDocs?.Percentual != null
 									? {
@@ -184,7 +182,6 @@ export default async function DashboardPage() {
 						<DonutProgressCard
 							label="Em Reanálise"
 							value={dashboardData.reanalysis?.Total}
-							change={dashboardData.reanalysis?.Percentual}
 							chartData={
 								dashboardData.reanalysis?.Percentual != null
 									? {
