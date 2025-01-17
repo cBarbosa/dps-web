@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 export async function getNotifications(
 	token: string,
 	page = 1,
-	size = 100
+	size = 10
 ): Promise<{
 	message: string
 	success: boolean
@@ -27,7 +27,6 @@ export async function getNotifications(
 			},
 		})
 
-		console.log('>>>>>>>>>>>>>>>>>>>>>> ~~~~ ~~~~ ~~', response)
 		if (response.data) {
 			return response.data
 		} else {
@@ -52,7 +51,30 @@ async function setNotificationReadById(token: string, id: number) {
 	})
 }
 
-export async function setNotificationsRead(token: string, idList: number[]) {
+export async function setNotificationRead(token: string, id: number) {
+	try {
+		const response = await setNotificationReadById(token, id)
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}
+
+/*export*/ async function setNotificationListRead(
+	token: string,
+	idList: number[]
+) {
 	try {
 		const responseBatch = await Promise.allSettled(
 			idList.map(id => setNotificationReadById(token, id))

@@ -1,5 +1,5 @@
 'use client'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useCallback } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { GoBackButton } from '@/components/ui/go-back-button'
 import {
@@ -14,7 +14,11 @@ import {
 	Undo2Icon,
 	UserRoundIcon,
 } from 'lucide-react'
-import { getProposalByUid, getProposalSignByUid, putProposalAnalysis } from '../actions'
+import {
+	getProposalByUid,
+	getProposalSignByUid,
+	putProposalAnalysis,
+} from '../actions'
 import { cn, formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -46,7 +50,7 @@ export const statusDescriptionDict: Record<number, string> = {
 	34: 'DFI Avaliada',
 	40: 'Processo em reanálise',
 	41: 'Processo reanalisado',
-	42: 'MIP Avaliada'
+	42: 'MIP Avaliada',
 }
 
 const DetailsPresent = ({
@@ -76,18 +80,21 @@ const DetailsPresent = ({
 		onConfirm?: () => void
 		confirmText?: string
 	}>({
-		open: false
-	});
+		open: false,
+	})
 
 	const proposalSituation = proposalData?.status
 	const proposalSituationDFI = proposalData?.dfiStatus
 
-	async function refetchProposalData() {
-		const response = await getProposalByUid(token, uid)
-		if (response) {
-			setProposalData(response.data)
-		}
-	}
+	const refetchProposalData = useCallback(
+		async function () {
+			const response = await getProposalByUid(token, uid)
+			if (response) {
+				setProposalData(response.data)
+			}
+		},
+		[token, uid]
+	)
 
 	const handleViewArchive = React.useCallback(async () => {
 		setIsModalOpen(opt => true)
@@ -100,178 +107,186 @@ const DetailsPresent = ({
 	}, [token, uid])
 
 	const reportAnalisys = React.useCallback(
-	
-			async function (action: `REOPEN`) {
-	
+		async function (action: `REOPEN`) {
+			setAlertDialog({
+				open: true,
+				title: `Confirmação abertura de reanálise`,
+				body: (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-primary">
+							REABERTURA DA ANÁLISE
+						</span>{' '}
+						do processo?
+					</>
+				),
+				onConfirm: handleReanalisys,
+				confirmText: 'Reabrir',
+			})
+
+			async function handleReanalisys() {
 				setAlertDialog({
-					open: true,
-					title: `Confirmação abertura de reanálise`,
-					body:
-						<>
-							Confirma a{' '}
-							<span className="text-base font-semibold text-primary">
-								REABERTURA DA ANÁLISE
-							</span>{' '}
-							do processo?
-						</>,
-					onConfirm: handleReanalisys,
-					confirmText: 'Reabrir'
-				});
-	
-				async function handleReanalisys() {
+					open: false,
+				})
 
-					setAlertDialog({
-						open: false
-					});
+				const response = await putProposalAnalysis(token, uid, {
+					Action: action,
+					IsApproved: false,
+				})
 
-					const response = await putProposalAnalysis(
-										token,
-										uid,
-										{ Action: action, IsApproved: false }
-									);
-	
-					if (response) {
-						if (response.success) {
-							refetchProposalData();
-						} else {
-							setAlertDialog({
-								open: true,
-								title: 'Erro',
-								body: response.message,
-							});
-						}
+				if (response) {
+					if (response.success) {
+						refetchProposalData()
 					} else {
 						setAlertDialog({
 							open: true,
 							title: 'Erro',
-							body: 'Ocorreu um erro ao alterar o processo',
+							body: response.message,
 						})
 					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao alterar o processo',
+					})
 				}
-			},
-			[refetchProposalData, uid]
-		);
+			}
+		},
+		[token, refetchProposalData, uid]
+	)
 
 	const reportApprovalAnalisys = React.useCallback(
-	
-			async function (isApproved: boolean, action: `APPROVE` | `REFUSE`) {
-	
+		async function (isApproved: boolean, action: `APPROVE` | `REFUSE`) {
+			setAlertDialog({
+				open: true,
+				title: `Confirmação de ${
+					isApproved ? 'Aprovação' : 'Reprovação'
+				} de processo de reanálise`,
+				body: isApproved ? (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-primary">
+							APROVAÇÃO
+						</span>{' '}
+						do processo?
+					</>
+				) : (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-destructive">
+							REPROVAÇÃO
+						</span>{' '}
+						do processo?
+					</>
+				),
+				onConfirm: handleReanalisys,
+				confirmText: 'Confirmar',
+			})
+
+			async function handleReanalisys() {
 				setAlertDialog({
-					open: true,
-					title: `Confirmação de ${isApproved ? 'Aprovação' : 'Reprovação'} de processo de reanálise`,
-					body:isApproved ? (
-							<>
-									Confirma a{' '}
-									<span className="text-base font-semibold text-primary">
-										APROVAÇÃO
-									</span>{' '}
-									do processo?
-								</>
-							) : (
-								<>
-									Confirma a{' '}
-									<span className="text-base font-semibold text-destructive">
-										REPROVAÇÃO
-									</span>{' '}
-									do processo?
-								</>
-							),
-					onConfirm: handleReanalisys,
-					confirmText: 'Confirmar'
-				});
-	
-				async function handleReanalisys() {
+					open: false,
+				})
 
-					setAlertDialog({
-						open: false
-					});
+				console.log({ Action: action, IsApproved: isApproved })
 
-					console.log({ Action: action, IsApproved: isApproved })
-	
-					const response = await putProposalAnalysis(
-						token,
-						uid,
-						{ Action: action, IsApproved: isApproved }
-					);
-	
-					if (response) {
-						if (response.success) {
-							refetchProposalData();
-						} else {
-							setAlertDialog({
-								open: true,
-								title: 'Erro',
-								body: response.message,
-							});
-						}
+				const response = await putProposalAnalysis(token, uid, {
+					Action: action,
+					IsApproved: isApproved,
+				})
+
+				if (response) {
+					if (response.success) {
+						refetchProposalData()
 					} else {
 						setAlertDialog({
 							open: true,
 							title: 'Erro',
-							body: 'Ocorreu um erro ao deletar um arquivo.',
+							body: response.message,
 						})
 					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao deletar um arquivo.',
+					})
 				}
-			},
-			[refetchProposalData, uid]
-		);
+			}
+		},
+		[token, refetchProposalData, uid]
+	)
 
-	const calculateDaysBetween = (dateString?: string, thresholdDays: number = 10): boolean => {
-
+	const calculateDaysBetween = (
+		dateString?: string,
+		thresholdDays: number = 10
+	): boolean => {
 		try {
-			if(!dateString)
-				throw new Error("Date string cannot be undefined.");
+			if (!dateString) throw new Error('Date string cannot be undefined.')
 
 			// Convert the input string to a Date object
-			const inputDate = new Date(dateString);
-	
+			const inputDate = new Date(dateString)
+
 			// Validate the input date
 			if (isNaN(inputDate.getTime()))
-				throw new Error("Invalid date format. Please provide a valid date string (e.g., 'YYYY-MM-DDTHH:mm:ss.sss').");
-	
+				throw new Error(
+					"Invalid date format. Please provide a valid date string (e.g., 'YYYY-MM-DDTHH:mm:ss.sss')."
+				)
+
 			// Get the current date
-			const currentDate = new Date();
-	
+			const currentDate = new Date()
+
 			// Calculate the difference in time (milliseconds)
-			const timeDifference = currentDate.getTime() - inputDate.getTime();
-	
+			const timeDifference = currentDate.getTime() - inputDate.getTime()
+
 			// Convert the difference from milliseconds to days
-			const daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-	
-			console.log(`Days difference: ${daysDifference}`);
+			const daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
+
+			console.log(`Days difference: ${daysDifference}`)
 			// Return whether the difference exceeds the threshold
-			return daysDifference > thresholdDays;
+			return daysDifference > thresholdDays
 		} catch (error) {
-			console.error(error);
-			return false;
+			console.error(error)
+			return false
 		}
-	};
+	}
 
 	const lastSituation: number | undefined =
-		proposalData.history?.at(0)?.statusId;
+		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean | undefined =
 		role === 'vendedor' &&
 		(proposalSituation.id === 5 ||
 			proposalSituation.id === 10 ||
 			proposalData.uploadMIP ||
-			proposalData.uploadDFI);
+			proposalData.uploadDFI)
 
 	const showMipAlertMinToMedic: boolean | undefined =
-		role === 'subscritor-med' && proposalData.status.id === 4 && (proposalData.capitalMIP >= 3000000 && proposalData.capitalMIP < 5000000);
+		role === 'subscritor-med' &&
+		proposalData.status.id === 4 &&
+		proposalData.capitalMIP >= 3000000 &&
+		proposalData.capitalMIP < 5000000
 	const showMipAlertCompleteToMedic: boolean | undefined =
-		role === 'subscritor-med' && proposalData.status.id === 4 && proposalData.capitalMIP > 5000000;
+		role === 'subscritor-med' &&
+		proposalData.status.id === 4 &&
+		proposalData.capitalMIP > 5000000
 	const showDfiAlertToSubscriber: boolean | undefined =
-		role === 'subscritor' && proposalData.dfiStatus?.id === 29;
-	const showReanalisys:boolean =
-		role === 'vendedor-sup' && proposalData.riskStatus === 'REFUSED' && proposalData.closed === undefined && !calculateDaysBetween(proposalData.refused, 15);
+		role === 'subscritor' && proposalData.dfiStatus?.id === 29
+	const showReanalisys: boolean =
+		role === 'vendedor-sup' &&
+		proposalData.riskStatus === 'REFUSED' &&
+		proposalData.closed === undefined &&
+		!calculateDaysBetween(proposalData.refused, 15)
 	const showAproveAnalisysDps: boolean =
-		role === 'subscritor-sup' && proposalData.riskStatus === 'REOPENED' && proposalData.closed === undefined;
+		role === 'subscritor-sup' &&
+		proposalData.riskStatus === 'REOPENED' &&
+		proposalData.closed === undefined
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-				<div className='w-full flex justify-between'>
+				<div className="w-full flex justify-between">
 					<GoBackButton>
 						<Undo2Icon className="mr-2" />
 						Voltar
@@ -292,19 +307,21 @@ const DetailsPresent = ({
 										!proposalData?.riskStatus
 											? `warn`
 											: proposalData?.riskStatus === `APPROVED`
-												? `success`
-												: `destructive`
+											? `success`
+											: `destructive`
 									}
-									className={cn("ml-4",
+									className={cn(
+										'ml-4',
 										proposalData?.riskStatus === `APPROVED`
-										? `text-zinc-600`
-										: `text-white`
+											? `text-zinc-600`
+											: `text-white`
 									)}
 								>
-									{!proposalData?.riskStatus ? `Em andamento`
+									{!proposalData?.riskStatus
+										? `Em andamento`
 										: proposalData?.riskStatus === `APPROVED`
-											? `Aprovado`
-											: `Recusado`}
+										? `Aprovado`
+										: `Recusado`}
 								</Badge>
 							</h4>
 						</div>
@@ -317,13 +334,14 @@ const DetailsPresent = ({
 										proposalSituation?.description === `DPS Aprovada`
 											? `success`
 											: proposalSituation?.description === `DPS Reprovada`
-												? `destructive`
-												: `warn`
+											? `destructive`
+											: `warn`
 									}
-									className={cn("ml-4",
+									className={cn(
+										'ml-4',
 										proposalSituation?.description === `DPS Aprovada`
-										? `text-zinc-600`
-										: `text-white`
+											? `text-zinc-600`
+											: `text-white`
 									)}
 								>
 									{proposalSituation?.description ?? 'Estado desconhecido'}
@@ -339,14 +357,16 @@ const DetailsPresent = ({
 										variant={
 											proposalSituationDFI?.description === `Laudo DFI aprovado`
 												? `success`
-												: proposalSituationDFI?.description === `Laudo DFI reprovado`
-													? `destructive`
-													: `warn`
+												: proposalSituationDFI?.description ===
+												  `Laudo DFI reprovado`
+												? `destructive`
+												: `warn`
 										}
-										className={cn("ml-4",
+										className={cn(
+											'ml-4',
 											proposalSituationDFI?.description === `Laudo DFI aprovado`
-											? `text-zinc-600`
-											: `text-white`
+												? `text-zinc-600`
+												: `text-white`
 										)}
 									>
 										{proposalSituationDFI?.description ?? 'Estado desconhecido'}
@@ -381,10 +401,13 @@ const DetailsPresent = ({
 							{proposalData.capitalDFI && (
 								<DetailDataCard
 									label="Valor DFI"
-									value={proposalData.capitalDFI && Intl.NumberFormat('pt-BR', {
-										style: 'currency',
-										currency: 'BRL',
-									}).format(proposalData.capitalDFI)}
+									value={
+										proposalData.capitalDFI &&
+										Intl.NumberFormat('pt-BR', {
+											style: 'currency',
+											currency: 'BRL',
+										}).format(proposalData.capitalDFI)
+									}
 								>
 									<DollarSignIcon />
 								</DetailDataCard>
@@ -393,15 +416,17 @@ const DetailsPresent = ({
 							{proposalData.capitalMIP && (
 								<DetailDataCard
 									label="Valor da contratação"
-									value={proposalData.capitalMIP && Intl.NumberFormat('pt-BR', {
-										style: 'currency',
-										currency: 'BRL',
-									}).format(proposalData.capitalMIP)}
+									value={
+										proposalData.capitalMIP &&
+										Intl.NumberFormat('pt-BR', {
+											style: 'currency',
+											currency: 'BRL',
+										}).format(proposalData.capitalMIP)
+									}
 								>
 									<DollarSignIcon />
 								</DetailDataCard>
 							)}
-
 						</div>
 
 						<div className="flex flex-col gap-3">
@@ -416,7 +441,7 @@ const DetailsPresent = ({
 							{showReanalisys && (
 								<Button
 									variant={`secondary`}
-									onClick={() => reportAnalisys(`REOPEN`) }
+									onClick={() => reportAnalisys(`REOPEN`)}
 								>
 									<LucideAlertOctagon className="mr-2" size={18} />
 									Reanálise
@@ -485,7 +510,9 @@ const DetailsPresent = ({
 							<DetailDataCard
 								label="Sexo"
 								value={
-									proposalData.customer.gender === 'M' ? 'Masculino' : 'Feminino'
+									proposalData.customer.gender === 'M'
+										? 'Masculino'
+										: 'Feminino'
 								}
 							>
 								<UserRoundIcon />
@@ -494,12 +521,7 @@ const DetailsPresent = ({
 					</div>
 				</div>
 
-				{proposalData.addressZipcode && (
-					<AddressProposal
-						data={proposalData}
-					/>
-				)}
-
+				{proposalData.addressZipcode && <AddressProposal data={proposalData} />}
 			</div>
 
 			{showFillOutAlert && (
@@ -576,13 +598,12 @@ const DetailsPresent = ({
 						<ul className="ml-5 text-base text-orange-400 list-disc">
 							<li>
 								Exame de Sangue¹ + Exame de Urina I + Teste Ergométrico +
-								Ecocardiograma + ECG + USG Abdome (Superior) Total e
-								próstata
+								Ecocardiograma + ECG + USG Abdome (Superior) Total e próstata
 							</li>
 							<li>Para Homens acima de 50 anos: Todos acima + PSA</li>
 							<li>
-								Para Mulheres acima de 50 anos: Todos acima + CA 19-9 + CA
-								125 + Papanicolau + US mama
+								Para Mulheres acima de 50 anos: Todos acima + CA 19-9 + CA 125 +
+								Papanicolau + US mama
 							</li>
 						</ul>
 					</div>
@@ -596,9 +617,7 @@ const DetailsPresent = ({
 							Ações pendentes
 						</h4>
 						<ul className="ml-5 text-base text-orange-400 list-disc">
-							<li>
-								Necessário validar o laudo DFI inserido.
-							</li>
+							<li>Necessário validar o laudo DFI inserido.</li>
 						</ul>
 					</div>
 				</div>
@@ -606,7 +625,9 @@ const DetailsPresent = ({
 
 			{(role === `vendedor` ||
 				role === `subscritor-med` ||
-				role === `admin` || role === `subscritor-sup` || role === `vendedor-sup`) && (
+				role === `admin` ||
+				role === `subscritor-sup` ||
+				role === `vendedor-sup`) && (
 				<MedReports
 					token={token}
 					uid={uid}
@@ -617,8 +638,11 @@ const DetailsPresent = ({
 				/>
 			)}
 
-			{(role === `vendedor` || role === `subscritor` || role === `admin`||
-				role === `subscritor-sup` || role === `vendedor-sup`) && (
+			{(role === `vendedor` ||
+				role === `subscritor` ||
+				role === `admin` ||
+				role === `subscritor-sup` ||
+				role === `vendedor-sup`) && (
 				<DfiReports
 					token={token}
 					uid={uid}

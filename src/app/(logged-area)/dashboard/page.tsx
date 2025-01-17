@@ -60,23 +60,23 @@ export default async function DashboardPage() {
 			label: 'Value',
 		},
 		chrome: {
-			label: 'Chrome',
+			label: '1',
 			color: 'hsl(var(--chart-1))',
 		},
 		safari: {
-			label: 'Safari',
+			label: '2',
 			color: 'hsl(var(--chart-2))',
 		},
 		firefox: {
-			label: 'Firefox',
+			label: '3',
 			color: 'hsl(var(--chart-3))',
 		},
 		edge: {
-			label: 'Edge',
+			label: '4',
 			color: 'hsl(var(--chart-4))',
 		},
 		other: {
-			label: 'Other',
+			label: '5',
 			color: 'hsl(var(--chart-5))',
 		},
 	} satisfies ChartConfig
@@ -168,7 +168,11 @@ async function EndingProposalList() {
 	// 		status: undefined,
 	// 		title: 'Passíveis de reanálise - Menores que 30 dias corridos da recusa',
 	// 	}
-	else if (role === 'admin' || role === 'vendedor-sup' || role === 'subscritor-sup')
+	else if (
+		role === 'admin' ||
+		role === 'vendedor-sup' ||
+		role === 'subscritor-sup'
+	)
 		roleBasedData = {
 			status: undefined,
 			title: "SLA's - Iminência de finalização de prazo de 15 dias",
@@ -182,7 +186,7 @@ async function EndingProposalList() {
 		undefined, //produto
 		roleBasedData.status, //status
 		`asc` // orderBy
-	);
+	)
 
 	if (data === null) return redirect('/logout')
 
@@ -195,7 +199,7 @@ async function EndingProposalList() {
 			tipoDoc: item.type?.description,
 			status: item.status,
 			dfiStatus: item.dfiStatus,
-			riskStatus: item.riskStatus
+			riskStatus: item.riskStatus,
 		}
 	})
 
