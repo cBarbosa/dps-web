@@ -181,7 +181,7 @@ export default async function DashboardPage() {
 						/>
 						<DonutProgressCard
 							label="Em Reanálise"
-							value={dashboardData.reanalysis?.Total}
+							value={dashboardData.reanalysis?.TotalReanalise}
 							chartData={
 								dashboardData.reanalysis?.Percentual != null
 									? {
