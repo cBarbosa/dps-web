@@ -6,8 +6,10 @@ import {
 } from '@/components/ui/popover'
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 import { BellIcon, MessageSquareTextIcon } from 'lucide-react'
-import { getNotifications, setNotificationsRead } from '../actions'
+import { getNotifications, setNotificationRead } from '../actions'
 import { useSession } from 'next-auth/react'
+import DialogAlertComp from '@/components/ui/alert-dialog-comp'
+import { title } from 'process'
 
 type News = { id: number; title: string; date: Date; description?: string }
 
@@ -21,11 +23,40 @@ export function NotificationSection({
 
 	const [notifications, setNotifications] = useState<{
 		news: News[] | null
+		newsTotal: number
 		messages: News[] | null
+		messagesTotal: number
 	}>({
 		news: [],
+		newsTotal: 0,
 		messages: [],
+		messagesTotal: 0,
 	})
+
+	const [dialogControl, setDialogControl] = useState<{
+		open: boolean
+		title: string
+		body: ReactNode
+	}>({
+		open: false,
+		title: '',
+		body: '',
+	})
+
+	function setDialogOpen(open: boolean) {
+		setDialogControl(prev => ({
+			...prev,
+			open,
+		}))
+	}
+
+	function setDialogContent(title: string, body: ReactNode) {
+		setDialogControl(prev => ({
+			...prev,
+			title,
+			body,
+		}))
+	}
 
 	const fetchNotifications = useCallback(async () => {
 		const notifications = await getNotifications(token)
@@ -33,7 +64,9 @@ export function NotificationSection({
 		if (notifications?.success === false) {
 			return setNotifications({
 				news: [],
+				newsTotal: 0,
 				messages: [],
+				messagesTotal: 0,
 			})
 		}
 
@@ -51,7 +84,9 @@ export function NotificationSection({
 						date: new Date(item.created),
 					}
 				}),
+				newsTotal: notifications.data.totalItems,
 				messages: [],
+				messagesTotal: 0,
 			})
 		}
 	}, [token])
@@ -70,11 +105,26 @@ export function NotificationSection({
 		fetchNotifications()
 	}, [enablePooling, fetchNotifications])
 
-	function onNewsClose() {
-		setNotificationsRead(
-			token,
-			notifications.news?.map(item => item.id) ?? []
-		).then(() => {
+	function onNewsRead(
+		id: number,
+		date: Date,
+		title: string,
+		description?: string
+	) {
+		const body = (
+			<div className="flex flex-col gap-2">
+				<p className="text-gray-500">{description}</p>
+				<p>{date.toLocaleString('pt-BR')}</p>
+			</div>
+		)
+
+		setDialogControl({
+			open: true,
+			title,
+			body,
+		})
+
+		setNotificationRead(token, id).then(() => {
 			fetchNotifications()
 		})
 	}
@@ -83,13 +133,22 @@ export function NotificationSection({
 		<>
 			<NotificationButton
 				icon={<BellIcon />}
-				onClose={onNewsClose}
 				newsList={notifications.news}
+				newsTotal={notifications.newsTotal}
+				onClose={fetchNotifications}
+				onRead={onNewsRead}
 			/>
 			<NotificationButton
 				icon={<MessageSquareTextIcon />}
 				newsList={notifications.messages}
 			/>
+			<DialogAlertComp
+				open={dialogControl.open}
+				onOpenChange={setDialogOpen}
+				title={dialogControl.title}
+			>
+				{dialogControl.body}
+			</DialogAlertComp>
 		</>
 	)
 }
@@ -97,15 +156,19 @@ export function NotificationSection({
 function NotificationButton({
 	icon,
 	newsList,
+	newsTotal,
 	onClose,
+	onRead,
 }: {
 	icon: ReactNode
 	newsList?: News[] | null
+	newsTotal?: number
 	onClose?: () => void
+	onRead?: (id: number, date: Date, title: string, description?: string) => void
 }) {
 	'use client'
 
-	const newsCount = newsList?.length
+	const newsCount = newsTotal ?? newsList?.length
 
 	return (
 		<div className="relative">
@@ -138,6 +201,11 @@ function NotificationButton({
 									<Button
 										variant="ghost"
 										className="w-full h-auto p-1 rounded-none active:ring-1 active:ring-primary/20"
+										onClick={
+											onRead
+												? () => onRead(n.id, n.date, n.title, n.description)
+												: undefined
+										}
 									>
 										<div className="w-full text-left">
 											<div className="font-semibold text-primary-dark text-wrap">

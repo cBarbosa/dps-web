@@ -1,23 +1,17 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { calculateAge, cn, getProfissionDescription, RecursivePartial } from '@/lib/utils'
+import {
+	calculateAge,
+	cn,
+	getProfissionDescription,
+	RecursivePartial,
+} from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
-import React, { use, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import {
-	custom,
-	date,
-	email,
-	InferInput,
-	maxValue,
-	nonEmpty,
-	object,
-	optional,
-	pipe,
-	string,
-} from 'valibot'
+import { InferInput, object } from 'valibot'
 import { getProponentDataByCpf, postProposal } from '../../actions'
 import { useRouter } from 'next/navigation'
 import DpsProfileForm, {
@@ -35,7 +29,6 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
-
 
 export const dpsInitialForm = object({
 	profile: dpsProfileForm,

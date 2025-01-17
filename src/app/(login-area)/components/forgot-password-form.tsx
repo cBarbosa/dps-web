@@ -32,11 +32,24 @@ import {
 	useState,
 } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+	sendPasswordRecoveryEmail,
+	updatePassword,
+	validatePasswordRecoveryCode,
+} from '../forgot-password/actions'
+import { useSession } from 'next-auth/react'
 
 export default function ForgotPasswordForm() {
+	const session = useSession()
+	const token = (session.data as any)?.accessToken
+
 	const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
 
+	const [uid, setUid] = useState('')
+
 	const [email, setEmail] = useState('')
+
+	const [otp, setOtp] = useState('')
 
 	const router = useRouter()
 
@@ -47,9 +60,32 @@ export default function ForgotPasswordForm() {
 	return (
 		<div className="flex flex-col items-center gap-4 h-full w-full">
 			<div className="flex w-full items-center justify-center grow">
-				{step === 0 && <SendEmailForm setStep={setStep} setEmail={setEmail} />}
-				{step === 1 && <ValidateOTPForm setStep={setStep} email={email} />}
-				{step === 2 && <ResetPasswordForm setStep={setStep} email={email} />}
+				{step === 0 && (
+					<SendEmailForm
+						token={token}
+						setStep={setStep}
+						setEmail={setEmail}
+						setUid={setUid}
+					/>
+				)}
+				{step === 1 && (
+					<ValidateOTPForm
+						token={token}
+						setStep={setStep}
+						setOtp={setOtp}
+						email={email}
+						uid={uid}
+					/>
+				)}
+				{step === 2 && (
+					<ResetPasswordForm
+						token={token}
+						setStep={setStep}
+						otp={otp}
+						email={email}
+						uid={uid}
+					/>
+				)}
 				{step === 3 && <SuccessMessage />}
 			</div>
 			<div className="p-3 my-3 text-sm text-slate-500">
@@ -57,9 +93,7 @@ export default function ForgotPasswordForm() {
 				<Link href="/">Política de privacidade</Link> e{' '}
 				<Link href={'/'}>Termos de uso</Link>
 			</div>
-			<div>
-				Copyright © 2024 Techtrail - Todos os direitos reservados
-			</div>
+			<div>Copyright © 2024 Techtrail - Todos os direitos reservados</div>
 		</div>
 	)
 }
@@ -75,15 +109,20 @@ const sendEmailSchema = object({
 type SendEmailSchema = InferInput<typeof sendEmailSchema>
 
 function SendEmailForm({
+	token,
 	setStep,
 	setEmail,
+	setUid,
 }: {
+	token: string
 	setStep: (step: 0 | 1 | 2 | 3) => void
 	setEmail: (email: string) => void
+	setUid: (uid: string) => void
 }) {
 	const {
 		handleSubmit,
 		getValues,
+		setError,
 		control,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<SendEmailSchema>({
@@ -91,8 +130,23 @@ function SendEmailForm({
 	})
 
 	async function onSubmit(v: SendEmailSchema) {
-		setStep(1)
-		setEmail(v.email)
+		console.log('submitting', v)
+
+		const response = await sendPasswordRecoveryEmail(token, v.email)
+
+		if (response) {
+			if (!response.success) {
+				setError('email', { message: response.message })
+				return
+			}
+
+			setEmail(v.email)
+			setUid(response.data)
+			setStep(1)
+			return
+		}
+
+		setError('email', { message: 'Ocorreu um problema ao consultar o e-mail.' })
 	}
 
 	return (
@@ -160,15 +214,22 @@ const validateOTPSchema = object({
 type ValidateOTPSchema = InferInput<typeof validateOTPSchema>
 
 function ValidateOTPForm({
+	token,
 	setStep,
+	setOtp,
 	email,
+	uid,
 }: {
+	token: string
 	setStep: (step: 0 | 1 | 2 | 3) => void
+	setOtp: (otp: string) => void
 	email: string
+	uid: string
 }) {
 	const {
 		handleSubmit,
 		getValues,
+		setError,
 		control,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<ValidateOTPSchema>({
@@ -176,7 +237,22 @@ function ValidateOTPForm({
 	})
 
 	async function onSubmit(v: ValidateOTPSchema) {
-		setStep(2)
+		console.log('submitting', v)
+
+		const response = await validatePasswordRecoveryCode(token, uid, v.otp)
+
+		if (response) {
+			if (!response.success) {
+				setError('otp', { message: response.message })
+				return
+			}
+
+			setStep(2)
+			setOtp(v.otp)
+			return
+		}
+
+		setError('otp', { message: 'Ocorreu um problema ao confirmar a OTP.' })
 	}
 
 	return (
@@ -268,15 +344,22 @@ const resetPasswordSchema = pipe(
 type ResetPasswordSchema = InferInput<typeof resetPasswordSchema>
 
 function ResetPasswordForm({
+	token,
 	setStep,
+	otp,
 	email,
+	uid,
 }: {
+	token: string
 	setStep: (step: 0 | 1 | 2 | 3) => void
+	otp: string
 	email: string
+	uid: string
 }) {
 	const {
 		handleSubmit,
 		getValues,
+		setError,
 		watch,
 		trigger,
 		control,
@@ -298,7 +381,27 @@ function ResetPasswordForm({
 	}, [confirmPwd, trigger, getFieldState])
 
 	async function onSubmit(v: ResetPasswordSchema) {
-		setStep(3)
+		console.log('submitting', v)
+
+		const response = await updatePassword(token, uid, {
+			username: email,
+			password: v.newPassword,
+			code: otp,
+		})
+
+		if (response) {
+			if (!response.success) {
+				setError('newPassword', { message: response.message })
+				return
+			}
+
+			setStep(3)
+			return
+		}
+
+		setError('newPassword', {
+			message: 'Ocorreu um problema ao atualizar a senha.',
+		})
 	}
 
 	console.log(errors)
