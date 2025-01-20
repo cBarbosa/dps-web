@@ -159,7 +159,7 @@ export default async function DashboardPage() {
 				<div className="grid grid-cols-2 xl:grid-cols-4 gap-8">
 					<div className="contents">
 						<DonutProgressCard
-							label="DPS's preenchidas"
+							label="DPS's preenchidas (mês atual)"
 							value={dashboardData.filledDps?.TotalMesAtual}
 							change={dashboardData.filledDps?.PercentualCrescimento}
 						/>
