@@ -11,6 +11,7 @@ import getServerSessionAuthorization, {
 import { PieChartCard, DonutProgressCard } from '../components/data-card'
 import { ChartConfig } from '@/components/ui/chart'
 import Link from 'next/link'
+import { DashboardDataType, getFilledDps } from './actions'
 
 export const revalidate = 0 // no cache
 // export const maxDuration = 300;
@@ -21,39 +22,110 @@ export default async function DashboardPage() {
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
 		| undefined
+	const token = (session as any)?.accessToken
 
-	const chartData = [
-		{
-			label: 'Anexar Documentação',
-			value: 0,
-			fill: 'hsl(var(--chart-1))',
-			href: '/dashboard/table?status=5',
-		},
-		{
-			label: 'Em Análise',
-			value: 0,
-			fill: 'hsl(var(--chart-2))',
-			href: '/dashboard/table?status=4',
-		},
-		{
-			label: 'Assinada',
-			value: 55,
-			fill: 'hsl(var(--chart-3))',
-			href: '/dashboard/table?status=10',
-		},
-		{
-			label: 'Aceita',
-			value: 35,
-			fill: 'hsl(var(--chart-4))',
-			href: '/dashboard/table?status=6',
-		},
-		{
-			label: 'Pendente de Assinatura',
-			value: 10,
-			fill: 'hsl(var(--chart-5))',
-			href: '/dashboard/table?status=3',
-		},
+	if (!granted) {
+		redirect('/logout')
+	}
+
+	const dashboardDataTypes: DashboardDataType[] = [
+		'filledDps',
+		'pendingSign',
+		'pendingDocs',
+		'reanalysis',
+		'mipSituation',
+		'dfiSituation',
 	]
+
+	const dashboardDataRaw = await Promise.allSettled([
+		getFilledDps(token, 'filledDps'),
+		getFilledDps(token, 'pendingSign'),
+		getFilledDps(token, 'pendingDocs'),
+		getFilledDps(token, 'reanalysis'),
+		getFilledDps(token, 'mipSituation'),
+		getFilledDps(token, 'dfiSituation'),
+	])
+
+	const dashboardData = dashboardDataRaw.reduce(
+		(acc, response, i) => {
+			if (response.status === 'fulfilled') {
+				acc[dashboardDataTypes[i]] = response.value?.data as any
+			}
+
+			return acc
+		},
+		{
+			filledDps: null,
+			pendingSign: null,
+			pendingDocs: null,
+			reanalysis: null,
+			mipSituation: null,
+			dfiSituation: null,
+		} as {
+			[T in DashboardDataType]:
+				| Exclude<Awaited<ReturnType<typeof getFilledDps<T>>>, null>['data']
+				| null
+		}
+	)
+
+	type ChartData = {
+		label: string
+		value: number
+		count: number
+		fill: string
+		href?: string
+	}
+
+	const mipChartData: ChartData[] =
+		dashboardData.mipSituation?.map((item, i) => ({
+			label: item.Descricao,
+			value: item.Percentual,
+			count: item.Quantidade,
+			total: item.Total,
+			fill: `hsl(var(--chart-${i + 1}))`,
+			href: `/dashboard/table?status=${item.MipId}`,
+		})) ?? []
+
+	if (mipChartData && mipChartData.length > 0) {
+		const itemCount = mipChartData.reduce((acc, item) => acc + item.count, 0)
+		const mipTotal = dashboardData.mipSituation?.[0]?.Total ?? 0
+
+		if (itemCount < mipTotal) {
+			const restCount = mipTotal - itemCount
+
+			mipChartData.push({
+				label: 'Outros',
+				value: 100 - (100 * restCount) / mipTotal,
+				count: restCount,
+				fill: 'hsl(var(--chart-6))',
+			})
+		}
+	}
+
+	const dfiChartData: ChartData[] =
+		dashboardData.dfiSituation?.map((item, i) => ({
+			label: item.Descricao,
+			value: item.Percentual,
+			count: item.Quantidade,
+			fill: `hsl(var(--chart-${i + 1}))`,
+			href: `/dashboard/table?dfiStatus=${item.DfiId}`,
+		})) ?? []
+
+	if (dfiChartData && dfiChartData.length > 0) {
+		const itemCount = dfiChartData.reduce((acc, item) => acc + item.count, 0)
+		const dfiTotal = dashboardData.dfiSituation?.[0]?.Total ?? 0
+
+		if (itemCount < dfiTotal) {
+			const restCount = dfiTotal - itemCount
+
+			dfiChartData.push({
+				label: 'Outros',
+				value: 100 - (100 * restCount) / dfiTotal,
+				count: restCount,
+				fill: `hsl(var(--chart-${dfiChartData.length + 1}))`,
+			})
+		}
+	}
 
 	const chartConfig = {
 		value: {
@@ -88,49 +160,58 @@ export default async function DashboardPage() {
 					<div className="contents">
 						<DonutProgressCard
 							label="DPS's preenchidas"
-							value={150}
-							change={2.4}
+							value={dashboardData.filledDps?.TotalMesAtual}
+							change={dashboardData.filledDps?.PercentualCrescimento}
 						/>
 						<DonutProgressCard
 							label="Pend. de Assinatura"
-							value={150}
-							change={2.4}
-							chartData={{
-								value: 8,
-								fill: 'hsl(var(--chart-2))',
-							}}
+							value={dashboardData.pendingSign?.Apurado}
+							chartData={
+								dashboardData.pendingSign?.Percentual != null
+									? {
+											value: dashboardData.pendingSign?.Percentual,
+											fill: 'hsl(var(--chart-2))',
+									  }
+									: undefined
+							}
 						/>
 					</div>
 					<div className="contents">
 						<DonutProgressCard
 							label="Pend. de Documentação"
-							value={23}
-							chartData={{
-								value: 21,
-								fill: 'hsl(var(--chart-3))',
-							}}
-							change={2.2}
+							value={dashboardData.pendingDocs?.Apurado}
+							chartData={
+								dashboardData.pendingDocs?.Percentual != null
+									? {
+											value: dashboardData.pendingDocs?.Percentual,
+											fill: 'hsl(var(--chart-3))',
+									  }
+									: undefined
+							}
 						/>
 						<DonutProgressCard
 							label="Em Reanálise"
-							value={5}
-							chartData={{
-								value: 2,
-								fill: 'hsl(var(--chart-4))',
-							}}
-							change={0.2}
+							value={dashboardData.reanalysis?.TotalReanalise}
+							chartData={
+								dashboardData.reanalysis?.Percentual != null
+									? {
+											value: dashboardData.reanalysis?.Percentual,
+											fill: 'hsl(var(--chart-4))',
+									  }
+									: undefined
+							}
 						/>
 					</div>
 					<div className="col-span-2">
 						<PieChartCard
 							title="SLA MIP"
-							chartData={{ data: chartData, config: chartConfig }}
+							chartData={{ data: mipChartData, config: chartConfig }}
 						/>
 					</div>
 					<div className="col-span-2">
 						<PieChartCard
 							title="SLA DFI"
-							chartData={{ data: chartData, config: chartConfig }}
+							chartData={{ data: dfiChartData, config: chartConfig }}
 						/>
 					</div>
 				</div>
