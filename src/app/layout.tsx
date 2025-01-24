@@ -4,6 +4,8 @@ import './globals.css'
 import AppSessionProvider from '@/components/app-session-provider'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './api/auth/[...nextauth]/auth-options'
+import ThemeProvider from '@/components/theme-provider'
+import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 
 const geistSans = localFont({
 	src: './fonts/GeistVF.woff',
@@ -26,14 +28,16 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode
 }>) {
-	const session = await getServerSession(authOptions)
+	const { session, granted } = await getServerSessionAuthorization()
 
 	return (
 		<html lang="en">
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<AppSessionProvider session={session}>{children}</AppSessionProvider>
+				<AppSessionProvider session={session}>
+					<ThemeProvider role={session?.role}>{children}</ThemeProvider>
+				</AppSessionProvider>
 			</body>
 		</html>
 	)

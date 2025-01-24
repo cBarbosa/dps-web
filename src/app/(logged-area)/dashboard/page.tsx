@@ -28,6 +28,11 @@ export default async function DashboardPage() {
 		redirect('/logout')
 	}
 
+	//@ts-expect-error nome de perfil ainda não definido
+	if (role === 'bradesco') {
+		redirect('/home')
+	}
+
 	const dashboardDataTypes: DashboardDataType[] = [
 		'filledDps',
 		'pendingSign',
