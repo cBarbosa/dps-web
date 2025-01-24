@@ -25,7 +25,7 @@ function ThemeProvider({
 	if (!initialTheme && role) {
 		const roleBasedTheme: Record<string, Theme> = {
 			admin: Theme.Default,
-			bradesco: Theme.Bradesco,
+			oferta: Theme.Bradesco,
 		}
 
 		initialTheme = roleBasedTheme[role.toLowerCase()]

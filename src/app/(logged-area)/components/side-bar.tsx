@@ -9,6 +9,7 @@ import {
 	ArrowLeftFromLineIcon,
 	FilesIcon,
 	FileTextIcon,
+	HandshakeIcon,
 	LayoutDashboardIcon,
 	SettingsIcon,
 } from 'lucide-react'
@@ -25,7 +26,7 @@ import {
 
 export default function SideBar() {
 	const { session } = useSessionAuthorization()
-	const role = session?.data?.role
+	const role = session?.data?.role?.toLowerCase() as Lowercase<ApiRoles>
 
 	console.log('role', role)
 
@@ -34,9 +35,11 @@ export default function SideBar() {
 			<div>
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
-						src="/static/images/app-logo-green.png"
-						width="153"
-						height="45"
+						src={`/static/images/${
+							role === Role.OFERTA ? 'bradesco-logo' : 'app-logo-green'
+						}.png`}
+						width={role === Role.OFERTA ? '221' : '153'}
+						height={role === Role.OFERTA ? '42' : '45'}
 						alt="Subscrição Inteligente Logo"
 					/>
 					<ArrowLeftFromLineIcon className="text-primary-dark" />
@@ -48,27 +51,49 @@ export default function SideBar() {
 
 				<Accordion type="multiple" defaultValue={['DPS', 'Backup']}>
 					<ul>
-						<MenuItem href="/dashboard" Icon={LayoutDashboardIcon}>
-							Dashboard
-						</MenuItem>
-						<MenuSection title="Seg. Habitacional" Icon={FileTextIcon}>
-							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
-								<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
-							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR]}>
-								<MenuItem href="/dps/subscription">Subscrição</MenuItem>
-							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_MED]}>
-								<MenuItem href="/dps/subscription-med">Subscrição Med</MenuItem>
-							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
-								<MenuItem href="/dps/saler-sup">Reanálise</MenuItem>
-							</RoleBasedRender>
-							<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR_SUP]}>
-								<MenuItem href="/dps/subscription-sup">Reanálise</MenuItem>
-							</RoleBasedRender>
-							<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
-						</MenuSection>
+						<RoleBasedRender role={role} disallowedRoles={[Role.OFERTA]}>
+							<MenuItem href="/dashboard" Icon={LayoutDashboardIcon}>
+								Dashboard
+							</MenuItem>
+						</RoleBasedRender>
+						<RoleBasedRender role={role} allowedRoles={[Role.OFERTA]}>
+							<MenuItem href="/home" Icon={LayoutDashboardIcon}>
+								Home
+							</MenuItem>
+						</RoleBasedRender>
+						<RoleBasedRender role={role} allowedRoles={[Role.OFERTA]}>
+							<MenuItem href="/offer" Icon={HandshakeIcon}>
+								Oferta Personalizada
+							</MenuItem>
+						</RoleBasedRender>
+						<RoleBasedRender role={role} disallowedRoles={[Role.OFERTA]}>
+							<MenuSection title="Seg. Habitacional" Icon={FileTextIcon}>
+								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
+									<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
+								</RoleBasedRender>
+								<RoleBasedRender role={role} allowedRoles={[Role.SUBSCRITOR]}>
+									<MenuItem href="/dps/subscription">Subscrição</MenuItem>
+								</RoleBasedRender>
+								<RoleBasedRender
+									role={role}
+									allowedRoles={[Role.SUBSCRITOR_MED]}
+								>
+									<MenuItem href="/dps/subscription-med">
+										Subscrição Med
+									</MenuItem>
+								</RoleBasedRender>
+								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
+									<MenuItem href="/dps/saler-sup">Reanálise</MenuItem>
+								</RoleBasedRender>
+								<RoleBasedRender
+									role={role}
+									allowedRoles={[Role.SUBSCRITOR_SUP]}
+								>
+									<MenuItem href="/dps/subscription-sup">Reanálise</MenuItem>
+								</RoleBasedRender>
+								<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
+							</MenuSection>
+						</RoleBasedRender>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>
 							<MenuItem href="/">Realizar Backup</MenuItem>
 							<MenuItem href="/">Listar Backups</MenuItem>
@@ -149,17 +174,30 @@ function MenuItem({
 function RoleBasedRender({
 	children,
 	allowedRoles,
+	disallowedRoles,
 	role,
-}: {
-	children: React.ReactNode
-	allowedRoles: ApiRoles[]
-	role: ApiRoles | undefined
-}) {
+}:
+	| {
+			children: React.ReactNode
+			allowedRoles: ApiRoles[]
+			disallowedRoles?: never
+			role: ApiRoles | undefined
+	  }
+	| {
+			children: React.ReactNode
+			allowedRoles?: never
+			disallowedRoles: ApiRoles[]
+			role: ApiRoles | undefined
+	  }) {
 	if (!role) return null
 
 	role = role.toLowerCase() as ApiRoles
 
-	if (role === 'admin' || allowedRoles.includes(role)) {
+	if (
+		role === 'admin' ||
+		allowedRoles?.includes(role) ||
+		!disallowedRoles?.includes(role)
+	) {
 		return children
 	}
 

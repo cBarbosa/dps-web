@@ -28,7 +28,7 @@ async function BradescoHome() {
 
 	return (
 		<div className="p-5">
-			<div className="w-full max-w-screen-lg mx-auto">
+			<div className="w-full max-w-screen-xl mx-auto">
 				<HomeBanner />
 				<h3 className="text-xl text-gray-500 mt-9 mb-7">
 					Produtos disponíveis:

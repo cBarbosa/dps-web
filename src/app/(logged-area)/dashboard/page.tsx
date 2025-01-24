@@ -28,8 +28,7 @@ export default async function DashboardPage() {
 		redirect('/logout')
 	}
 
-	//@ts-expect-error nome de perfil ainda não definido
-	if (role === 'bradesco') {
+	if (role === 'oferta') {
 		redirect('/home')
 	}
 
@@ -257,7 +256,8 @@ async function EndingProposalList() {
 	else if (
 		role === 'admin' ||
 		role === 'vendedor-sup' ||
-		role === 'subscritor-sup'
+		role === 'subscritor-sup' ||
+		role === 'oferta'
 	)
 		roleBasedData = {
 			status: undefined,
