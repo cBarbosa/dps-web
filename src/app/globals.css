@@ -46,6 +46,7 @@
 
 		.theme-bradesco {
 			--primary: 360 50% 53%;
+			--primary-dark: 360 65% 28%;
 		}
 	}
 }

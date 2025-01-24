@@ -15,20 +15,24 @@ import { Progress } from '@/components/ui/progress'
 import {
 	AlertTriangleIcon,
 	CalendarIcon,
+	CarIcon,
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronsUpDownIcon,
 	ChevronUpIcon,
 	CircleArrowOutUpRightIcon,
+	HandshakeIcon,
+	HouseIcon,
 	MailIcon,
 	SmartphoneIcon,
 	Undo2Icon,
 	UserRoundIcon,
+	WalletIcon,
 	XIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import React, { use, useContext, useEffect, useState } from 'react'
-import { HomeCardVida } from '../../home/page'
+import { CatalogCardViva } from './cards'
 import { Theme, ThemeContext } from '@/components/theme-provider'
 
 function OfferProfile({ uid, token }: { uid: string; token: string }) {
@@ -131,7 +135,7 @@ function ProgressCard({
 	const labelList = ['Baixíssimo', 'Baixo', 'Médio', 'Alto', 'Altíssimo']
 	const colorList = ['#E45B5E', '#E45B5E', '#EEC232', '#55E47B', '#55E47B']
 
-	const labelIndex = Math.floor((progress / 100) * 4)
+	const labelIndex = Math.floor((progress / 100) * 5)
 
 	return (
 		<div className="p-4 rounded-xl border border-muted">
@@ -363,7 +367,7 @@ function PerfilCompra() {
 
 				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="flex justify-between items-center gap-5 ">
-						<HomeCardVida outlined />
+						<CatalogCardViva outlined />
 						<div className="text-center">
 							<span className="text-xl text-muted-foreground">
 								Oferta Ideal
@@ -385,39 +389,39 @@ function PerfilCompra() {
 				<div className="mt-4 flex flex-col gap-4">
 					<ProgressCard
 						icon={
-							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
-								<AlertTriangleIcon size={18} />
+							<div className="p-2 bg-bradesco-accent text-white rounded-lg">
+								<HouseIcon size={18} />
 							</div>
 						}
 						title="Propensão de compra"
-						progress={20}
+						progress={90}
 					/>
 					<ProgressCard
 						icon={
-							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
-								<AlertTriangleIcon size={18} />
+							<div className="p-2 bg-bradesco-accent text-white rounded-lg">
+								<CarIcon size={18} />
 							</div>
 						}
 						title="Perfil do cliente"
-						progress={50}
+						progress={40}
 					/>
 					<ProgressCard
 						icon={
-							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
-								<AlertTriangleIcon size={18} />
+							<div className="p-2 bg-bradesco-accent text-white rounded-lg">
+								<WalletIcon size={18} />
 							</div>
 						}
 						title="Capacidade de pagamento"
-						progress={95}
+						progress={15}
 					/>
 					<ProgressCard
 						icon={
-							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
-								<AlertTriangleIcon size={18} />
+							<div className="p-2 bg-bradesco-accent text-white rounded-lg">
+								<HandshakeIcon size={18} />
 							</div>
 						}
 						title="Indicalçai de produto"
-						progress={33}
+						progress={15}
 					/>
 				</div>
 			</div>

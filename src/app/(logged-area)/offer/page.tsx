@@ -4,7 +4,6 @@ import OfferSearchForm from './components/search-form'
 function OfferPage() {
 	return (
 		<div>
-			OfferPage
 			<OfferSearchForm />
 		</div>
 	)
