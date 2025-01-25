@@ -22,6 +22,10 @@ async function BradescoHome() {
 		| undefined
 	const token = (session as any)?.accessToken
 
+	if (role !== 'oferta') {
+		redirect('/dashboard')
+	}
+
 	if (!granted) {
 		redirect('/logout')
 	}
