@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import React from 'react'
 import OfferProfile from '../components/offer-profile'
+import { getOfferDataByUid } from '../../actions'
 
 export default async function OfferProfilePage({
 	params: { uid },
@@ -12,18 +13,12 @@ export default async function OfferProfilePage({
 	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken
 
-	// const [
-	// 	proposalDataRaw,
-	// 	propertyTypesRaw,
-	// ] = await Promise.all([
-	// 	null, //getProposalByUid(token, uid),
-	// 	null, //getTipoImovelOptions(token),
-	// ])
-	// console.dir(proposalDataRaw, { depth: Infinity })
+	const offerDataRaw = await getOfferDataByUid(token, uid)
+	console.dir(offerDataRaw, { depth: Infinity })
 
-	// const proposalData = proposalDataRaw?.data
+	const offerData = offerDataRaw?.data
 
-	// if (!proposalData) redirect('/dashboard')
+	if (!offerData) redirect('/dashboard')
 
-	return <OfferProfile token={token} uid={uid} />
+	return <OfferProfile data={offerData} token={token} uid={uid} />
 }

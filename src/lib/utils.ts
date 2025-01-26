@@ -17,7 +17,7 @@ export function isValidDate(date: Date) {
 	return date instanceof Date && !isNaN(date.getTime())
 }
 
-export function formatCpf(cpf?: string) {
+export function formatCpf(cpf?: string | null) {
 	if (!cpf) return ''
 
 	cpf = cpf.replace(/[^\d]/g, '')
@@ -101,4 +101,4 @@ export function getProfissionDescription(input?: string): string {
 	const partes = input.split('-')
 
 	return partes[1]?.trim() ?? ''
-};
+}

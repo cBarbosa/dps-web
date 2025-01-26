@@ -35,8 +35,6 @@ function ThemeProvider({
 		initialTheme = roleBasedTheme[role.toLowerCase()]
 	}
 
-	console.log('>>>>>--->>>', roleProp, role)
-
 	const [theme, setTheme] = React.useState<Theme>(initialTheme ?? Theme.Default)
 
 	const ThemeContextValue = React.useMemo(

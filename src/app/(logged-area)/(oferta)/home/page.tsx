@@ -3,7 +3,7 @@ import getServerSessionAuthorization, {
 } from '@/hooks/getServerSessionAuthorization'
 import { redirect } from 'next/navigation'
 import React from 'react'
-import { HomeBanner } from '../components/home-banner'
+import { HomeBanner } from '../../components/home-banner'
 import { CarIcon, HeartIcon, HouseIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import {

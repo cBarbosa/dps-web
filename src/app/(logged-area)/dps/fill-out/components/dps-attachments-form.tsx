@@ -1,40 +1,26 @@
 import { Button } from '@/components/ui/button'
 import FileInput from '@/components/ui/file-input'
-import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import ShareLine from '@/components/ui/share-line'
 import { cn, getBase64 } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { useRouter } from 'next/navigation'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
 	Control,
 	Controller,
 	FormState,
 	useForm,
 	UseFormGetValues,
-	UseFormReset,
 	UseFormResetField,
-	UseFormSetValue,
-	UseFormTrigger,
 } from 'react-hook-form'
 import {
 	file,
 	InferInput,
-	literal,
-	undefined_,
 	object,
-	variant,
-	nonNullish,
 	pipe,
 	nonOptional,
 	nonEmpty,
 	string,
 	optional,
 	array,
-	ObjectSchema,
-	NonOptionalSchema,
-	FileSchema,
 	union,
 } from 'valibot'
 import { DiseaseKeys, diseaseNames } from './dps-form'
@@ -461,7 +447,8 @@ function AttachmentField({
 							<Alert variant="info" disposable className={`mt-4`}>
 								<InfoIcon size={20} className="text-primary-dark/60" />
 								<AlertDescription>
-									Inserrir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
+									Inserrir apenas arquivos com a extensão PDF e tamanho limite
+									10Mb.
 								</AlertDescription>
 							</Alert>
 						</div>

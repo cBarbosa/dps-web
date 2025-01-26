@@ -1,11 +1,5 @@
 'use client'
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from '@/components/ui/accordion'
-import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -18,7 +12,6 @@ import {
 	CarIcon,
 	CheckIcon,
 	ChevronDownIcon,
-	ChevronsUpDownIcon,
 	ChevronUpIcon,
 	CircleArrowOutUpRightIcon,
 	HandshakeIcon,
@@ -34,11 +27,86 @@ import Link from 'next/link'
 import React, { use, useContext, useEffect, useState } from 'react'
 import { CatalogCardViva } from './cards'
 import { Theme, ThemeContext } from '@/components/theme-provider'
+import { GetOfferDataByUidResponse } from '../../actions'
+import { formatCpf } from '@/lib/utils'
 
-function OfferProfile({ uid, token }: { uid: string; token: string }) {
+function OfferProfile({
+	uid,
+	token,
+	data,
+}: {
+	uid: string
+	token: string
+	data: Exclude<GetOfferDataByUidResponse['data'], undefined>
+}) {
 	const themeContext = useContext(ThemeContext)
 
-	const [offerProfileData, setOfferProfileData] = useState<any>(null)
+	const [offerProfileData, setOfferProfileData] = useState<{
+		personal: {
+			name: string | null | undefined
+			birthdate: Date | null | undefined
+			cpf: string | null | undefined
+			gender: string | null | undefined
+			phone: string | null | undefined
+			email: string | null | undefined
+			profession: string | null | undefined
+			motherName: string | null | undefined
+			maritalStatus: string | null | undefined
+		}
+		perfilConsumo: PerfilConsumo
+		perfilCompra: PerfilCompra
+		perfilCompliance: PerfilCompliance
+		perfilRisco: PerfilRisco
+	}>({
+		personal: {
+			name: data.nome,
+			birthdate: new Date(data.dT_NASCIMENTO),
+			cpf: data.cpf,
+			gender: null,
+			phone: null,
+			email: null,
+			profession: null,
+			motherName: null,
+			maritalStatus: null,
+		},
+		perfilConsumo: {
+			propensaoCompra: data.resultadoPropensaoDeCompraValor * 10,
+			perfilCliente: null,
+			capacidadePagamento: progressStringToNumber(
+				data.resultadoCapaCidadePagamento
+			),
+			indicacaoProduto: progressStringToNumber(
+				data.resultadoIndicacaoDeProduto
+			),
+		},
+		perfilCompra: {
+			faixaRenda: data.rendA_FAIXA,
+			complementar: {
+				propensaoCompra: null,
+				perfilCliente: null,
+				capacidadePagamento: null,
+				indicacaoProduto: null,
+			},
+		},
+		perfilCompliance: {
+			obito: data.resultadoComplianceObito,
+			antecedentesCriminais: data.resultadoComplianceAntecedentesCriminais,
+			mandatoPrisao: data.resultadoComplianceMandadoDePrisao,
+			situacaoCadastral: null,
+			aposentado: null,
+			aposentadoMotivo: null,
+			riscoAposentadoDoenca: null,
+		},
+		perfilRisco: {
+			morteQualquerCausa: null,
+			morteNatural: null,
+			morteAcidente: null,
+			doencaCronica: null,
+			acidente: null,
+		},
+	})
+
+	console.log('>>>>', offerProfileData)
 
 	useEffect(() => {
 		themeContext.setTheme(Theme.Bradesco)
@@ -54,39 +122,48 @@ function OfferProfile({ uid, token }: { uid: string; token: string }) {
 
 				<div className="px-3 flex justify-between gap-5 mb-7">
 					<div>
-						<h5 className="text-xl my-4">
-							Fulano de Tal da Silva de Oliveira Junior
-						</h5>
+						<h5 className="text-xl my-4">{offerProfileData.personal.name}</h5>
 
 						<div className="flex gap-5">
 							<div className="flex flex-nowrap gap-2">
 								<CalendarIcon className="text-bradesco" />
-								<span className="text-muted-foreground">01/01/1980</span>
+								<span className="text-muted-foreground">
+									{offerProfileData.personal.birthdate?.toLocaleDateString() ??
+										'N/A'}
+								</span>
 							</div>
 							<div className="flex flex-nowrap gap-2">
 								<UserRoundIcon className="text-bradesco" />
-								<span className="text-muted-foreground">154.254.878-98</span>
+								<span className="text-muted-foreground">
+									{formatCpf(offerProfileData.personal.cpf)}
+								</span>
 							</div>
 							<div className="flex flex-nowrap gap-2">
 								<CircleArrowOutUpRightIcon className="text-bradesco" />
-								<span className="text-muted-foreground">Masculino</span>
+								<span className="text-muted-foreground">
+									{offerProfileData.personal.gender ?? 'N/A'}
+								</span>
 							</div>
 						</div>
 
 						<ul className="list-image-rounded-square-red ml-6 mt-6 [&>li]:mb-1">
 							<li>
 								Profissão:{' '}
-								<span className="text-muted-foreground">123305 - Diretor</span>
+								<span className="text-muted-foreground">
+									{offerProfileData.personal.profession ?? 'N/A'}
+								</span>
 							</li>
 							<li>
 								Nome da Mãe:{' '}
 								<span className="text-muted-foreground">
-									Fulana da Silva de Oliveira
+									{offerProfileData.personal.motherName ?? 'N/A'}
 								</span>
 							</li>
 							<li>
 								Estado Civil:{' '}
-								<span className="text-muted-foreground">Casado(a)</span>
+								<span className="text-muted-foreground">
+									{offerProfileData.personal.maritalStatus ?? 'N/A'}
+								</span>
 							</li>
 						</ul>
 					</div>
@@ -95,22 +172,22 @@ function OfferProfile({ uid, token }: { uid: string; token: string }) {
 						<h5 className="text-lg">Dados de Contato</h5>
 						<div className="flex flex-nowrap gap-2 text-muted-foreground">
 							<SmartphoneIcon className="text-bradesco" />
-							(99) 9 9999-9999
+							{offerProfileData.personal.phone ?? 'N/A'}
 						</div>
 						<div className="flex flex-nowrap gap-2 text-muted-foreground">
 							<MailIcon className="text-bradesco" />
-							emaildofulano@gmail.com
+							{offerProfileData.personal.email ?? 'N/A'}
 						</div>
 					</div>
 				</div>
 
-				<PerfilConsumo />
+				<PerfilConsumo data={offerProfileData.perfilConsumo} />
 
-				<PerfilCompra />
+				<PerfilCompra data={offerProfileData.perfilCompra} />
 
-				<PerfilCompliance />
+				<PerfilCompliance data={offerProfileData.perfilCompliance} />
 
-				<PerfilRisco />
+				<PerfilRisco data={offerProfileData.perfilRisco} />
 			</div>
 		</div>
 	)
@@ -121,21 +198,25 @@ export default OfferProfile
 function ProgressCard({
 	icon,
 	title,
-	progress,
+	progress: progressProp,
 	href,
 }: {
 	icon: React.ReactNode
 	title: string
-	progress: number
+	progress: number | null
 	href?: string
 }) {
+	let progress = progressProp
+
+	if (progress === null) progress = 0
 	if (progress > 100) progress = 100
 	if (progress < 0) progress = 0
 
 	const labelList = ['Baixíssimo', 'Baixo', 'Médio', 'Alto', 'Altíssimo']
 	const colorList = ['#E45B5E', '#E45B5E', '#EEC232', '#55E47B', '#55E47B']
 
-	const labelIndex = Math.floor((progress / 100) * 5)
+	const labelIndex = progress === 100 ? 4 : Math.floor((progress / 100) * 5)
+	console.log(title, labelIndex)
 
 	return (
 		<div className="p-4 rounded-xl border border-muted">
@@ -149,7 +230,16 @@ function ProgressCard({
 				color={colorList[labelIndex]}
 			/>
 			<div className={`flex ${href ? 'justify-between' : 'justify-center'}`}>
-				<span className="text-sm font-semibold">{labelList[labelIndex]}</span>
+				<span className="text-sm font-semibold">
+					{progressProp !== null ? (
+						labelList[labelIndex]
+					) : (
+						<span className="text-muted-foreground font-normal italic">
+							Sem dados
+						</span>
+					)}
+				</span>
+
 				{href && <Link href={href}>+ info</Link>}
 			</div>
 		</div>
@@ -175,7 +265,13 @@ function CheckListItem({
 	)
 }
 
-function PerfilConsumo() {
+type PerfilConsumo = {
+	propensaoCompra: number | null
+	perfilCliente: number | null
+	capacidadePagamento: number | null
+	indicacaoProduto: number | null
+}
+function PerfilConsumo({ data }: { data: PerfilConsumo }) {
 	const [isOpen, setIsOpen] = useState(true)
 	return (
 		<Collapsible
@@ -198,7 +294,7 @@ function PerfilConsumo() {
 							</div>
 						}
 						title="Propensão de compra"
-						progress={20}
+						progress={data.propensaoCompra}
 					/>
 					<ProgressCard
 						icon={
@@ -207,7 +303,7 @@ function PerfilConsumo() {
 							</div>
 						}
 						title="Perfil do cliente"
-						progress={50}
+						progress={data.perfilCliente}
 					/>
 					<ProgressCard
 						icon={
@@ -216,7 +312,7 @@ function PerfilConsumo() {
 							</div>
 						}
 						title="Capacidade de pagamento"
-						progress={95}
+						progress={data.capacidadePagamento}
 					/>
 					<ProgressCard
 						icon={
@@ -225,7 +321,7 @@ function PerfilConsumo() {
 							</div>
 						}
 						title="Indicação de produto"
-						progress={33}
+						progress={data.indicacaoProduto}
 					/>
 				</div>
 			</CollapsibleContent>
@@ -233,7 +329,14 @@ function PerfilConsumo() {
 	)
 }
 
-function PerfilRisco() {
+type PerfilRisco = {
+	morteQualquerCausa: number | null
+	morteNatural: number | null
+	morteAcidente: number | null
+	doencaCronica: number | null
+	acidente: number | null
+}
+function PerfilRisco({ data }: { data: PerfilRisco }) {
 	const [isOpen, setIsOpen] = useState(true)
 
 	return (
@@ -257,7 +360,7 @@ function PerfilRisco() {
 							</div>
 						}
 						title="Risco de morte por qualquer causa"
-						progress={18}
+						progress={data.morteQualquerCausa}
 					/>
 					<ProgressCard
 						icon={
@@ -266,7 +369,7 @@ function PerfilRisco() {
 							</div>
 						}
 						title="Risco de morte natural"
-						progress={50}
+						progress={data.morteNatural}
 					/>
 					<ProgressCard
 						icon={
@@ -275,7 +378,7 @@ function PerfilRisco() {
 							</div>
 						}
 						title="Risco de morte por acidente"
-						progress={95}
+						progress={data.morteAcidente}
 					/>
 					<ProgressCard
 						icon={
@@ -284,7 +387,7 @@ function PerfilRisco() {
 							</div>
 						}
 						title="Risco de doenças crônicas"
-						progress={33}
+						progress={data.doencaCronica}
 					/>
 					<ProgressCard
 						icon={
@@ -293,7 +396,7 @@ function PerfilRisco() {
 							</div>
 						}
 						title="Risco de acidente"
-						progress={50}
+						progress={data.acidente}
 					/>
 				</div>
 			</CollapsibleContent>
@@ -301,8 +404,29 @@ function PerfilRisco() {
 	)
 }
 
-function PerfilCompliance() {
+type PerfilCompliance = {
+	obito: string | null | undefined
+	antecedentesCriminais: string | null | undefined
+	mandatoPrisao: string | null | undefined
+	situacaoCadastral: string | null | undefined
+	aposentado: string | null | undefined
+	aposentadoMotivo: string | null | undefined
+	riscoAposentadoDoenca: string | null | undefined
+}
+function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 	const [isOpen, setIsOpen] = useState(true)
+
+	function checkValue(v: boolean | string | null | undefined) {
+		if (typeof v === 'string') {
+			v = v?.toUpperCase()
+			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA') {
+				return true
+			}
+			return false
+		}
+		return true
+	}
+
 	return (
 		<Collapsible
 			open={isOpen}
@@ -317,31 +441,45 @@ function PerfilCompliance() {
 			</CollapsibleTrigger>
 			<CollapsibleContent>
 				<div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<CheckListItem check>
-						Óbito: <span className="text-muted-foreground">N/A</span>
+					<CheckListItem check={checkValue(data.obito)}>
+						Óbito:{' '}
+						<span className="text-muted-foreground">{data.obito ?? 'N/A'}</span>
 					</CheckListItem>
-					<CheckListItem check>
+					<CheckListItem check={checkValue(data.antecedentesCriminais)}>
 						Antecedentes Criminais:{' '}
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">
+							{data.antecedentesCriminais ?? 'N/A'}
+						</span>
 					</CheckListItem>
-					<CheckListItem check>
+					<CheckListItem check={checkValue(data.mandatoPrisao)}>
 						Mandado de Prisão:{' '}
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">
+							{data.mandatoPrisao ?? 'N/A'}
+						</span>
 					</CheckListItem>
-					<CheckListItem check>
+					<CheckListItem check={checkValue(data.situacaoCadastral)}>
 						Situação Cadastral:{' '}
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">
+							{data.situacaoCadastral ?? 'N/A'}
+						</span>
 					</CheckListItem>
-					<CheckListItem check>
-						Aposentado: <span className="text-muted-foreground">N/A</span>
+					<CheckListItem check={checkValue(data.aposentado)}>
+						Aposentado:{' '}
+						<span className="text-muted-foreground">
+							{data.aposentado ?? 'N/A'}
+						</span>
 					</CheckListItem>
-					<CheckListItem check>
+					<CheckListItem check={checkValue(data.aposentadoMotivo)}>
 						Aposentado Motivo:{' '}
-						<span className="text-muted-foreground">N/A</span>
+						<span className="text-muted-foreground">
+							{data.aposentadoMotivo ?? 'N/A'}
+						</span>
 					</CheckListItem>
-					<CheckListItem>
+					<CheckListItem check={checkValue(data.riscoAposentadoDoenca)}>
 						Risco aposentado por doença:{' '}
-						<span className="text-muted-foreground">Crítica aqui</span>
+						<span className="text-muted-foreground">
+							{data.riscoAposentadoDoenca ?? 'N/A'}
+						</span>
 					</CheckListItem>
 				</div>
 				<p className="mt-10 text-muted-foreground">*N/A: Nada consta</p>
@@ -350,7 +488,16 @@ function PerfilCompliance() {
 	)
 }
 
-function PerfilCompra() {
+type PerfilCompra = {
+	faixaRenda: string
+	complementar: {
+		propensaoCompra: number | null
+		perfilCliente: number | null
+		capacidadePagamento: number | null
+		indicacaoProduto: number | null
+	}
+}
+function PerfilCompra({ data }: { data: PerfilCompra }) {
 	return (
 		<div className="flex gap-1 mx-3">
 			<div className="grow p-5 mt-5 rounded-2xl border border-muted">
@@ -361,8 +508,9 @@ function PerfilCompra() {
 					<span className="text-bradesco font-semibold">PF + PJ</span>
 				</p>
 				<p className="text-2xl font-semibold">
-					<span className="text-nowrap">R$ 10.000,00</span> a{' '}
-					<span className="text-nowrap">R$ 15.000,00</span>
+					{/* <span className="text-nowrap">R$ 10.000,00</span> a{' '}
+					<span className="text-nowrap">R$ 15.000,00</span> */}
+					{data.faixaRenda}
 				</p>
 
 				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
@@ -385,7 +533,7 @@ function PerfilCompra() {
 			</div>
 
 			<div className="p-5 mx-3 mt-5 rounded-2xl border border-muted">
-				<h3 className="text-xl font-medium">Perfil de Compra</h3>
+				<h3 className="text-xl font-medium">Oferta Complementar</h3>
 				<div className="mt-4 flex flex-col gap-4">
 					<ProgressCard
 						icon={
@@ -394,7 +542,7 @@ function PerfilCompra() {
 							</div>
 						}
 						title="Propensão de compra"
-						progress={90}
+						progress={data.complementar.propensaoCompra}
 					/>
 					<ProgressCard
 						icon={
@@ -403,7 +551,7 @@ function PerfilCompra() {
 							</div>
 						}
 						title="Perfil do cliente"
-						progress={40}
+						progress={data.complementar.perfilCliente}
 					/>
 					<ProgressCard
 						icon={
@@ -412,7 +560,7 @@ function PerfilCompra() {
 							</div>
 						}
 						title="Capacidade de pagamento"
-						progress={15}
+						progress={data.complementar.capacidadePagamento}
 					/>
 					<ProgressCard
 						icon={
@@ -420,11 +568,37 @@ function PerfilCompra() {
 								<HandshakeIcon size={18} />
 							</div>
 						}
-						title="Indicalçai de produto"
-						progress={15}
+						title="Indicação de produto"
+						progress={data.complementar.indicacaoProduto}
 					/>
 				</div>
 			</div>
 		</div>
 	)
+}
+
+function progressStringToNumber(str: string) {
+	let value
+
+	switch (str.toLowerCase()) {
+		case 'baixíssimo':
+			value = 0
+			break
+		case 'baixo':
+			value = 25
+			break
+		case 'médio':
+			value = 50
+			break
+		case 'alto':
+			value = 75
+			break
+		case 'altíssimo':
+			value = 100
+			break
+		default:
+			value = null
+	}
+
+	return value
 }
