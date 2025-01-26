@@ -1,7 +1,8 @@
 'use client'
 
 import { ApiRoles } from '@/hooks/getServerSessionAuthorization'
-import React from 'react'
+import useSessionAuthorization from '@/hooks/useSessionAuthorization'
+import React, { useEffect } from 'react'
 
 export enum Theme {
 	Default = 'default',
@@ -16,13 +17,16 @@ export const ThemeContext = React.createContext<{
 function ThemeProvider({
 	initialTheme,
 	children,
-	role,
+	role: roleProp,
 }: {
 	initialTheme?: Theme
 	children: React.ReactNode
 	role?: ApiRoles
 }) {
-	if (!initialTheme && role) {
+	const { session } = useSessionAuthorization()
+	const role = session?.data?.role?.toLowerCase() as Lowercase<ApiRoles>
+
+	if (!initialTheme && roleProp) {
 		const roleBasedTheme: Record<string, Theme> = {
 			admin: Theme.Default,
 			oferta: Theme.Bradesco,
@@ -30,6 +34,8 @@ function ThemeProvider({
 
 		initialTheme = roleBasedTheme[role.toLowerCase()]
 	}
+
+	console.log('>>>>>--->>>', roleProp, role)
 
 	const [theme, setTheme] = React.useState<Theme>(initialTheme ?? Theme.Default)
 
@@ -40,6 +46,14 @@ function ThemeProvider({
 		}),
 		[theme]
 	)
+
+	useEffect(() => {
+		if (role === 'oferta') {
+			setTheme(Theme.Bradesco)
+		} else {
+			setTheme(Theme.Default)
+		}
+	}, [role])
 
 	return (
 		<ThemeContext.Provider value={ThemeContextValue}>

@@ -196,7 +196,7 @@ function RoleBasedRender({
 	if (
 		role === 'admin' ||
 		allowedRoles?.includes(role) ||
-		!disallowedRoles?.includes(role)
+		(disallowedRoles && !disallowedRoles.includes(role))
 	) {
 		return children
 	}
