@@ -122,3 +122,35 @@ export async function getOfferDataByUid(
 
 	return null
 }
+
+export async function postContactInfo(
+	token: string,
+	data: {
+		Uid: string
+		Document: string
+		Phone: string
+		Email: string
+	}
+) {
+	try {
+		const response = await axios.post('v1/leadcustomer', data, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null
+}

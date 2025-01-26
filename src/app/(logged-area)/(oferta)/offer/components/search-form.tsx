@@ -21,7 +21,11 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import { getOfferBasicDataByCpf, getOfferDataByUid } from '../../actions'
+import {
+	getOfferBasicDataByCpf,
+	getOfferDataByUid,
+	postContactInfo,
+} from '../../actions'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
@@ -81,7 +85,19 @@ function OfferSearchForm() {
 
 	const onSubmit = async (data: OfferSearchFormType) => {
 		setIsLoading(true)
-		if (searchedUid) router.push(`/offer/${searchedUid}`)
+
+		const response = await postContactInfo(token, {
+			Uid: searchedUid,
+			Document: data.cpf,
+			Phone: data.phone,
+			Email: data.email,
+		})
+
+		if (response && response.success) {
+			router.push(`/offer/${searchedUid}`)
+		} else {
+			setIsLoading(false)
+		}
 	}
 
 	const completeDataByCpf = async () => {
