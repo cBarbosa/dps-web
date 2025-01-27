@@ -8,6 +8,7 @@ export enum ApiRoleEnum {
 	SUBSCRITOR_MED = 'subscritor-med',
 	VENDEDOR_SUP = 'vendedor-sup',
 	SUBSCRITOR_SUP = 'subscritor-sup',
+	OFERTA = 'oferta',
 }
 
 type ApiRolesAux =
@@ -17,6 +18,7 @@ type ApiRolesAux =
 	| 'SUBSCRITOR-MED'
 	| 'VENDEDOR-SUP'
 	| 'SUBSCRITOR-SUP'
+	| 'OFERTA'
 
 export type ApiRoles = Lowercase<ApiRolesAux> | Uppercase<ApiRolesAux>
 
