@@ -97,6 +97,7 @@ function OfferProfile({
 					data.resultadoEmpresarial
 				),
 			},
+			listaProdutos: data.indicacoesProdutosFaixa
 		},
 		perfilCompliance: {
 			obito: data.resultadoComplianceObito,
@@ -521,6 +522,7 @@ type PerfilCompra = {
 		previdencia: number | null
 		empresarial: number | null
 	}
+	listaProdutos: string[]
 }
 function PerfilCompra({ data }: { data: PerfilCompra }) {
 	return (
@@ -546,7 +548,12 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 
 				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="flex justify-between items-center gap-5 ">
-						<CatalogCardViva outlined />
+						{data.listaProdutos.map((produto, index) => (
+							<div key={index} className="flex flex-col items-center gap-2 w-full">
+								<CatalogCardViva outlined productName={produto} />
+								<span className="text-muted-foreground">{produto}</span>
+							</div>
+						))}
 						<div className="text-center">
 							<span className="text-xl text-muted-foreground">
 								Oferta Ideal
