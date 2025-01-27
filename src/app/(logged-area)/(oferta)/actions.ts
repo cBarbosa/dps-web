@@ -43,17 +43,28 @@ export type GetOfferDataByUidResponse = {
 	message: string
 	success: boolean
 	data?: {
+		uid: string
 		dT_CONSULTA: string
 		protocolo: string
 		tp: string
 		doc: string
 		status: string
+		risco: string
+		natural: string
+		saude: string
+		violencia: string
+		acidente: string
 		cpf: string
 		nome: string
+		nomE_MAE: string
+		sexoDescricao: string
+		aposentadO_MOTIVO: string
 		dT_NASCIMENTO: string
 		idade: number
 		rendA_FAIXA: string
 		escolaridade: string
+		estadO_CIVIL: string
+		profissaO_DESCRICAO: string
 		creditO_RISCO_FAIXA: string
 		mandatO_PRISAO: string
 		casA_PROPRIA: boolean
@@ -66,6 +77,10 @@ export type GetOfferDataByUidResponse = {
 		previdenciA_PRIVADA: boolean
 		segurO_VIDA: boolean
 		segurO_RESIDENCIAL: boolean
+		saudE_DOENCA_CRONICA: string
+		resultadoPerfilDoCliente: string
+		resultadoComplianceAposentado: string
+		resultadoComplianceRiscoAposentadoDoenca: string
 		resultadoIndicacaoDeProduto: string
 		resultadoVida: string
 		resultadoAutomovel: string
@@ -93,6 +108,8 @@ export type GetOfferDataByUidResponse = {
 		resultadoCapaCidadePagamento: string
 		resultadoOfertaIdeal: number
 		resultadoFaixaDeRendaPf: number
+		emailContato: string
+		telefoneContato: string
 	}
 }
 

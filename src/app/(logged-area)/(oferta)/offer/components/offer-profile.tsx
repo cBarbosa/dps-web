@@ -62,12 +62,12 @@ function OfferProfile({
 			name: data.nome,
 			birthdate: new Date(data.dT_NASCIMENTO),
 			cpf: data.cpf,
-			gender: null,
-			phone: null,
-			email: null,
-			profession: null,
-			motherName: null,
-			maritalStatus: null,
+			gender: data.sexoDescricao,
+			phone: data.telefoneContato,
+			email: data.emailContato,
+			profession: data.profissaO_DESCRICAO,
+			motherName: data.nomE_MAE,
+			maritalStatus: data.estadO_CIVIL,
 		},
 		perfilConsumo: {
 			propensaoCompra: data.resultadoPropensaoDeCompraValor * 10,
@@ -81,6 +81,7 @@ function OfferProfile({
 		},
 		perfilCompra: {
 			faixaRenda: data.rendA_FAIXA,
+			ofertaIdeal: data.resultadoOfertaIdeal,
 			complementar: {
 				propensaoCompra: null,
 				perfilCliente: null,
@@ -98,11 +99,11 @@ function OfferProfile({
 			riscoAposentadoDoenca: null,
 		},
 		perfilRisco: {
-			morteQualquerCausa: null,
-			morteNatural: null,
-			morteAcidente: null,
-			doencaCronica: null,
-			acidente: null,
+			morteQualquerCausa: progressStringToNumber(data.risco),
+			morteNatural: progressStringToNumber(data.natural),
+			morteAcidente: progressStringToNumber(data.acidente),
+			doencaCronica: progressStringToNumber(data.saudE_DOENCA_CRONICA),
+			acidente: progressStringToNumber(data.violencia),
 		},
 	})
 
@@ -490,6 +491,7 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 
 type PerfilCompra = {
 	faixaRenda: string
+	ofertaIdeal: number
 	complementar: {
 		propensaoCompra: number | null
 		perfilCliente: number | null
@@ -521,8 +523,13 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 								Oferta Ideal
 							</span>
 							<p className="text-3xl font-semibold">
-								<span className="text-nowrap">R$ 100.000,00</span> a{' '}
-								<span className="text-nowrap">R$ 200.000,00</span>
+								{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
+								<span className="text-nowrap">R$ 200.000,00</span> */}
+								<span className="text-nowrap">
+									{data.ofertaIdeal
+										? `R$ ${data.ofertaIdeal.toLocaleString('pt-BR')},00`
+										: 'N/A'}
+								</span>
 							</p>
 						</div>
 					</div>
