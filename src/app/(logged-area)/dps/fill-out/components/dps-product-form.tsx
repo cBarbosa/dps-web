@@ -51,7 +51,7 @@ const DpsProductForm = ({
 	control: Control<DpsInitialForm>
 	formState: FormState<DpsInitialForm>
 }) => {
-	const router = useRouter()
+	// const router = useRouter()
 
 	const errors = formState.errors?.product
 

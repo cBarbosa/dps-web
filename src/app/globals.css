@@ -24,8 +24,8 @@
 		--primary-light: 169 82% 30%;
 		--secondary: 220 14% 96%;
 		--secondary-foreground: 222.2 47.4% 11.2%;
-		--muted: 210 40% 96.1%;
-		--muted-foreground: 215 11% 65%;
+		--muted: 210 40% 95.1%;
+		--muted-foreground: 215 11% 60%;
 		--accent: 210 40% 96.1%;
 		--accent-foreground: 222.2 47.4% 11.2%;
 		--destructive: 0 77% 71%;
@@ -39,7 +39,15 @@
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
 		--radius: 0.5rem;
-		/* color: hsla(169, 82%, 30%, 0.5); */
+		--bradesco: 354 100% 30%;
+		--bradesco-accent: 345 100% 42%;
+		--bradesco-foreground: 0 0% 100%;
+		/* color: hsl(345, 100%, 42%); */
+
+		.theme-bradesco {
+			--primary: 360 50% 53%;
+			--primary-dark: 360 65% 28%;
+		}
 	}
 }
 

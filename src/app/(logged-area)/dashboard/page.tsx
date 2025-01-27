@@ -28,6 +28,10 @@ export default async function DashboardPage() {
 		redirect('/logout')
 	}
 
+	if (role === 'oferta') {
+		redirect('/home')
+	}
+
 	const dashboardDataTypes: DashboardDataType[] = [
 		'filledDps',
 		'pendingSign',
@@ -252,7 +256,8 @@ async function EndingProposalList() {
 	else if (
 		role === 'admin' ||
 		role === 'vendedor-sup' ||
-		role === 'subscritor-sup'
+		role === 'subscritor-sup' ||
+		role === 'oferta'
 	)
 		roleBasedData = {
 			status: undefined,
