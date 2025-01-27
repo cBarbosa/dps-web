@@ -66,6 +66,7 @@ function OfferSearchForm() {
 		trigger,
 		setValue,
 		watch,
+		setError,
 		control,
 		reset,
 		formState: { isSubmitting, isSubmitted, errors, ...formStateRest },
@@ -101,6 +102,8 @@ function OfferSearchForm() {
 	}
 
 	const completeDataByCpf = async () => {
+		trigger('cpf')
+
 		setIsLoading(true)
 		const response = await getOfferBasicDataByCpf(token, cpf)
 
@@ -109,6 +112,8 @@ function OfferSearchForm() {
 
 			setValue('name', response.data.nome)
 			setValue('birthdate', new Date(response.data.dataNascimento))
+		} else {
+			setError('cpf', { message: 'Nenhum cadastro encontrado.' })
 		}
 
 		setIsLoading(false)
