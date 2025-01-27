@@ -40,7 +40,12 @@ export default function AccountSection({ userData }: { userData: UserData }) {
 					sideOffset={10}
 					collisionPadding={10}
 				>
-					<Button onClick={() => signOut()}>Sair</Button>
+					<Button
+						className={userData.role === 'OFERTA' ? 'bg-bradesco' : ''}
+						onClick={() => signOut()}
+					>
+						Sair
+					</Button>
 				</PopoverContent>
 			</Popover>
 		</div>
