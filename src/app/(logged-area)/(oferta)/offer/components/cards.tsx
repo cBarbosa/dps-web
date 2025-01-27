@@ -83,15 +83,39 @@ export function CatalogCardResidencial({ outlined = false }) {
 	)
 }
 
-export function CatalogCardViva({ outlined = false }) {
+export function CatalogCardViva({ productName, outlined = false }: {productName: string, outlined?: boolean}) {
+
+	let productImage = `/static/images/card-pic-viva.jpg`;
+	let productDescription = `O seguro de vida da sua vida e das pessoas da sua vida.`;
+
+	if(productName === 'AP PREMIÁVEL BRADESCO'){
+		productImage = `/static/images/card-pic-premiavel.jpg`;
+		productDescription = `Um seguro de pessoas ideal para você e sua família.`;
+	}
+
+	if(productName === 'AP PREMIÁVEL BRADESCO EMPRESARIAL'){
+		productImage = `/static/images/card-pic-premiavel.jpg`;
+		productDescription = `Um seguro de pessoas ideal para você e sua família`;
+	}
+
+	if(productName === 'NOVO TOP CLUBE BRADESCO'){
+		productImage = `/static/images/card-top-clube.jpg`;
+		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`;
+	}
+
+	if(productName === 'NOVO TOP CLUBE BRADESCO EMPRESARIAL'){
+		productImage = `/static/images/card-top-clube.jpg`;
+		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`;
+	}
+
 	return (
 		<CatalogCard
 			title="Vida Viva Bradesco"
 			icon={<HeartIcon />}
-			imagePath="/static/images/card-pic-viva.jpg"
+			imagePath={productImage}
 			outlined={outlined}
 		>
-			O seguro de vida da sua vida e das pessoas da sua vida.
+			{productDescription}
 		</CatalogCard>
 	)
 }
