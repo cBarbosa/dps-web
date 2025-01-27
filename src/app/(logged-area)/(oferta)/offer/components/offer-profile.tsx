@@ -94,7 +94,8 @@ function OfferProfile({
 					data.resultadoVida
 				),
 				empresarial: progressStringToNumber(
-					data.resultadoEmpresarial
+					// data.resultadoEmpresarial
+					`ALTO`
 				),
 			},
 			listaProdutos: data.indicacoesProdutosFaixa
