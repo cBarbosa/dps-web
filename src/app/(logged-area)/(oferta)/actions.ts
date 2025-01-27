@@ -111,6 +111,11 @@ export type GetOfferDataByUidResponse = {
 		resultadoFaixaDeRendaPf: number
 		emailContato: string
 		telefoneContato: string
+		resultadoFaixaDeRendaPj: number
+		resultadoRendaPfPjFaixa: string
+		resultadoOfertaIdealFaixa: string
+		resultadoBigdataCorpSituacaoCadastral: string
+		resultadoEmpresarial: string
 	}
 }
 
