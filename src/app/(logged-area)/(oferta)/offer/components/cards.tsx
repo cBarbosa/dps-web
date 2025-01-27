@@ -110,7 +110,7 @@ export function CatalogCardViva({ productName, outlined = false }: {productName:
 
 	return (
 		<CatalogCard
-			title="Vida Viva Bradesco"
+			title={productName}
 			icon={<HeartIcon />}
 			imagePath={productImage}
 			outlined={outlined}
