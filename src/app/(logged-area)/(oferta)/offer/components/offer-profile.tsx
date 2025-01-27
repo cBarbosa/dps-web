@@ -549,7 +549,7 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="flex justify-between items-center gap-5 ">
 						{data.listaProdutos.map((produto, index) => (
-							<div key={index} className="flex flex-col items-center gap-2 w-full">
+							<div key={index} className="flex flex-col items-center gap-2">
 								<CatalogCardViva outlined productName={produto} />
 								<span className="text-muted-foreground">{produto}</span>
 							</div>
@@ -561,7 +561,7 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 							<p className="text-3xl font-semibold">
 								{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
 								<span className="text-nowrap">R$ 200.000,00</span> */}
-								<span className="text-nowrap">
+								<span className="text-wrap">
 									{/* {data.ofertaIdeal
 										? `R$ ${data.ofertaIdeal.toLocaleString('pt-BR')},00`
 										: 'NADA CONSTA'} */}
