@@ -13,7 +13,7 @@ export default async function OfferProfilePage({
 }: {
 	params: { uid: string }
 }) {
-	const session = await getServerSessionAuthorization(['oferta'])
+	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
