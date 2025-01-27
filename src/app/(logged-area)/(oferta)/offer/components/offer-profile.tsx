@@ -41,6 +41,8 @@ function OfferProfile({
 }) {
 	const themeContext = useContext(ThemeContext)
 
+	console.log(data)
+
 	const [offerProfileData, setOfferProfileData] = useState<{
 		personal: {
 			name: string | null | undefined
@@ -99,7 +101,7 @@ function OfferProfile({
 			riscoAposentadoDoenca: null,
 		},
 		perfilRisco: {
-			morteQualquerCausa: progressStringToNumber(data.risco),
+			morteQualquerCausa: progressStringToNumber(data.saudE_DOENCA_FAIXA),
 			morteNatural: progressStringToNumber(data.natural),
 			morteAcidente: progressStringToNumber(data.acidente),
 			doencaCronica: progressStringToNumber(data.saudE_DOENCA_CRONICA),
@@ -587,20 +589,33 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 function progressStringToNumber(str: string) {
 	let value
 
-	switch (str.toLowerCase()) {
-		case 'baixíssimo':
+	console.log(';;;;;;;;;', str)
+
+	switch (str.toUpperCase()) {
+		case 'BAIXÍSSIMO':
+		case 'BAIXISSIMO':
+		case 'BAIXÍSSIMO RISCO':
+		case 'BAIXISSIMO RISCO':
 			value = 0
 			break
-		case 'baixo':
+		case 'BAIXO':
+		case 'BAIXO RISCO':
 			value = 25
 			break
-		case 'médio':
+		case 'MÉDIO':
+		case 'MEDIO':
+		case 'MÉDIO RISCO':
+		case 'MEDIO RISCO':
 			value = 50
 			break
-		case 'alto':
+		case 'ALTO':
+		case 'ALTO RISCO':
 			value = 75
 			break
-		case 'altíssimo':
+		case 'ALTÍSSIMO':
+		case 'ALTISSIMO':
+		case 'ALTÍSSIMO RISCO':
+		case 'ALTISSIMO RISCO':
 			value = 100
 			break
 		default:

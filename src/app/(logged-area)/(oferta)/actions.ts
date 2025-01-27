@@ -54,6 +54,7 @@ export type GetOfferDataByUidResponse = {
 		saude: string
 		violencia: string
 		acidente: string
+		saudE_DOENCA_FAIXA: string
 		cpf: string
 		nome: string
 		nomE_MAE: string

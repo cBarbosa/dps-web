@@ -194,6 +194,14 @@ function RoleBasedRender({
 	role = role.toLowerCase() as ApiRoles
 
 	if (
+		allowedRoles &&
+		allowedRoles.includes(Role.OFERTA) &&
+		role !== Role.OFERTA
+	) {
+		return null
+	}
+
+	if (
 		role === 'admin' ||
 		allowedRoles?.includes(role) ||
 		(disallowedRoles && !disallowedRoles.includes(role))
