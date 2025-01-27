@@ -430,7 +430,7 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 	function checkValue(v: boolean | string | null | undefined) {
 		if (typeof v === 'string') {
 			v = v?.toUpperCase()
-			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA') {
+			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA' || v === 'REGULAR') {
 				return true
 			}
 			return false
