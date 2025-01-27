@@ -47,7 +47,7 @@ export function HomeBanner() {
 					</TabsTrigger>
 				</TabsList>
 			</Tabs>
-			<div className="flex ml-5 mt-5 gap-6 items-end">
+			{/* <div className="flex ml-5 mt-5 gap-6 items-end">
 				<Button
 					asChild
 					className="px-6 py-5 bg-white hover:bg-white text-black/80 hover:text-black font-semibold"
@@ -61,7 +61,7 @@ export function HomeBanner() {
 					alt="Logo"
 					className="pb-3"
 				/>
-			</div>
+			</div> */}
 		</div>
 	)
 }
