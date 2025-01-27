@@ -116,6 +116,7 @@ export type GetOfferDataByUidResponse = {
 		resultadoOfertaIdealFaixa: string
 		resultadoBigdataCorpSituacaoCadastral: string
 		resultadoEmpresarial: string
+		indicacoesProdutosFaixa: string[]
 	}
 }
 
