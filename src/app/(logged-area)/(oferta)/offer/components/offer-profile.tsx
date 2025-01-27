@@ -29,7 +29,7 @@ import React, { use, useContext, useEffect, useState } from 'react'
 import { CatalogCardViva } from './cards'
 import { Theme, ThemeContext } from '@/components/theme-provider'
 import { GetOfferDataByUidResponse } from '../../actions'
-import { formatCpf } from '@/lib/utils'
+import { cn, formatCpf } from '@/lib/utils'
 
 function OfferProfile({
 	uid,
@@ -83,24 +83,29 @@ function OfferProfile({
 			),
 		},
 		perfilCompra: {
-			faixaRenda: data.rendA_FAIXA,
-			ofertaIdeal: data.resultadoOfertaIdeal,
+			faixaRenda: data.resultadoRendaPfPjFaixa,
+			ofertaIdeal: data.resultadoOfertaIdealFaixa,
+			ofertaEmpresarial: data.resultadoFaixaDeRendaPj > 0,
 			complementar: {
-				propensaoCompra: progressStringToNumber(
-					data.resultadoPropensaoDeCompraClassificacao
+				residencial: progressStringToNumber(
+					data.resultadoResidencial
 				),
-				perfilCliente: progressStringToNumber(data.resultadoPerfilDoCliente),
-				capacidadePagamento: progressStringToNumber(
-					data.resultadoCapaCidadePagamento
+				auto: progressStringToNumber(data.resultadoAutomovel),
+				previdencia: progressStringToNumber(
+					data.resultadoVida
 				),
-				indicacaoProduto: null,
+				empresarial: progressStringToNumber(
+					// data.resultadoEmpresarial
+					`ALTO`
+				),
 			},
+			listaProdutos: data.indicacoesProdutosFaixa
 		},
 		perfilCompliance: {
 			obito: data.resultadoComplianceObito,
 			antecedentesCriminais: data.resultadoComplianceAntecedentesCriminais,
 			mandatoPrisao: data.resultadoComplianceMandadoDePrisao,
-			situacaoCadastral: null,
+			situacaoCadastral: data.resultadoBigdataCorpSituacaoCadastral,
 			aposentado: null,
 			aposentadoMotivo: null,
 			riscoAposentadoDoenca: null,
@@ -109,7 +114,7 @@ function OfferProfile({
 			morteQualquerCausa: progressStringToNumber(data.saudE_DOENCA_FAIXA),
 			morteNatural: progressStringToNumber(data.natural),
 			morteAcidente: progressStringToNumber(data.acidente),
-			doencaCronica: progressStringToNumber(data.saudE_DOENCA_CRONICA),
+			doencaCronica: progressStringToNumber(data.saudE_DOENCA_CRONICA == `` ? `MÉDIO` : data.saudE_DOENCA_CRONICA),
 			acidente: progressStringToNumber(data.violencia),
 		},
 	})
@@ -304,7 +309,7 @@ function PerfilConsumo({ data }: { data: PerfilConsumo }) {
 						title="Propensão de compra"
 						progress={data.propensaoCompra}
 					/>
-					<ProgressCard
+					{/* <ProgressCard
 						icon={
 							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
 								<AlertTriangleIcon size={18} />
@@ -312,7 +317,7 @@ function PerfilConsumo({ data }: { data: PerfilConsumo }) {
 						}
 						title="Perfil do cliente"
 						progress={data.perfilCliente}
-					/>
+					/> */}
 					<ProgressCard
 						icon={
 							<div className="p-2 bg-green-600/10 text-green-700 rounded-lg">
@@ -427,7 +432,7 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 	function checkValue(v: boolean | string | null | undefined) {
 		if (typeof v === 'string') {
 			v = v?.toUpperCase()
-			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA') {
+			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA' || v === 'REGULAR') {
 				return true
 			}
 			return false
@@ -484,13 +489,13 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 							{formatValue(data.situacaoCadastral) ?? 'NADA CONSTA'}
 						</span>
 					</CheckListItem>
-					<CheckListItem check={checkValue(data.aposentado)}>
+					{/* <CheckListItem check={checkValue(data.aposentado)}>
 						Aposentado:{' '}
 						<span className="text-muted-foreground">
 							{formatValue(data.aposentado) ?? 'NADA CONSTA'}
 						</span>
-					</CheckListItem>
-					<CheckListItem check={checkValue(data.aposentadoMotivo)}>
+					</CheckListItem> */}
+					{/* <CheckListItem check={checkValue(data.aposentadoMotivo)}>
 						Aposentado Motivo:{' '}
 						<span className="text-muted-foreground">
 							{formatValue(data.aposentadoMotivo) ?? 'NADA CONSTA'}
@@ -501,7 +506,7 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 						<span className="text-muted-foreground">
 							{formatValue(data.riscoAposentadoDoenca) ?? 'NADA CONSTA'}
 						</span>
-					</CheckListItem>
+					</CheckListItem> */}
 				</div>
 				{/* <p className="mt-10 text-muted-foreground">*NADA CONSTA: Nada consta</p> */}
 			</CollapsibleContent>
@@ -511,24 +516,32 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 
 type PerfilCompra = {
 	faixaRenda: string
-	ofertaIdeal: number
+	ofertaIdeal: string
+	ofertaEmpresarial: boolean
 	complementar: {
-		propensaoCompra: number | null
-		perfilCliente: number | null
-		capacidadePagamento: number | null
-		indicacaoProduto: number | null
+		residencial: number | null
+		auto: number | null
+		previdencia: number | null
+		empresarial: number | null
 	}
+	listaProdutos: string[]
 }
 function PerfilCompra({ data }: { data: PerfilCompra }) {
 	return (
 		<div className="flex gap-1 mx-3">
 			<div className="grow p-5 mt-5 rounded-2xl border border-muted">
-				<h3 className="text-xl font-medium">Perfil de Compra</h3>
+				<h3 className="text-xl font-medium">Perfil de compra</h3>
 
-				{/* <p className="mt-6 text-muted-foreground">
+				<p className='mt-4 text-muted-foreground text-2xl font-semibold'>
+					Primeira Oferta
+				</p>
+
+				<p className="mt-6 text-muted-foreground">
 					Faixa de Renda:{' '}
-					<span className="text-bradesco font-semibold">PF + PJ</span>
-				</p> */}
+					<span className={cn(
+						`text-bradesco font-semibold`,
+						!data.ofertaEmpresarial && `hidden`)}>PF + PJ</span>
+				</p>
 				<p className="mt-6 text-2xl font-semibold">
 					{/* <span className="text-nowrap">R$ 10.000,00</span> a{' '}
 					<span className="text-nowrap">R$ 15.000,00</span> */}
@@ -537,7 +550,12 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 
 				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="flex justify-between items-center gap-5 ">
-						<CatalogCardViva outlined />
+						{data.listaProdutos.map((produto, index) => (
+							<div key={index} className="flex flex-col items-center gap-2">
+								<CatalogCardViva outlined productName={produto} />
+								<span className="text-muted-foreground">{produto}</span>
+							</div>
+						))}
 						<div className="text-center">
 							<span className="text-xl text-muted-foreground">
 								Oferta Ideal
@@ -545,10 +563,11 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 							<p className="text-3xl font-semibold">
 								{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
 								<span className="text-nowrap">R$ 200.000,00</span> */}
-								<span className="text-nowrap">
-									{data.ofertaIdeal
+								<span className="text-wrap">
+									{/* {data.ofertaIdeal
 										? `R$ ${data.ofertaIdeal.toLocaleString('pt-BR')},00`
-										: 'NADA CONSTA'}
+										: 'NADA CONSTA'} */}
+										{data.ofertaIdeal}
 								</span>
 							</p>
 						</div>
@@ -568,8 +587,8 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 								<HouseIcon size={18} />
 							</div>
 						}
-						title="Propensão de compra"
-						progress={data.complementar.propensaoCompra}
+						title="Seguro residencial"
+						progress={data.complementar.residencial}
 					/>
 					<ProgressCard
 						icon={
@@ -577,8 +596,8 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 								<CarIcon size={18} />
 							</div>
 						}
-						title="Perfil do cliente"
-						progress={data.complementar.perfilCliente}
+						title="Seguro auto"
+						progress={data.complementar.auto}
 					/>
 					<ProgressCard
 						icon={
@@ -586,18 +605,20 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 								<WalletIcon size={18} />
 							</div>
 						}
-						title="Capacidade de pagamento"
-						progress={data.complementar.capacidadePagamento}
+						title="Previdência"
+						progress={data.complementar.previdencia}
 					/>
-					<ProgressCard
-						icon={
-							<div className="p-2 bg-bradesco-accent text-white rounded-lg">
-								<HandshakeIcon size={18} />
-							</div>
-						}
-						title="Indicação de produto"
-						progress={data.complementar.indicacaoProduto}
-					/>
+					{data.ofertaEmpresarial && (
+						<ProgressCard
+							icon={
+								<div className="p-2 bg-bradesco-accent text-white rounded-lg">
+									<HandshakeIcon size={18} />
+								</div>
+							}
+							title="Seguro empresarial"
+							progress={data.complementar.empresarial}
+						/>
+					)}
 				</div>
 			</div>
 		</div>
