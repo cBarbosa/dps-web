@@ -13,7 +13,6 @@ async function OfferPage() {
 		| Lowercase<ApiRoles>
 		| undefined
 
-	console.log('\n\n\n\n\n\n\n\n\n', role)
 	if (role !== 'oferta') {
 		redirect('/dashboard')
 	}

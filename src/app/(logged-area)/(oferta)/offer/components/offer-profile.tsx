@@ -23,6 +23,7 @@ import {
 	WalletIcon,
 	XIcon,
 } from 'lucide-react'
+import { Male, Female } from '@/components/ui/icons'
 import Link from 'next/link'
 import React, { use, useContext, useEffect, useState } from 'react'
 import { CatalogCardViva } from './cards'
@@ -146,7 +147,7 @@ function OfferProfile({
 								</span>
 							</div>
 							<div className="flex flex-nowrap gap-2">
-								<CircleArrowOutUpRightIcon className="text-bradesco" />
+								<Female className="text-bradesco" />
 								<span className="text-muted-foreground">
 									{offerProfileData.personal.gender ?? 'NADA CONSTA'}
 								</span>
