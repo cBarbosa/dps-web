@@ -133,7 +133,7 @@ function OfferProfile({
 
 	return (
 		<div className="p-5">
-			<div className="px-7 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+			<div className="px-7 py-7 w-full max-w-screen-xl mx-auto bg-white rounded-3xl">
 				<GoBackButton className="pl-0">
 					<Undo2Icon className="mr-2" />
 					Voltar
@@ -554,8 +554,8 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 	}
 
 	return (
-		<div className="flex gap-1 mx-3">
-			<div className="grow p-5 mt-5 rounded-2xl border border-muted">
+		<div className="relative max-w-full grid grid-cols-[1fr_auto] gap-1 mx-3 mt-5">
+			<div className="p-5 overflow-auto rounded-2xl border border-muted">
 				<h3 className="text-xl font-medium">Perfil de compra</h3>
 
 				<p className="text-muted-foreground text-2xl font-semibold">
@@ -579,7 +579,7 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 					{data.faixaRenda}
 				</p>
 
-				<div className="py-5 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
+				<div className="max-w-full py-5 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="px-10 text-center">
 						<span className="text-xl text-muted-foreground">Oferta Ideal</span>
 						<p className="text-3xl font-semibold">
@@ -593,7 +593,6 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 							</span>
 						</p>
 					</div>
-
 					<Carousel
 						className="mx-8 mt-5"
 						onEvent={['scroll', handleSideFade]}
@@ -601,8 +600,24 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 					>
 						<CarouselContent className="p-1 justify-evenly">
 							{data.listaProdutos.map((produto, index) => (
-								<CarouselItem key={index} className="basis-2/5">
-									<div className="h-full flex flex-col items-center gap-2">
+								<CarouselItem
+									key={index}
+									className="basis-full lg:basis-2/3 xl:basis-1/2 2xl:basis-2/5"
+								>
+									<div className="flex flex-col items-center gap-2">
+										<CatalogCardViva outlined productName={produto} />
+										<span className="text-muted-foreground text-center">
+											{produto}
+										</span>
+									</div>
+								</CarouselItem>
+							))}
+							{data.listaProdutos.map((produto, index) => (
+								<CarouselItem
+									key={index}
+									className="basis-full lg:basis-2/3 xl:basis-1/2 2xl:basis-2/5"
+								>
+									<div className="flex flex-col items-center gap-2">
 										<CatalogCardViva outlined productName={produto} />
 										<span className="text-muted-foreground text-center">
 											{produto}
@@ -622,13 +637,14 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 							style={{ opacity: canScrollNext ? '1' : '0' }}
 						></div>
 					</Carousel>
+
 					<div className="text-right px-10">
 						<Link href="">+ Info</Link>
 					</div>
 				</div>
 			</div>
 
-			<div className="p-5 mx-3 mt-5 rounded-2xl border border-muted">
+			<div className="p-5 mx-3 rounded-2xl border border-muted">
 				<h3 className="text-xl font-medium">Oferta Complementar</h3>
 				<div className="mt-4 flex flex-col gap-4">
 					<ProgressCard

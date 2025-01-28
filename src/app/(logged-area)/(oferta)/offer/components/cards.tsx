@@ -20,7 +20,7 @@ function CatalogCard({
 	return (
 		<Card
 			className={cn(
-				'w-full max-w-60 hover:outline outline-2 outline-bradesco-accent shadow-slate-900/10 border-none shadow-2xl rounded-3xl',
+				'w-60 hover:outline outline-2 outline-bradesco-accent shadow-slate-900/10 border-none shadow-2xl rounded-3xl',
 				outlined ? 'outline' : '',
 				className
 			)}
