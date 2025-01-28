@@ -554,8 +554,8 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 	}
 
 	return (
-		<div className="relative max-w-full grid grid-cols-[1fr_auto] gap-1 mx-3 mt-5">
-			<div className="p-5 overflow-auto rounded-2xl border border-muted">
+		<div className="relative max-w-full grid grid-cols-[minmax(0,1fr)_auto] gap-1 mx-3 mt-5">
+			<div className="p-5 rounded-2xl border border-muted">
 				<h3 className="text-xl font-medium">Perfil de compra</h3>
 
 				<p className="text-muted-foreground text-2xl font-semibold">
@@ -599,19 +599,6 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 						onInit={handleCarouselInit}
 					>
 						<CarouselContent className="p-1 justify-evenly">
-							{data.listaProdutos.map((produto, index) => (
-								<CarouselItem
-									key={index}
-									className="basis-full lg:basis-2/3 xl:basis-1/2 2xl:basis-2/5"
-								>
-									<div className="flex flex-col items-center gap-2">
-										<CatalogCardViva outlined productName={produto} />
-										<span className="text-muted-foreground text-center">
-											{produto}
-										</span>
-									</div>
-								</CarouselItem>
-							))}
 							{data.listaProdutos.map((produto, index) => (
 								<CarouselItem
 									key={index}
