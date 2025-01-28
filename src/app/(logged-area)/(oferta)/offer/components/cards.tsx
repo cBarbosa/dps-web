@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { CarIcon, HeartIcon, HouseIcon } from 'lucide-react'
 
 function CatalogCard({
@@ -7,19 +8,22 @@ function CatalogCard({
 	icon,
 	children,
 	outlined = false,
+	className,
 }: {
 	imagePath: string
 	title: string
 	icon: React.ReactNode
 	children: string
 	outlined?: boolean
+	className?: string
 }) {
 	return (
 		<Card
-			className={
-				'w-full max-w-60 hover:outline outline-2 outline-bradesco-accent shadow-slate-900/10 border-none shadow-2xl rounded-3xl' +
-				(outlined ? ' outline' : '')
-			}
+			className={cn(
+				'w-full max-w-60 hover:outline outline-2 outline-bradesco-accent shadow-slate-900/10 border-none shadow-2xl rounded-3xl',
+				outlined ? 'outline' : '',
+				className
+			)}
 		>
 			<CardContent className="p-3">
 				<div
@@ -83,29 +87,36 @@ export function CatalogCardResidencial({ outlined = false }) {
 	)
 }
 
-export function CatalogCardViva({ productName, outlined = false }: {productName: string, outlined?: boolean}) {
+export function CatalogCardViva({
+	productName,
+	outlined = false,
+	className,
+}: {
+	productName: string
+	outlined?: boolean
+	className?: string
+}) {
+	let productImage = `/static/images/card-pic-viva.jpg`
+	let productDescription = `O seguro de vida da sua vida e das pessoas da sua vida.`
 
-	let productImage = `/static/images/card-pic-viva.jpg`;
-	let productDescription = `O seguro de vida da sua vida e das pessoas da sua vida.`;
-
-	if(productName === 'AP PREMIÁVEL BRADESCO'){
-		productImage = `/static/images/card-pic-premiavel.jpg`;
-		productDescription = `Um seguro de pessoas ideal para você e sua família.`;
+	if (productName === 'AP PREMIÁVEL BRADESCO') {
+		productImage = `/static/images/card-pic-premiavel.jpg`
+		productDescription = `Um seguro de pessoas ideal para você e sua família.`
 	}
 
-	if(productName === 'AP PREMIÁVEL BRADESCO EMPRESARIAL'){
-		productImage = `/static/images/card-pic-premiavel.jpg`;
-		productDescription = `Um seguro de pessoas ideal para você e sua família`;
+	if (productName === 'AP PREMIÁVEL BRADESCO EMPRESARIAL') {
+		productImage = `/static/images/card-pic-premiavel.jpg`
+		productDescription = `Um seguro de pessoas ideal para você e sua família`
 	}
 
-	if(productName === 'NOVO TOP CLUBE BRADESCO'){
-		productImage = `/static/images/card-top-clube.jpg`;
-		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`;
+	if (productName === 'NOVO TOP CLUBE BRADESCO') {
+		productImage = `/static/images/card-top-clube.jpg`
+		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`
 	}
 
-	if(productName === 'NOVO TOP CLUBE BRADESCO EMPRESARIAL'){
-		productImage = `/static/images/card-top-clube.jpg`;
-		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`;
+	if (productName === 'NOVO TOP CLUBE BRADESCO EMPRESARIAL') {
+		productImage = `/static/images/card-top-clube.jpg`
+		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`
 	}
 
 	return (
@@ -114,6 +125,7 @@ export function CatalogCardViva({ productName, outlined = false }: {productName:
 			icon={<HeartIcon />}
 			imagePath={productImage}
 			outlined={outlined}
+			className={className}
 		>
 			{productDescription}
 		</CatalogCard>
