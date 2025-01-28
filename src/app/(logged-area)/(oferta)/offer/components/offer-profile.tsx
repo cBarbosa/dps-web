@@ -610,16 +610,6 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 									</div>
 								</CarouselItem>
 							))}
-							{data.listaProdutos.map((produto, index) => (
-								<CarouselItem key={index} className="basis-2/5">
-									<div className="h-full flex flex-col items-center gap-2">
-										<CatalogCardViva outlined productName={produto} />
-										<span className="text-muted-foreground text-center">
-											{produto}
-										</span>
-									</div>
-								</CarouselItem>
-							))}
 						</CarouselContent>
 						<CarouselPrevious className="ml-7 z-10" />
 						<CarouselNext className="mr-7 z-10" />
