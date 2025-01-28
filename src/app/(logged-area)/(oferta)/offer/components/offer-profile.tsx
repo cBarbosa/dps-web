@@ -290,7 +290,7 @@ type PerfilConsumo = {
 	indicacaoProduto: number | null
 }
 function PerfilConsumo({ data }: { data: PerfilConsumo }) {
-	const [isOpen, setIsOpen] = useState(true)
+	const [isOpen, setIsOpen] = useState(false)
 	return (
 		<Collapsible
 			open={isOpen}
