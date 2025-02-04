@@ -28,15 +28,14 @@ export default function SideBar() {
 	const { session } = useSessionAuthorization()
 	const role = session?.data?.role?.toLowerCase() as Lowercase<ApiRoles>
 
-	console.log('role', role)
-
 	return (
 		<div className="flex flex-col justify-between w-full h-full p-4">
 			<div>
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
 						src={`/static/images/${
-							role === Role.OFERTA ? 'bradesco-logo' : 'app-logo-green'
+							// role === Role.OFERTA ? 'bradesco-logo' : 'app-logo-green'
+							'app-logo-green'
 						}.png`}
 						width={role === Role.OFERTA ? '221' : '153'}
 						height={role === Role.OFERTA ? '42' : '45'}
@@ -84,6 +83,7 @@ export default function SideBar() {
 								</RoleBasedRender>
 								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
 									<MenuItem href="/dps/saler-sup">Reanálise</MenuItem>
+									<MenuItem href="/dps/saler-review">Revisão</MenuItem>
 								</RoleBasedRender>
 								<RoleBasedRender
 									role={role}

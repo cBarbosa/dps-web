@@ -292,7 +292,7 @@ const DetailsPresent = ({
 						Voltar
 					</GoBackButton>
 					<span className="font-mono text-sm text-gray-500">
-						{proposalData.code}
+						{proposalData.contractNumber ?? proposalData.code}
 					</span>
 				</div>
 
