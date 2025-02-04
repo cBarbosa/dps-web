@@ -148,6 +148,7 @@ const DpsInitialForm = ({
 			gender: v.profile.gender,
 			cellphone: v.profile.phone,
 			email: v.profile.email,
+			contractNumber: v.product.contractNumber,
 			birthDate: v.profile.birthdate.toISOString(),
 			productId: v.product.product,
 			profession: v.profile.profession ?? '',
