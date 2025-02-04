@@ -74,12 +74,27 @@
 		}
 
 		&::-webkit-scrollbar {
-			width: 6px;
 			background-color: #f5f5f5;
+		}
+		&::-webkit-scrollbar:vertical {
+			width: 6px;
+		}
+		&::-webkit-scrollbar:horizontal {
+			height: 6px;
 		}
 		&::-webkit-scrollbar-thumb {
 			border-radius: 10px;
 			background-color: #cfcfcf;
+		}
+
+		&:hover::-webkit-scrollbar-thumb {
+			background-color: #bdbdbd;
+		}
+
+		&.custom-scrollbar-pointer {
+			&::-webkit-scrollbar-thumb {
+				cursor: pointer;
+			}
 		}
 	}
 }

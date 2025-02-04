@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button'
 import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
-import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
@@ -21,11 +20,7 @@ import {
 	string,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import {
-	getOfferBasicDataByCpf,
-	getOfferDataByUid,
-	postContactInfo,
-} from '../../actions'
+import { getOfferBasicDataByCpf, postContactInfo } from '../../actions'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 

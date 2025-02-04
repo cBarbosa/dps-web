@@ -103,7 +103,6 @@ export default function LoginForm() {
 		if (redirectPath.startsWith('/logout') || redirectPath === '/') {
 			redirectPath = '/dashboard'
 		}
-		console.log('redirectPath', redirectPath)
 		router.push('/dashboard')
 	}
 

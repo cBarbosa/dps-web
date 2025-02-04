@@ -1,8 +1,5 @@
-import { Input } from '@/components/ui/input'
 import DpsDataTable, { DPS } from '../components/dps-data-table'
-import { ListFilterIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-// import { getProposals } from './actions'
 import { redirect } from 'next/navigation'
 import { getProposals } from '../dps/actions'
 import getServerSessionAuthorization, {
@@ -18,7 +15,8 @@ export const revalidate = 0 // no cache
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-	const { session, granted } = await getServerSessionAuthorization()
+	const { session, granted } = await getServerSessionAuthorization();
+
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
 		| undefined
