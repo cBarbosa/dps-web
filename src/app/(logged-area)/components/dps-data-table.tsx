@@ -71,7 +71,9 @@ export const columns: ColumnDef<DPS>[] = [
 							? `Aprovado`
 							: riskStatus === `REFUSED`
 								? `Recusado`
-								: `Reanálise`
+								: riskStatus === `REVIEW`
+										? `Revisão`
+											: `-`
 							)}
 					</Badge>
 				</div>;

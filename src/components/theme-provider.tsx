@@ -47,7 +47,7 @@ function ThemeProvider({
 
 	useEffect(() => {
 		if (role === 'oferta') {
-			setTheme(Theme.Bradesco)
+			setTheme(Theme.Default) //TODO trocar em breve
 		} else {
 			setTheme(Theme.Default)
 		}

@@ -23,12 +23,21 @@ import {
 	WalletIcon,
 	XIcon,
 } from 'lucide-react'
+import { Male, Female } from '@/components/ui/icons'
 import Link from 'next/link'
 import React, { use, useContext, useEffect, useState } from 'react'
 import { CatalogCardViva } from './cards'
 import { Theme, ThemeContext } from '@/components/theme-provider'
 import { GetOfferDataByUidResponse } from '../../actions'
 import { cn, formatCpf } from '@/lib/utils'
+import {
+	Carousel,
+	CarouselApi,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from '@/components/ui/carousel'
 
 function OfferProfile({
 	uid,
@@ -86,19 +95,15 @@ function OfferProfile({
 			ofertaIdeal: data.resultadoOfertaIdealFaixa,
 			ofertaEmpresarial: data.resultadoFaixaDeRendaPj > 0,
 			complementar: {
-				residencial: progressStringToNumber(
-					data.resultadoResidencial
-				),
+				residencial: progressStringToNumber(data.resultadoResidencial),
 				auto: progressStringToNumber(data.resultadoAutomovel),
-				previdencia: progressStringToNumber(
-					data.resultadoVida
-				),
+				previdencia: progressStringToNumber(data.resultadoVida),
 				empresarial: progressStringToNumber(
 					// data.resultadoEmpresarial
 					`ALTO`
 				),
 			},
-			listaProdutos: data.indicacoesProdutosFaixa
+			listaProdutos: data.indicacoesProdutosFaixa,
 		},
 		perfilCompliance: {
 			obito: data.resultadoComplianceObito,
@@ -113,7 +118,9 @@ function OfferProfile({
 			morteQualquerCausa: progressStringToNumber(data.saudE_DOENCA_FAIXA),
 			morteNatural: progressStringToNumber(data.natural),
 			morteAcidente: progressStringToNumber(data.acidente),
-			doencaCronica: progressStringToNumber(data.saudE_DOENCA_CRONICA == `` ? `MÉDIO` : data.saudE_DOENCA_CRONICA),
+			doencaCronica: progressStringToNumber(
+				data.saudE_DOENCA_CRONICA == `` ? `MÉDIO` : data.saudE_DOENCA_CRONICA
+			),
 			acidente: progressStringToNumber(data.violencia),
 		},
 	})
@@ -126,7 +133,7 @@ function OfferProfile({
 
 	return (
 		<div className="p-5">
-			<div className="px-7 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+			<div className="px-7 py-7 w-full max-w-screen-xl mx-auto bg-white rounded-3xl">
 				<GoBackButton className="pl-0">
 					<Undo2Icon className="mr-2" />
 					Voltar
@@ -151,7 +158,7 @@ function OfferProfile({
 								</span>
 							</div>
 							<div className="flex flex-nowrap gap-2">
-								<CircleArrowOutUpRightIcon className="text-bradesco" />
+								<Female className="text-bradesco" />
 								<span className="text-muted-foreground">
 									{offerProfileData.personal.gender ?? 'NADA CONSTA'}
 								</span>
@@ -228,7 +235,6 @@ function ProgressCard({
 	const colorList = ['#E45B5E', '#E45B5E', '#EEC232', '#55E47B', '#55E47B']
 
 	const labelIndex = progress === 100 ? 4 : Math.floor((progress / 100) * 5)
-	console.log(title, labelIndex)
 
 	return (
 		<div className="p-4 rounded-xl border border-muted">
@@ -284,7 +290,7 @@ type PerfilConsumo = {
 	indicacaoProduto: number | null
 }
 function PerfilConsumo({ data }: { data: PerfilConsumo }) {
-	const [isOpen, setIsOpen] = useState(true)
+	const [isOpen, setIsOpen] = useState(false)
 	return (
 		<Collapsible
 			open={isOpen}
@@ -431,7 +437,12 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 	function checkValue(v: boolean | string | null | undefined) {
 		if (typeof v === 'string') {
 			v = v?.toUpperCase()
-			if (v === 'N/A' || v === 'N/D' || v === 'NADA CONSTA' || v === 'REGULAR') {
+			if (
+				v === 'N/A' ||
+				v === 'N/D' ||
+				v === 'NADA CONSTA' ||
+				v === 'REGULAR'
+			) {
 				return true
 			}
 			return false
@@ -526,20 +537,41 @@ type PerfilCompra = {
 	listaProdutos: string[]
 }
 function PerfilCompra({ data }: { data: PerfilCompra }) {
+	const [canScrollNext, setCanScrollNext] = useState(false)
+	const [canScrollPrev, setCanScrollPrev] = useState(false)
+
+	function handleSideFade(api?: CarouselApi) {
+		if (api) {
+			setCanScrollNext(api.canScrollNext())
+			setCanScrollPrev(api.canScrollPrev())
+		}
+	}
+
+	function handleCarouselInit(api?: CarouselApi) {
+		if (api) {
+			handleSideFade(api)
+		}
+	}
+
 	return (
-		<div className="flex gap-1 mx-3">
-			<div className="grow p-5 mt-5 rounded-2xl border border-muted">
+		<div className="relative max-w-full grid grid-cols-[minmax(0,1fr)_auto] gap-1 mx-3 mt-5">
+			<div className="p-5 rounded-2xl border border-muted">
 				<h3 className="text-xl font-medium">Perfil de compra</h3>
 
-				<p className='mt-4 text-muted-foreground text-2xl font-semibold'>
+				<p className="text-muted-foreground text-2xl font-semibold">
 					Primeira Oferta
 				</p>
 
 				<p className="mt-6 text-muted-foreground">
 					Faixa de Renda:{' '}
-					<span className={cn(
-						`text-bradesco font-semibold`,
-						!data.ofertaEmpresarial && `hidden`)}>PF + PJ</span>
+					<span
+						className={cn(
+							`text-bradesco font-semibold`,
+							!data.ofertaEmpresarial && `hidden`
+						)}
+					>
+						PF + PJ
+					</span>
 				</p>
 				<p className="mt-6 text-2xl font-semibold">
 					{/* <span className="text-nowrap">R$ 10.000,00</span> a{' '}
@@ -547,37 +579,59 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 					{data.faixaRenda}
 				</p>
 
-				<div className="p-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
-					<div className="flex justify-between items-center gap-5 ">
-						{data.listaProdutos.map((produto, index) => (
-							<div key={index} className="flex flex-col items-center gap-2">
-								<CatalogCardViva outlined productName={produto} />
-								<span className="text-muted-foreground">{produto}</span>
-							</div>
-						))}
-						<div className="text-center">
-							<span className="text-xl text-muted-foreground">
-								Oferta Ideal
-							</span>
-							<p className="text-3xl font-semibold">
-								{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
+				<div className="max-w-full py-5 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
+					<div className="px-10 text-center">
+						<span className="text-xl text-muted-foreground">Oferta Ideal</span>
+						<p className="text-3xl font-semibold">
+							{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
 								<span className="text-nowrap">R$ 200.000,00</span> */}
-								<span className="text-wrap">
-									{/* {data.ofertaIdeal
+							<span className="text-wrap">
+								{/* {data.ofertaIdeal
 										? `R$ ${data.ofertaIdeal.toLocaleString('pt-BR')},00`
 										: 'NADA CONSTA'} */}
-										{data.ofertaIdeal}
-								</span>
-							</p>
-						</div>
+								{data.ofertaIdeal}
+							</span>
+						</p>
 					</div>
-					<div className="text-right -mt-4">
+					<Carousel
+						className="mx-8 mt-5"
+						onEvent={['scroll', handleSideFade]}
+						onInit={handleCarouselInit}
+					>
+						<CarouselContent className="p-1 justify-evenly">
+							{data.listaProdutos.map((produto, index) => (
+								<CarouselItem
+									key={index}
+									className="basis-full lg:basis-2/3 xl:basis-1/2 2xl:basis-2/5"
+								>
+									<div className="flex flex-col items-center gap-2">
+										<CatalogCardViva outlined productName={produto} />
+										<span className="text-muted-foreground text-center">
+											{produto}
+										</span>
+									</div>
+								</CarouselItem>
+							))}
+						</CarouselContent>
+						<CarouselPrevious className="ml-7 z-10" />
+						<CarouselNext className="mr-7 z-10" />
+						<div
+							className="absolute left-0 top-0 bg-gradient-to-r from-white w-[10%] h-full pointer-events-none transition-opacity duration-500"
+							style={{ opacity: canScrollPrev ? '1' : '0' }}
+						></div>
+						<div
+							className="absolute right-0 top-0 bg-gradient-to-l from-white w-[10%] h-full pointer-events-none transition-opacity duration-500"
+							style={{ opacity: canScrollNext ? '1' : '0' }}
+						></div>
+					</Carousel>
+
+					<div className="text-right px-10">
 						<Link href="">+ Info</Link>
 					</div>
 				</div>
 			</div>
 
-			<div className="p-5 mx-3 mt-5 rounded-2xl border border-muted">
+			<div className="p-5 mx-3 rounded-2xl border border-muted">
 				<h3 className="text-xl font-medium">Oferta Complementar</h3>
 				<div className="mt-4 flex flex-col gap-4">
 					<ProgressCard
@@ -626,8 +680,6 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 
 function progressStringToNumber(str: string | null | undefined) {
 	let value
-
-	console.log(';;;;;;;;;', str)
 
 	switch (str?.toUpperCase()) {
 		case 'BAIXÍSSIMO':

@@ -302,6 +302,7 @@ export type ProposalByUid = {
 	capitalDFI: number
 	uploadMIP?: boolean
 	uploadDFI?: boolean
+	contractNumber?: string
 	customer: {
 		uid: string
 		document: string
@@ -956,6 +957,74 @@ export async function putProposalAnalysis(
 				message: string
 				success: boolean
 				data: number
+			}
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.log(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout');
+		}
+	}
+
+	return null;
+};
+
+export async function getReviewProposals(
+	token: string,
+	status?: number,
+	page = 1,
+	size = 10
+) {
+
+	try {
+		const response = await axios.get('v1/Proposal/review', {
+			params: {
+				page: page,
+				size: size,
+				status: status ?? ''
+			},
+			headers: {
+				Authorization: `Bearer ${token}`,
+			}
+		})
+
+		if (response.data) {
+			return response.data as {
+				totalItems: number
+				page: number
+				size: number
+				items: {
+					uid: string
+					code: string
+					riskStatus?: string
+					customer: {
+						uid: string
+						document: string
+						name: string
+						email: string
+						birthdate: string
+					}
+					product: {
+						uid: string
+						name: string
+					}
+					type: {
+						id: number
+						description: string
+					}
+					status: {
+						id: number
+						description: string
+					}
+					dfiStatus: {
+						id: number
+						description: string
+					}
+					createdAt: string
+				}[];
 			}
 		} else {
 			throw new Error('Unsuccessful request');
