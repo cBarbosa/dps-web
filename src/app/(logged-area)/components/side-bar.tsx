@@ -34,7 +34,7 @@ export default function SideBar() {
 				<div className="w-full flex flex-row justify-between items-center gap-3">
 					<Image
 						src={`/static/images/${
-							// role === Role.OFERTA ? 'bradesco-logo' : 'app-logo-green'
+							// role === Role.OFERTA ? 'bradesco-logo' : 'app-logo-green' //TODO trocar em breve
 							'app-logo-green'
 						}.png`}
 						width={role === Role.OFERTA ? '221' : '153'}
