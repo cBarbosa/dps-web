@@ -1039,3 +1039,43 @@ export async function getReviewProposals(
 
 	return null;
 };
+
+export async function putProposalReview(
+	token: string,
+	uid: string,
+	data: {
+		Action: string
+		IsApproved: boolean
+	}
+) {
+	try {
+
+		const response = await axios.put(
+			`v1/Proposal/${uid}/review`,
+			data,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+				}
+			}
+		);
+
+		if (response.data) {
+			return response.data as {
+				message: string
+				success: boolean
+				data: number
+			}
+		} else {
+			throw new Error('Unsuccessful request');
+		}
+	} catch (err) {
+		console.log(err);
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout');
+		}
+	}
+
+	return null;
+};
