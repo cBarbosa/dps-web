@@ -60,11 +60,20 @@ export const columns: ColumnDef<DPS>[] = [
 			if(riskStatus)
 				return <div className='w-full flex justify-center'>
 					<Badge
-						variant={riskStatus === 'APPROVED' ? `success` : `destructive`}
+						variant={riskStatus === 'APPROVED'
+							? `success`
+							: riskStatus === 'REVIEW'
+								? `warn`
+								:`destructive`
+							}
 						shape="pill"
 						className={
 							cn(`font-medium`,
-								riskStatus === 'APPROVED' ? `text-zinc-600` : `text-white`
+								riskStatus === 'APPROVED'
+									? `text-zinc-600`
+									: riskStatus === 'REVIEW'
+										? `text-zinc-600`
+										:`text-white`
 							)}
 					>
 						{(riskStatus === `APPROVED`

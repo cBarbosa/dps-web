@@ -18,6 +18,7 @@ import {
 	getProposalByUid,
 	getProposalSignByUid,
 	putProposalAnalysis,
+	putProposalReview,
 } from '../actions'
 import { cn, formatCpf } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -189,8 +190,6 @@ const DetailsPresent = ({
 					open: false,
 				})
 
-				console.log({ Action: action, IsApproved: isApproved })
-
 				const response = await putProposalAnalysis(token, uid, {
 					Action: action,
 					IsApproved: isApproved,
@@ -210,13 +209,73 @@ const DetailsPresent = ({
 					setAlertDialog({
 						open: true,
 						title: 'Erro',
-						body: 'Ocorreu um erro ao deletar um arquivo.',
+						body: 'Ocorreu um erro ao processar as informações.',
 					})
 				}
 			}
 		},
 		[token, refetchProposalData, uid]
 	)
+
+	const reportReviewDps = React.useCallback(
+		async function (isApproved: boolean, action: `APPROVE` | `REFUSE`) {
+			setAlertDialog({
+				open: true,
+				title: `Confirmação de ${
+					isApproved ? 'Aprovação' : 'Reprovação'
+				} de processo de revisão`,
+				body: isApproved ? (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-primary">
+							APROVAÇÃO
+						</span>{' '}
+						do processo?
+					</>
+				) : (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-destructive">
+							REPROVAÇÃO
+						</span>{' '}
+						do processo?
+					</>
+				),
+				onConfirm: handleReviewDps,
+				confirmText: 'Confirmar',
+			});
+
+			async function handleReviewDps() {
+				setAlertDialog({
+					open: false,
+				});
+
+				const response = await putProposalReview(token, uid, {
+					Action: action,
+					IsApproved: isApproved,
+				});
+
+				if (response) {
+					if (response.success) {
+						refetchProposalData();
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: response.message,
+						});
+					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao processar as informações.',
+					});
+				}
+			}
+		},
+		[token, refetchProposalData, uid]
+	);
 
 	const calculateDaysBetween = (
 		dateString?: string,
@@ -282,6 +341,10 @@ const DetailsPresent = ({
 		role === 'subscritor-sup' &&
 		proposalData.riskStatus === 'REOPENED' &&
 		proposalData.closed === undefined
+	const showReviewDps: boolean =
+		role === 'subscritor-sup' &&
+		proposalData.riskStatus === 'REVIEW' &&
+		proposalData.closed === undefined
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -307,8 +370,10 @@ const DetailsPresent = ({
 										!proposalData?.riskStatus
 											? `warn`
 											: proposalData?.riskStatus === `APPROVED`
-											? `success`
-											: `destructive`
+												? `success`
+												: proposalData?.riskStatus === `REVIEW`
+													? `warn`
+													: `destructive`
 									}
 									className={cn(
 										'ml-4',
@@ -320,8 +385,10 @@ const DetailsPresent = ({
 									{!proposalData?.riskStatus
 										? `Em andamento`
 										: proposalData?.riskStatus === `APPROVED`
-										? `Aprovado`
-										: `Recusado`}
+											? `Aprovado`
+											: proposalData?.riskStatus === `REVIEW`
+												? `Em revisão`
+												:`Recusado`}
 								</Badge>
 							</h4>
 						</div>
@@ -448,6 +515,24 @@ const DetailsPresent = ({
 								</Button>
 							)}
 							{showAproveAnalisysDps && (
+								<div className="flex gap-2 mb-3">
+									<Button
+										variant="default"
+										onClick={() => reportApprovalAnalisys(true, `APPROVE`)}
+									>
+										<ThumbsUpIcon className="mr-2" size={18} />
+										Aprovar
+									</Button>
+									<Button
+										variant="destructive"
+										onClick={() => reportApprovalAnalisys(false, `REFUSE`)}
+									>
+										<ThumbsDownIcon className="mr-2" size={18} />
+										Reprovar
+									</Button>
+								</div>
+							)}
+							{showReviewDps && (
 								<div className="flex gap-2 mb-3">
 									<Button
 										variant="default"
