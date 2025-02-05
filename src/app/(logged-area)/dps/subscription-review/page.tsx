@@ -17,7 +17,7 @@ export default async function Page({
 }) {
 
     const { session, granted } = await getServerSessionAuthorization([
-            'vendedor-sup',
+            'subscritor-sup',
     ]);
     const token = (session as any)?.accessToken;
 
@@ -54,7 +54,7 @@ export default async function Page({
         const cpf = cpfRaw?.toString().replace(/[^\d]/g, '');
         console.log('filtering', cpf);
 
-        redirect(`/dps/saler-review?cpf=${cpf}`);
+        redirect(`/dps/subscription-review?cpf=${cpf}`);
     }
 
     return(
