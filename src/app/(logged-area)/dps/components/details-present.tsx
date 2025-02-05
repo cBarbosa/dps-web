@@ -52,6 +52,8 @@ export const statusDescriptionDict: Record<number, string> = {
 	40: 'Processo em reanálise',
 	41: 'Processo reanalisado',
 	42: 'MIP Avaliada',
+	52: 'Processo enviado para revisão',
+	53: 'Processo revisado',
 }
 
 const DetailsPresent = ({
@@ -536,14 +538,14 @@ const DetailsPresent = ({
 								<div className="flex gap-2 mb-3">
 									<Button
 										variant="default"
-										onClick={() => reportApprovalAnalisys(true, `APPROVE`)}
+										onClick={() => reportReviewDps(true, `APPROVE`)}
 									>
 										<ThumbsUpIcon className="mr-2" size={18} />
 										Aprovar
 									</Button>
 									<Button
 										variant="destructive"
-										onClick={() => reportApprovalAnalisys(false, `REFUSE`)}
+										onClick={() => reportReviewDps(false, `REFUSE`)}
 									>
 										<ThumbsDownIcon className="mr-2" size={18} />
 										Reprovar
