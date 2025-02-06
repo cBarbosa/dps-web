@@ -389,8 +389,9 @@ const DetailsPresent = ({
 										: proposalData?.riskStatus === `APPROVED`
 											? `Aprovado`
 											: proposalData?.riskStatus === `REVIEW`
-												? `Em revisão`
-												:`Recusado`}
+												? `Em análise pela seguradora`
+												:`Recusado`
+									}
 								</Badge>
 							</h4>
 						</div>
