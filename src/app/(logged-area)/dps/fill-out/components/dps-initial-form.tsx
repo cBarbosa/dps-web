@@ -221,6 +221,7 @@ const DpsInitialForm = ({
 				setValue('profile.socialName', autocompleteData.socialName)
 			if (autocompleteData.gender)
 				setValue('profile.gender', autocompleteData.gender)
+
 		} else {
 			console.error('Could not get proponent data by CPF')
 		}
