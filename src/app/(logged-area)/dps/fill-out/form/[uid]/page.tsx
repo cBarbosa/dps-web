@@ -22,7 +22,6 @@ export default async function DpsFormPage({
 		getProposalByUid(token, uid),
 		getHealthDataByUid(token, uid),
 	])
-	console.log('||||||||->>')
 	console.dir(proposalDataRaw, { depth: Infinity })
 
 	if (proposalDataRaw == null || proposalDataRaw.success === false)

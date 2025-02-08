@@ -70,20 +70,6 @@ export default async function DpsFormPage({
 		proposalData = data.totalItems > 0 ? data.items?.[0] : null
 	}
 
-	/*
-
-						produto: initialProposalData.product.uid,
-						lmi: initialProposalData.lmi.description,
-						cpf: initialProposalData.customer.document,
-						name: initialProposalData.customer.name,
-						socialName: initialProposalData.customer.name,
-						birthdate: new Date(initialProposalData.customer.birthdate),
-						profession: '',
-						email: initialProposalData.customer.email,
-						phone: '',
-
-		*/
-
 	const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 		? proponentDataRaw?.detalhes.nascimento.split('/')
 		: undefined

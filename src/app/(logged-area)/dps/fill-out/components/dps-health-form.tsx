@@ -1,18 +1,14 @@
-import React, { FocusEvent, useCallback, useEffect, useRef } from 'react'
-
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import FileInput from '@/components/ui/file-input'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
-import { cn, ParseInt } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { useRouter } from 'next/navigation'
 
 import {
 	Control,
 	Controller,
-	FieldErrors,
 	FormState,
 	useForm,
 	UseFormSetValue,
@@ -23,9 +19,7 @@ import {
 	literal,
 	object,
 	variant,
-	nonNullish,
 	pipe,
-	nonOptional,
 	nonEmpty,
 	string,
 	optional,
@@ -33,7 +27,7 @@ import {
 import { diseaseNames } from './dps-form'
 import { postHealthDataByUid } from '../../actions'
 import { useSession } from 'next-auth/react'
-import { Loader, Loader2Icon } from 'lucide-react'
+import { Loader2Icon } from 'lucide-react'
 
 const diseaseSchema = variant(
 	'has',
@@ -52,7 +46,7 @@ const diseaseSchema = variant(
 	'Campo obrigatório'
 )
 
-const healthForm = object({
+const productSchemaTop = {
 	'1': diseaseSchema,
 	'2': diseaseSchema,
 	'3': diseaseSchema,
@@ -74,8 +68,19 @@ const healthForm = object({
 	'19': diseaseSchema,
 	'20': diseaseSchema,
 	'21': diseaseSchema,
+}
+
+const productYelum = {
+	'1': diseaseSchema,
+	'2': diseaseSchema,
+	'3': diseaseSchema,
+	'4': diseaseSchema,
+	'5': diseaseSchema,
+	'6': diseaseSchema,
 	telefoneContato: diseaseSchema,
-})
+}
+
+const healthForm = object(productYelum)
 
 export type HealthForm = InferInput<typeof healthForm>
 
@@ -92,8 +97,6 @@ const DpsHealthForm = ({
 }) => {
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
-
-	console.log('>>>initialHealthData', initialHealthData)
 
 	const [submittingForm, setSubmittingForm] = React.useState(false)
 
@@ -123,11 +126,7 @@ const DpsHealthForm = ({
 			description: value.description,
 		}))
 
-		console.log('submitting', postData)
-
 		const response = await postHealthDataByUid(token, proposalUid, postData)
-
-		console.log('post proposal', response)
 
 		if (response) {
 			reset()
