@@ -34,6 +34,7 @@ export const diseaseNames = {
 	'19': 'Shistosomose',
 	'20': 'Tireóide ou outras Doenças Endócrinas com complicações',
 	'21': 'Tumores Malignos e Câncer',
+	telefoneContato: 'Telefone de Contato',
 }
 
 export type DiseaseKeys = keyof typeof diseaseNames
@@ -115,11 +116,11 @@ const DpsForm = ({
 				complement: '',
 				neighborhood: '',
 				state: '',
-				street: ''
-			}
+				street: '',
+			},
 		},
 		health: initialHealthData,
-		attachments: undefined
+		attachments: undefined,
 	})
 
 	const diseaseList = dpsData.health

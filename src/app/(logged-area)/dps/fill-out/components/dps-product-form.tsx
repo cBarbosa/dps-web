@@ -4,7 +4,7 @@ import DatePicker from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
-import { cn, maskToBrlCurrency } from '@/lib/utils'
+import { cn, maskToBrlCurrency, maskToDigitsAndSuffix } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import React from 'react'
 import { Control, Controller, FormState, useForm } from 'react-hook-form'
@@ -85,6 +85,36 @@ const DpsProductForm = ({
 					control={control}
 					defaultValue=""
 					name="product.deadline"
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Prazo</div>
+							<Input
+								id="deadline"
+								type="text"
+								placeholder="999 Meses"
+								mask={'999'}
+								beforeMaskedStateChange={maskToDigitsAndSuffix(' Meses')}
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.deadline &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								autoComplete="deadline"
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.deadline?.message}
+							</div>
+						</label>
+					)}
+				/>
+				{/* <Controller
+					control={control}
+					defaultValue=""
+					name="product.deadline"
 					render={({ field: { onChange, value } }) => (
 						<label>
 							<div className="text-gray-500">Prazo</div>
@@ -101,7 +131,7 @@ const DpsProductForm = ({
 							</div>
 						</label>
 					)}
-				/>
+				/> */}
 			</ShareLine>
 			<ShareLine>
 				<Controller

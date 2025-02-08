@@ -58,6 +58,7 @@ const DpsProfileForm = ({
 	formState,
 	getDataByCpf,
 	disabled,
+	disabledFields,
 }: {
 	data?: Partial<DpsProfileFormType>
 	control: Control<DpsInitialForm>
@@ -66,6 +67,7 @@ const DpsProfileForm = ({
 	formState: FormState<DpsInitialForm>
 	getDataByCpf: (cpf: string) => void
 	disabled?: boolean
+	disabledFields?: Partial<Record<keyof DpsProfileFormType, boolean>>
 }) => {
 	const errors = formState.errors?.profile
 	const isSubmitting = formState.isSubmitting
@@ -123,7 +125,10 @@ const DpsProfileForm = ({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								disabled={
-									disabled || isSubmitting || data?.birthdate !== undefined
+									disabled ||
+									isSubmitting ||
+									data?.birthdate !== undefined ||
+									disabledFields?.birthdate
 								}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -155,7 +160,12 @@ const DpsProfileForm = ({
 									errors?.name && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="name"
-								disabled={disabled || isSubmitting || data?.name !== undefined}
+								disabled={
+									disabled ||
+									isSubmitting ||
+									data?.name !== undefined ||
+									disabledFields?.name
+								}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}

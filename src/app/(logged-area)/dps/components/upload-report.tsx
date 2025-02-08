@@ -142,8 +142,8 @@ const UploadReport = ({
 						<InfoIcon size={20} className="text-primary-dark/60" />
 						<AlertDescription>
 							Inserir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
-					</AlertDescription>
-				</Alert>
+						</AlertDescription>
+					</Alert>
 				</div>
 				<DialogFooter>
 					<Button
@@ -157,7 +157,7 @@ const UploadReport = ({
 						type="submit"
 						disabled={
 							isLoading ||
-							message === '' ||
+							// message === '' ||
 							(typeProp === 'DFI' && file == undefined)
 						}
 						onClick={handleSubmit}

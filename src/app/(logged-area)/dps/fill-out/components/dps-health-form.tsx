@@ -74,6 +74,7 @@ const healthForm = object({
 	'19': diseaseSchema,
 	'20': diseaseSchema,
 	'21': diseaseSchema,
+	telefoneContato: diseaseSchema,
 })
 
 export type HealthForm = InferInput<typeof healthForm>
@@ -153,19 +154,31 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key => (
-					<DiseaseField
-						name={key}
-						label={diseaseNames[key]}
-						control={control}
-						watch={watch}
-						errors={errors}
-						isSubmitting={isSubmitting || submittingForm}
-						trigger={trigger}
-						setValue={setValue}
-						key={key}
-					/>
-				))}
+				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key =>
+					key === 'telefoneContato' ? null : (
+						<DiseaseField
+							name={key}
+							label={diseaseNames[key]}
+							control={control}
+							watch={watch}
+							errors={errors}
+							isSubmitting={isSubmitting || submittingForm}
+							trigger={trigger}
+							setValue={setValue}
+							key={key}
+						/>
+					)
+				)}
+				<DiseaseField
+					name="telefoneContato"
+					label="Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD + número)."
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting || submittingForm}
+					trigger={trigger}
+					setValue={setValue}
+				/>
 			</div>
 
 			<div className="flex justify-start items-center gap-5">

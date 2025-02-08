@@ -94,6 +94,10 @@ const DpsInitialForm = ({
 		disabled: isLoading || isLoadingData,
 	})
 
+	const [autocompletedByCpf, setAutocompletedByCpf] = useState<
+		Partial<Record<keyof typeof dpsProfileForm.entries, boolean>>
+	>({})
+
 	const formState = { ...formStateRest, errors, isSubmitting, isSubmitted }
 
 	const watchBirthdate = watch('profile.birthdate')
@@ -139,6 +143,7 @@ const DpsInitialForm = ({
 	const router = useRouter()
 
 	async function onSubmit(v: DpsInitialForm) {
+		console.log('>>>>>>>>>>>>>', v)
 		setIsLoading(true)
 
 		const postData = {
@@ -177,6 +182,8 @@ const DpsInitialForm = ({
 	async function getDataByCpf(cpf: string) {
 		if (!validarCpf(cpf)) return
 
+		setAutocompletedByCpf({})
+
 		setIsLoadingData(true)
 		const proponentDataRaw = await getProponentDataByCpf(cpf)
 
@@ -204,22 +211,58 @@ const DpsInitialForm = ({
 				phone: undefined,
 			}
 
-			if (autocompleteData.name) setValue('profile.name', autocompleteData.name)
-			if (autocompleteData.birthdate)
+			if (autocompleteData.name) {
+				setValue('profile.name', autocompleteData.name)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					name: true,
+				}))
+			}
+			if (autocompleteData.birthdate) {
 				setValue('profile.birthdate', autocompleteData.birthdate)
-			if (autocompleteData.profession)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					birthdate: true,
+				}))
+			}
+			if (autocompleteData.profession) {
 				setValue(
 					'profile.profession',
 					getProfissionDescription(autocompleteData.profession)
 				)
-			if (autocompleteData.email)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					profession: true,
+				}))
+			}
+			if (autocompleteData.email) {
 				setValue('profile.email', autocompleteData.email)
-			if (autocompleteData.phone)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					email: true,
+				}))
+			}
+			if (autocompleteData.phone) {
 				setValue('profile.phone', autocompleteData.phone)
-			if (autocompleteData.socialName)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					phone: true,
+				}))
+			}
+			if (autocompleteData.socialName) {
 				setValue('profile.socialName', autocompleteData.socialName)
-			if (autocompleteData.gender)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					socialName: true,
+				}))
+			}
+			if (autocompleteData.gender) {
 				setValue('profile.gender', autocompleteData.gender)
+				setAutocompletedByCpf(prev => ({
+					...prev,
+					gender: true,
+				}))
+			}
 		} else {
 			console.error('Could not get proponent data by CPF')
 		}
@@ -243,6 +286,7 @@ const DpsInitialForm = ({
 					formState={formState}
 					getDataByCpf={getDataByCpf}
 					disabled={isLoadingData}
+					disabledFields={autocompletedByCpf}
 				/>
 			</div>
 
