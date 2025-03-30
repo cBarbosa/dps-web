@@ -1,230 +1,165 @@
-import ShareLine from "@/components/ui/share-line";
-import { Control, Controller, FormState, UseFormSetValue, UseFormTrigger } from "react-hook-form";
-import { InferInput, maxLength, nonEmpty, object, pipe, string } from "valibot";
-import { DpsInitialForm } from "./dps-initial-form";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { getAddressByZipcode } from "../../actions";
-import SelectComp from "@/components/ui/select-comp";
+'use client'
+import { Input } from '@/components/ui/input'
+import SelectComp from '@/components/ui/select-comp'
+import { AddressData } from '@/components/ui/share-address'
+import ShareLine from '@/components/ui/share-line'
+import { states } from '@/constants'
+import { cn } from '@/lib/utils'
+import React, { useState } from 'react'
+import { Control, Controller, FormState, Path } from 'react-hook-form'
+import {
+	InferInput,
+	minLength,
+	nonEmpty,
+	number,
+	object,
+	pipe,
+	string,
+	maxLength,
+} from 'valibot'
+import { Loader2Icon } from 'lucide-react'
 
 export const dpsAddressForm = object({
 	zipcode: pipe(string(), nonEmpty('Campo obrigatório.')),
-    street: pipe(string(), nonEmpty('Campo obrigatório.'), maxLength(155, `Não pode exceder o máximo de 155 caracteres`)),
-	number: pipe(string(), maxLength(30, `Não pode exceder o máximo de 30 caracteres`)),
-    complement: pipe(string(), maxLength(100, `Não pode exceder o máximo de 100 caracteres`)),
-    neighborhood: pipe(string(), nonEmpty('Campo obrigatório.'), maxLength(155, `Não pode exceder o máximo de 155 caracteres`)),
-    city: pipe(string(), nonEmpty('Campo obrigatório.'), maxLength(155, `Não pode exceder o máximo de 155 caracteres`)),
-    state: pipe(string(), nonEmpty('Campo obrigatório.'))
-});
+	state: pipe(string(), nonEmpty('Campo obrigatório.')),
+	city: pipe(string(), nonEmpty('Campo obrigatório.')),
+	district: pipe(string(), nonEmpty('Campo obrigatório.')),
+	street: pipe(string(), nonEmpty('Campo obrigatório.')),
+	number: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		maxLength(10, 'Máximo de 10 caracteres permitidos.')
+	),
+	complement: pipe(string(), minLength(0, 'Complemento inválido.')),
+})
 
-export type DpsAddressFormType = InferInput<typeof dpsAddressForm>;
+export type DpsAddressFormType = InferInput<typeof dpsAddressForm>
 
-const DpsAddressForm = ({
-    data,
+// Generic version of the DpsAddressForm that works with any form structure that includes address
+const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 	control,
 	formState,
-    setValue
+	data,
+	cepDataLoader,
+	disabled,
 }: {
-    data?: Partial<DpsAddressFormType>
-    control: Control<DpsInitialForm>
-    formState: FormState<DpsInitialForm>
-    setValue: UseFormSetValue<DpsInitialForm>
+	control: Control<T>
+	formState: FormState<T>
+	data?: AddressData
+	cepDataLoader: (cep: string) => Promise<void>
+	disabled?: boolean
 }) => {
+	const errors = formState.errors?.address as any
+	const [loadingCep, setLoadingCep] = useState(false)
 
-    const statesOptions = [
-        { value: 'AC', label: 'Acre' },
-        { value: 'AL', label: 'Alagoas' },
-        { value: 'AP', label: 'Amapá' },
-        { value: 'AM', label: 'Amazonas' },
-        { value: 'BA', label: 'Bahia' },
-        { value: 'CE', label: 'Ceará' },
-        { value: 'DF', label: 'Distrito Federal' },
-        { value: 'ES', label: 'Espírito Santo' },
-        { value: 'GO', label: 'Goiás' },
-        { value: 'MA', label: 'Maranhão' },
-        { value: 'MT', label: 'Mato Grosso' },
-        { value: 'MS', label: 'Mato Grosso do Sul' },
-        { value: 'MG', label: 'Minas Gerais' },
-        { value: 'PA', label: 'Pará' },
-        { value: 'PB', label: 'Paraíba' },
-        { value: 'PR', label: 'Paraná' },
-        { value: 'PE', label: 'Pernambuco' },
-        { value: 'PI', label: 'Piauí' },
-        { value: 'RJ', label: 'Rio de Janeiro' },
-        { value: 'RN', label: 'Rio Grande do Norte' },
-        { value: 'RS', label: 'Rio Grande do Sul' },
-        { value: 'RO', label: 'Rondônia' },
-        { value: 'RR', label: 'Roraima' },
-        { value: 'SC', label: 'Santa Catarina' },
-        { value: 'SP', label: 'São Paulo' },
-        { value: 'SE', label: 'Sergipe' },
-        { value: 'TO', label: 'Tocantins' }
-    ];
+	const completeCepData = async (cep: string) => {
+		if (!cep || cep.replace(/\D/g, '').length < 8) return;
+		
+		try {
+			setLoadingCep(true)
+			// Limpa caracteres não numéricos para garantir formato correto
+			const cleanCep = cep.replace(/\D/g, '')
+			await cepDataLoader(cleanCep)
+		} catch (error) {
+			console.error('Erro ao buscar CEP:', error)
+		} finally {
+			setLoadingCep(false)
+		}
+	}
 
-    const errors = formState.errors?.address;
+	// Função para formatar o CEP
+	const formatCep = (value: string) => {
+		if (!value) return '';
+		
+		// Remove caracteres não numéricos
+		const digits = value.replace(/\D/g, '');
+		
+		// Limita a 8 dígitos
+		const cepDigits = digits.substring(0, 8);
+		
+		// Formata como 99999-999
+		if (cepDigits.length <= 5) {
+			return cepDigits;
+		} else {
+			return `${cepDigits.substring(0, 5)}-${cepDigits.substring(5)}`;
+		}
+	};
 
-    const handleAddress = async (zipcode: string):Promise<void> => {
-        const res = await getAddressByZipcode(zipcode);
-
-        if(!res) return;
-
-        setValue(`address.street`, res?.logradouro ?? ``);
-        setValue(`address.complement`, res?.complemento ?? ``);
-        setValue(`address.neighborhood`, res?.bairro ?? ``);
-        setValue(`address.city`, res?.localidade ?? ``);
-        setValue(`address.state`, res?.uf ?? ``);
-    };
-
-    return(
-        <div className="flex flex-col gap-6 w-full pt-8">
+	return (
+		<div className="flex flex-col gap-6 w-full">
 			<h3 className="text-primary text-lg">Dados de Endereço</h3>
-
-            <ShareLine>
-                <Controller
+			<ShareLine>
+				<Controller
 					control={control}
-					defaultValue=""
-					name="address.zipcode"
+					name={"address.zipcode" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">CEP</div>
-							<Input
-								id="zipcode"
-								type="text"
-								placeholder="99999-999"
-								mask="99999-999"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.zipcode && 'border-red-500 focus-visible:border-red-500'
+							<div className="relative">
+								<Input
+									id="zip"
+									type="text"
+									name="zip"
+									placeholder="99999-999"
+									className={cn(
+										'w-full px-4 py-6 rounded-lg',
+										errors?.zipcode && 'border-red-500 focus-visible:border-red-500',
+										loadingCep && 'pr-10'
+									)}
+									onChange={(e) => {
+										// Permite apenas dígitos e formatação
+										const rawValue = e.target.value.replace(/\D/g, '');
+										const formatted = formatCep(rawValue);
+										onChange(formatted);
+									}}
+									onBlur={(e) => {
+										onBlur();
+										completeCepData(e.target.value);
+									}}
+									value={value}
+									ref={ref}
+									disabled={disabled || loadingCep}
+								/>
+								{loadingCep && (
+									<Loader2Icon className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-primary" />
 								)}
-								autoComplete="zipcode"
-								onChange={onChange}
-								onBlur={(event) => handleAddress(event.target.value)}
-								value={value}
-								ref={ref}
-							/>
-							<div className="text-xs text-red-500">{errors?.zipcode?.message}</div>
+							</div>
+							<div className="text-xs text-red-500">
+								{errors?.zipcode?.message}
+							</div>
 						</label>
 					)}
 				/>
 
-                <Controller
+				<Controller
 					control={control}
-					defaultValue=""
-					name="address.street"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
+					name={"address.state" as Path<T>}
+					render={({ field: { onChange, onBlur, value } }) => (
 						<label>
-							<div className="text-gray-500">Endereço</div>
-							<Input
-								id="street"
-								type="text"
-								placeholder="Logradouro"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.street && 'border-red-500 focus-visible:border-red-500'
-								)}
-								autoComplete="street"
-								onChange={onChange}
-								onBlur={onBlur}
+							<div className="text-gray-500">UF</div>
+							<SelectComp
+								placeholder="UF"
+								options={states}
+								triggerClassName="p-4 h-12 rounded-lg"
+								onValueChange={(val) => {
+									onChange(val);
+									setTimeout(() => onBlur(), 0);
+								}}
 								value={value}
-								ref={ref}
-                                maxLength={155}
+								disabled={disabled}
 							/>
-							<div className="text-xs text-red-500">{errors?.street?.message}</div>
+							<div className="text-xs text-red-500">
+								{errors?.state?.message}
+							</div>
 						</label>
 					)}
 				/>
+			</ShareLine>
 
-            </ShareLine>
-
-            <ShareLine>
-                <Controller
+			<ShareLine>
+				<Controller
 					control={control}
-					defaultValue=""
-					name="address.number"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500">Número</div>
-							<Input
-								id="number"
-								type="text"
-								placeholder="número"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.number && 'border-red-500 focus-visible:border-red-500'
-								)}
-								autoComplete="number"
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-                                maxLength={30}
-							/>
-							<div className="text-xs text-red-500">{errors?.number?.message}</div>
-						</label>
-					)}
-				/>
-
-                <Controller
-					control={control}
-					defaultValue=""
-					name="address.complement"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500">Complemento</div>
-							<Input
-								id="complement"
-								type="text"
-								placeholder="Complemento"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.complement && 'border-red-500 focus-visible:border-red-500'
-								)}
-								autoComplete="street"
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-                                maxLength={100}
-							/>
-							<div className="text-xs text-red-500">{errors?.complement?.message}</div>
-						</label>
-					)}
-				/>
-
-            </ShareLine>
-
-            <ShareLine>
-                <Controller
-					control={control}
-					defaultValue=""
-					name="address.neighborhood"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500">Bairro</div>
-							<Input
-								id="neighborhood"
-								type="text"
-								placeholder="Bairro"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.neighborhood && 'border-red-500 focus-visible:border-red-500'
-								)}
-								autoComplete="neighborhood"
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-                                maxLength={155}
-							/>
-							<div className="text-xs text-red-500">{errors?.neighborhood?.message}</div>
-						</label>
-					)}
-				/>
-
-                <Controller
-					control={control}
-					defaultValue=""
-					name="address.city"
+					name={"address.city" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
 							<div className="text-gray-500">Cidade</div>
@@ -236,47 +171,138 @@ const DpsAddressForm = ({
 									'w-full px-4 py-6 rounded-lg',
 									errors?.city && 'border-red-500 focus-visible:border-red-500'
 								)}
-								autoComplete="city"
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
 								ref={ref}
-                                maxLength={155}
+								disabled={disabled}
 							/>
 							<div className="text-xs text-red-500">{errors?.city?.message}</div>
 						</label>
 					)}
 				/>
 
-            </ShareLine>
+				<Controller
+					control={control}
+					name={"address.district" as Path<T>}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Bairro</div>
+							<Input
+								id="district"
+								type="text"
+								placeholder="Bairro"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.district &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+								disabled={disabled}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.district?.message}
+							</div>
+						</label>
+					)}
+				/>
+			</ShareLine>
 
-            <ShareLine>
-                <Controller
-                    control={control}
-                    defaultValue=""
-                    name="address.state"
-                    render={({ field: { onChange, value } }) => (
-                        <label>
-                            <div className="text-gray-500">Estado</div>
-                            <SelectComp
-                                placeholder="Estado"
-                                options={statesOptions}
-                                triggerClassName="p-4 h-12 rounded-lg"
-                                onValueChange={onChange}
-                                defaultValue={value}
-                                value={value}
-                            />
-                            <div className="text-xs text-red-500">
-                                {errors?.state?.message}
-                            </div>
-                        </label>
-                    )}
-                />
+			<ShareLine>
+				<Controller
+					control={control}
+					name={"address.street" as Path<T>}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Logradouro</div>
+							<Input
+								id="street"
+								type="text"
+								placeholder="Rua/Avenida/Alameda"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.street &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+								disabled={disabled}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.street?.message}
+							</div>
+						</label>
+					)}
+				/>
 
-                <div></div>
-            </ShareLine>
-        </div>
-    );
-};
+				<Controller
+					control={control}
+					name={"address.number" as Path<T>}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Número</div>
+							<Input
+								id="number"
+								type="text"
+								placeholder="Número"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.number &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								onChange={(e) => {
+									// Limita a 10 caracteres alfanuméricos
+									const cleanValue = e.target.value.slice(0, 10);
+									onChange(cleanValue);
+								}}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+								disabled={disabled}
+								maxLength={10}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.number?.message}
+							</div>
+						</label>
+					)}
+				/>
 
-export default DpsAddressForm;
+				<Controller
+					control={control}
+					name={"address.complement" as Path<T>}
+					render={({ field: { onChange, onBlur, value, ref } }) => (
+						<label>
+							<div className="text-gray-500">Complemento</div>
+							<Input
+								id="complement"
+								type="text"
+								placeholder="Complemento"
+								className={cn(
+									'w-full px-4 py-6 rounded-lg',
+									errors?.complement &&
+										'border-red-500 focus-visible:border-red-500'
+								)}
+								onChange={onChange}
+								onBlur={onBlur}
+								value={value}
+								ref={ref}
+								disabled={disabled}
+							/>
+							<div className="text-xs text-red-500">
+								{errors?.complement?.message}
+							</div>
+						</label>
+					)}
+				/>
+			</ShareLine>
+		</div>
+	)
+}
+
+export default DpsAddressForm

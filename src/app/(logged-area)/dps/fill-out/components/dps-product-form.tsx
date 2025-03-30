@@ -42,8 +42,7 @@ export const dpsProductForm = object({
 			'Capital máximo R$ 10.000.000,00'
 		)
 	),
-	propertyType: pipe(string(), nonEmpty('Campo obrigatório.')),
-	contractNumber: pipe(string(), nonEmpty('Campo obrigatório.'))
+	propertyType: pipe(string(), nonEmpty('Campo obrigatório.'))
 })
 
 export type DpsProductFormType = InferInput<typeof dpsProductForm>
@@ -54,7 +53,8 @@ const DpsProductForm = ({
 	productOptions,
 	tipoImovelOptions,
 	control,
-	formState
+	formState,
+	disabled = false
 }: {
 	data?: Partial<DpsProductFormType>
 	prazosOptions: { value: string; label: string }[]
@@ -62,57 +62,80 @@ const DpsProductForm = ({
 	tipoImovelOptions: { value: string; label: string }[]
 	control: Control<DpsInitialForm>
 	formState: FormState<DpsInitialForm>
+	disabled?: boolean
 }) => {
-	// const router = useRouter()
-
-	const errors = formState.errors?.product
+	// Ignoramos erros quando em modo somente leitura
+	const errors = disabled ? {} : formState.errors?.product;
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
 			<h3 className="text-primary text-lg">Dados do Produto</h3>
+			{disabled && (
+				<div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
+					<p>Os dados do produto estão bloqueados pois já existe um proponente principal para esta operação.</p>
+				</div>
+			)}
 			<ShareLine>
 				<Controller
 					control={control}
 					defaultValue=""
 					name="product.product"
-					render={({ field: { onChange, value } }) => (
-						<label>
-							<div className="text-gray-500">Produto</div>
-							<SelectComp
-								placeholder="Produto"
-								options={productOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={false}
-								onValueChange={onChange}
-								defaultValue={value}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.product?.message}
-							</div>
-						</label>
-					)}
+					render={({ field: { onChange, onBlur, value, ref } }) => {
+						return (
+							<label>
+								<div className="text-gray-500">Produto</div>
+								<SelectComp
+									placeholder="Produto"
+									options={productOptions}
+									triggerClassName="p-4 h-12 rounded-lg"
+									disabled={disabled}
+									onValueChange={(val) => {
+										onChange(val);
+										// Chamar onBlur após a mudança para disparar a revalidação
+										setTimeout(() => onBlur(), 0);
+									}}
+									value={value || ''}
+									defaultValue={value || ''}
+								/>
+								{!disabled && (
+									<div className="text-xs text-red-500">
+										{errors?.product?.message}
+									</div>
+								)}
+							</label>
+						)
+					}}
 				/>
 
 				<Controller
 					control={control}
 					defaultValue=""
 					name="product.deadline"
-					render={({ field: { onChange, value } }) => (
-						<label>
-							<div className="text-gray-500">Prazo</div>
-							<SelectComp
-								placeholder="Prazo"
-								options={prazosOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
-								disabled={false}
-								onValueChange={onChange}
-								defaultValue={value}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.deadline?.message}
-							</div>
-						</label>
-					)}
+					render={({ field: { onChange, onBlur, value, ref } }) => {
+						return (
+							<label>
+								<div className="text-gray-500">Prazo</div>
+								<SelectComp
+									placeholder="Prazo"
+									options={prazosOptions}
+									triggerClassName="p-4 h-12 rounded-lg"
+									disabled={disabled}
+									onValueChange={(val) => {
+										onChange(val);
+										// Chamar onBlur após a mudança para disparar a revalidação
+										setTimeout(() => onBlur(), 0);
+									}}
+									value={value || ''}
+									defaultValue={value || ''}
+								/>
+								{!disabled && (
+									<div className="text-xs text-red-500">
+										{errors?.deadline?.message}
+									</div>
+								)}
+							</label>
+						)
+					}}
 				/>
 			</ShareLine>
 			<ShareLine>
@@ -131,15 +154,20 @@ const DpsProductForm = ({
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.mip && 'border-red-500 focus-visible:border-red-500'
+									!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="mip"
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
 								ref={ref}
+								disabled={disabled}
 							/>
-							<div className="text-xs text-red-500">{errors?.mip?.message}</div>
+							{!disabled && (
+								<div className="text-xs text-red-500">
+									{errors?.mip?.message}
+								</div>
+							)}
 						</label>
 					)}
 				/>
@@ -159,15 +187,20 @@ const DpsProductForm = ({
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.dfi && 'border-red-500 focus-visible:border-red-500'
+									!disabled && errors?.dfi && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="dfi"
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
 								ref={ref}
+								disabled={disabled}
 							/>
-							<div className="text-xs text-red-500">{errors?.dfi?.message}</div>
+							{!disabled && (
+								<div className="text-xs text-red-500">
+									{errors?.dfi?.message}
+								</div>
+							)}
 						</label>
 					)}
 				/>
@@ -178,48 +211,33 @@ const DpsProductForm = ({
 					control={control}
 					defaultValue=""
 					name="product.propertyType"
-					render={({ field: { onChange, value } }) => (
-						<label>
-							<div className="text-gray-500">Tipo de Imóvel</div>
-							<SelectComp
-								placeholder="Tipo de Imóvel"
-								options={tipoImovelOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
-								onValueChange={onChange}
-								defaultValue={value}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.propertyType?.message}
-							</div>
-						</label>
-					)}
-				/>
-
-				<Controller
-					control={control}
-					defaultValue=""
-					name="product.contractNumber"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500">Número do contrato</div>
-							<Input
-								id="contractNumber"
-								type="text"
-								placeholder="Número do contrato"
-								mask="99999999999999999"
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.contractNumber && 'border-red-500 focus-visible:border-red-500'
+					render={({ field: { onChange, onBlur, value, ref } }) => {
+						return (
+							<label>
+								<div className="text-gray-500">Tipo de Imóvel</div>
+								<SelectComp
+									placeholder="Tipo de Imóvel"
+									options={tipoImovelOptions}
+									triggerClassName="p-4 h-12 rounded-lg"
+									disabled={disabled}
+									onValueChange={(val) => {
+										onChange(val);
+										// Chamar onBlur após a mudança para disparar a revalidação
+										setTimeout(() => onBlur(), 0);
+									}}
+									value={value || ''}
+									defaultValue={value || ''}
+								/>
+								{!disabled && (
+									<div className="text-xs text-red-500">
+										{errors?.propertyType?.message}
+									</div>
 								)}
-								onChange={onChange}
-								onBlur={onBlur}
-								value={value}
-								ref={ref}
-							/>
-							<div className="text-xs text-red-500">{errors?.contractNumber?.message}</div>
-						</label>
-					)}
+							</label>
+						)
+					}}
 				/>
+				<div></div>
 			</ShareLine>
 		</div>
 	)

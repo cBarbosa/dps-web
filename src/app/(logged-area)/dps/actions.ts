@@ -89,7 +89,9 @@ export async function postProposal(
 		name: string
 		socialName?: string
 		gender: string
+		cellphone?: string
 		email: string
+		contractNumber?: string
 		birthDate: string
 		productId: string
 		profession: string
@@ -98,6 +100,14 @@ export async function postProposal(
 		propertyTypeId: number
 		capitalMip: number
 		capitalDfi: number
+		address?: any
+		participantsNumber?: string
+		totalValue?: number
+		totalParticipants?: number
+		operationValue?: number
+		percentageParticipation?: number
+		financingParticipation?: number
+		participantType?: 'P' | 'C'
 	}
 ) {
 	try {
@@ -1079,3 +1089,54 @@ export async function putProposalReview(
 
 	return null;
 };
+
+export async function getParticipantsByOperation(
+	token: string,
+	operationNumber: string
+) {
+	try {
+		const response = await axios.get(`v1/Proposal/participants/${operationNumber}`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (response.data) {
+			return response.data as {
+				message: string;
+				success: boolean;
+				data: Array<{
+					uid: string;
+					contractNumber: string;
+					operationValue: number;
+					totalParticipants: number;
+					percentageParticipation: number;
+					financingParticipation: number;
+					participantType: "P" | "C";
+					productId: number;
+					deadlineId: number;
+					propertyTypeId: number;
+					capitalMIP: number;
+					capitalDFI: number;
+					customer: {
+						name: string;
+						document: string;
+					}
+				}>
+			}
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+		return {
+			message: "Erro ao buscar participantes",
+			success: false,
+			data: []
+		}
+	}
+}
