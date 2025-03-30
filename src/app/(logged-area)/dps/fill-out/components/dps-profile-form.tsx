@@ -209,8 +209,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								disabled={
 									disabled ||
 									isSubmitting ||
-									data?.birthdate !== undefined ||
-									disabledFields?.birthdate
+									data?.birthdate !== undefined
 								}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -244,8 +243,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								disabled={
 									disabled ||
 									isSubmitting ||
-									data?.name !== undefined ||
-									disabledFields?.name
+									data?.name !== undefined
 								}
 								onChange={onChange}
 								onBlur={onBlur}
