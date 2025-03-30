@@ -1,14 +1,7 @@
-import React, {
-	useCallback,
-	useEffect,
-	useRef
-} from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-	RadioGroup,
-	RadioGroupItem
-} from '@/components/ui/radio-group'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
@@ -75,7 +68,7 @@ const productSchemaTop = {
 	'19': diseaseSchema,
 	'20': diseaseSchema,
 	'21': diseaseSchema,
-};
+}
 
 const productYelum = {
 	'1': diseaseSchema,
@@ -83,10 +76,11 @@ const productYelum = {
 	'3': diseaseSchema,
 	'4': diseaseSchema,
 	'5': diseaseSchema,
-	'6': diseaseSchema
-};
+	'6': diseaseSchema,
+	telefoneContato: diseaseSchema,
+}
 
-const healthForm = object(productYelum);
+const healthForm = object(productYelum)
 
 export type HealthForm = InferInput<typeof healthForm>
 
@@ -94,7 +88,7 @@ const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
 	proposalUid,
 	initialHealthData,
-	autocomplete = false
+	autocomplete = false,
 }: {
 	onSubmit: (v: HealthForm) => void
 	proposalUid: string
@@ -159,19 +153,31 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key => (
-					<DiseaseField
-						name={key}
-						label={diseaseNames[key]}
-						control={control}
-						watch={watch}
-						errors={errors}
-						isSubmitting={isSubmitting || submittingForm}
-						trigger={trigger}
-						setValue={setValue}
-						key={key}
-					/>
-				))}
+				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key =>
+					key === 'telefoneContato' ? null : (
+						<DiseaseField
+							name={key}
+							label={diseaseNames[key]}
+							control={control}
+							watch={watch}
+							errors={errors}
+							isSubmitting={isSubmitting || submittingForm}
+							trigger={trigger}
+							setValue={setValue}
+							key={key}
+						/>
+					)
+				)}
+				<DiseaseField
+					name="telefoneContato"
+					label="Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD + número)."
+					control={control}
+					watch={watch}
+					errors={errors}
+					isSubmitting={isSubmitting || submittingForm}
+					trigger={trigger}
+					setValue={setValue}
+				/>
 			</div>
 
 			<div className="flex justify-start items-center gap-5">

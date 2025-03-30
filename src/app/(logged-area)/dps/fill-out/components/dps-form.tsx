@@ -1,24 +1,15 @@
 'use client'
 
-import React, {
-	useState
-} from 'react'
-import DpsHealthForm, {
-	HealthForm
-} from './dps-health-form'
+import React, { useState } from 'react'
+import DpsHealthForm, { HealthForm } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useParams } from 'next/navigation'
-import DpsAttachmentsForm, {
-	AttachmentsForm
-} from './dps-attachments-form'
+import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
 import Link from 'next/link'
 import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
-import {
-	ProposalByUid,
-	signProposal
-} from '../../actions'
+import { ProposalByUid, signProposal } from '../../actions'
 
 // export const diseaseNames = {
 // 	'1': 'Acidente Vascular Cerebral',
@@ -50,8 +41,9 @@ export const diseaseNames = {
 	'3': 'Nos últimos cinco anos, submeteu-se a tratamento cirúrgico, cateterismo ou hospitalizou-se por período superior a dez dias; realizou ourealiza exames de controle de qualquer natureza por uma ou mais vezes ao ano pela mesma doença? Se sim, especificar.',
 	'4': 'Encontra-se aposentado por invalidez? Se SIM, especifique no campo abaixo a natureza ou causa da invalidez e o ano em que passou areceber o benefício da Previdência Social.',
 	'5': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
-	'6': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)'
-};
+	'6': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)',
+	telefoneContato: 'Telefone de Contato',
+}
 
 export type DiseaseKeys = keyof typeof diseaseNames
 
@@ -124,7 +116,7 @@ const DpsForm = ({
 				mip: '',
 				dfi: '',
 				propertyType: '',
-				contractNumber: ''
+				contractNumber: '',
 			},
 			address: {
 				zipcode: '',
@@ -133,11 +125,11 @@ const DpsForm = ({
 				complement: '',
 				neighborhood: '',
 				state: '',
-				street: ''
-			}
+				street: '',
+			},
 		},
 		health: initialHealthData,
-		attachments: undefined
+		attachments: undefined,
 	})
 
 	const diseaseList = dpsData.health
