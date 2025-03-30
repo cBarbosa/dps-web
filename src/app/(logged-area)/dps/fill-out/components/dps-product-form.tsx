@@ -3,24 +3,10 @@
 import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
-import {
-	cn,
-	maskToBrlCurrency
-} from '@/lib/utils'
+import { cn, maskToBrlCurrency, maskToDigitsAndSuffix } from '@/lib/utils'
 import React from 'react'
-import {
-	Control,
-	Controller,
-	FormState
-} from 'react-hook-form'
-import {
-	custom,
-	InferInput,
-	nonEmpty,
-	object,
-	pipe,
-	string
-} from 'valibot'
+import { Control, Controller, FormState } from 'react-hook-form'
+import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 
 export const dpsProductForm = object({

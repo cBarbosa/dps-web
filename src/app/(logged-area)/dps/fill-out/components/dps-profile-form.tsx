@@ -215,7 +215,10 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								disabled={
-									disabled || isSubmitting || data?.birthdate !== undefined
+									disabled ||
+									isSubmitting ||
+									data?.birthdate !== undefined ||
+									disabledFields?.birthdate
 								}
 								onChange={onChange}
 								onBlur={onBlur}
@@ -247,7 +250,12 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									errors?.name && 'border-red-500 focus-visible:border-red-500'
 								)}
 								autoComplete="name"
-								disabled={disabled || isSubmitting || data?.name !== undefined}
+								disabled={
+									disabled ||
+									isSubmitting ||
+									data?.name !== undefined ||
+									disabledFields?.name
+								}
 								onChange={onChange}
 								onBlur={onBlur}
 								value={value}
