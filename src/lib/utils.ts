@@ -78,6 +78,27 @@ export const maskToBrlCurrency = ({
 	return nextState
 }
 
+export function maskToDigitsAndSuffix(suffix: string) {
+	return ({ nextState }: BeforeMaskedStateChangeStates) => {
+		const { value } = nextState || {}
+
+		let amountFormatted = value?.replace?.(/\D/g, '')
+		amountFormatted = amountFormatted?.replace?.(/^0+/g, '')
+
+		if (amountFormatted)
+			return {
+				...nextState,
+				value: `${amountFormatted}${suffix}`,
+				selection: {
+					start: amountFormatted.length,
+					end: amountFormatted.length,
+				},
+			}
+
+		return nextState
+	}
+}
+
 export function calculateAge(birthday: Date) {
 	if (!birthday) return null
 	if (!isValidDate(birthday)) return null
