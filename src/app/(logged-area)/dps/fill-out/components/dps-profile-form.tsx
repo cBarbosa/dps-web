@@ -21,15 +21,7 @@ import {
 	forward,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from '@/components/ui/form'
-import { formatToPhone, RecursivePartial, maskToBrlCurrency } from '@/lib/utils'
+import { RecursivePartial, maskToBrlCurrency } from '@/lib/utils'
 import { useState } from 'react'
 import { Loader2Icon } from 'lucide-react'
 
@@ -117,7 +109,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 
 	const handleCpfBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
 		const cpf = e.target.value
-		if (!validateCpf(cpf) || cpf === data?.cpf) return
+		if (validateCpf && !validateCpf(cpf) || cpf === data?.cpf) return
 
 		setLoadingCpf(true)
 		await getDataByCpf(cpf)
@@ -126,7 +118,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	
 	// Function to handle percentage input formatting
 	const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		let value = e.target.value.replace(/[^\d]/g, '')
+		const value = e.target.value.replace(/[^\d]/g, '')
 		
 		// Convert to number and limit to 100
 		let numValue = parseInt(value, 10)
@@ -172,7 +164,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 										}
 										
 										// Verificar se é um CPF válido
-										if (!validateCpf(cpfValue)) {
+										if (validateCpf && !validateCpf(cpfValue)) {
 											return;
 										}
 										
@@ -188,7 +180,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 										await getDataByCpf(cpfValue);
 										setLoadingCpf(false);
 									}}
-									value={formatToCPF(value as string)}
+									value={typeof value === 'string' ? formatToCPF(value) : ''}
 									ref={ref}
 								/>
 								{loadingCpf && (
@@ -219,7 +211,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={value instanceof Date ? value : undefined}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -233,7 +225,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 			<ShareLine>
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.name" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
@@ -250,7 +241,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								disabled={disabled || isSubmitting || data?.name !== undefined}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -262,7 +253,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.socialName" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
@@ -282,7 +272,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -296,7 +286,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 			<ShareLine>
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.profession" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
@@ -314,7 +303,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								disabled={disabled}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -326,7 +315,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.email" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
@@ -343,7 +331,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								disabled={disabled}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -357,7 +345,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 			<ShareLine>
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.phone" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
@@ -375,7 +362,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								autoComplete="tel"
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
@@ -387,7 +374,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.gender" as Path<T>}
 					render={({ field: { onChange, onBlur, value } }) => (
 						<label>
@@ -402,7 +388,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									// Chamar onBlur após a mudança para disparar a revalidação
 									setTimeout(() => onBlur(), 0);
 								}}
-								defaultValue={value}
+								defaultValue={typeof value === 'string' ? value : ''}
 							/>
 							<div className="text-xs text-red-500">
 								{errors?.gender?.message}
@@ -415,7 +401,6 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 			<ShareLine>
 				<Controller
 					control={control}
-					defaultValue=""
 					name={"profile.participationPercentage" as Path<T>}
 					render={({ field: { onChange, onBlur, value } }) => (
 						<label>
@@ -489,7 +474,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									onBlur();
 									
 									// Normaliza o formato ao perder o foco
-									let rawValue = e.target.value.replace(/[^\d,]/g, '');
+									const rawValue = e.target.value.replace(/[^\d,]/g, '');
 									
 									if (rawValue === '') {
 										onChange('0,00%');
@@ -527,7 +512,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 										onParticipationPercentageBlur(formattedValue);
 									}
 								}}
-								value={value as string}
+								value={typeof value === 'string' ? value : ''}
 							/>
 							<div className="text-xs text-red-500">
 								{errors?.participationPercentage?.message}

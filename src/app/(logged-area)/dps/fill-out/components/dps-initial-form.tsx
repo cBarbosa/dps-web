@@ -432,7 +432,7 @@ const DpsInitialForm = ({
 								operationValue: totalValue,
 								percentageParticipation: cpPercentage,
 								financingParticipation: cpFinancingParticipation,
-								participantType: 'C' as 'C', // Coparticipante - tipagem estrita
+								participantType: 'C', // Coparticipante - tipagem estrita
 								typeId: 2, // Mesmo tipo do proponente principal
 							};
 							
@@ -500,7 +500,7 @@ const DpsInitialForm = ({
 					operationValue: totalValue,
 					percentageParticipation: mainPercentage,
 					financingParticipation: mainFinancingParticipation,
-					participantType: 'P' as 'P', // Proponente principal - tipagem estrita
+					participantType: 'P', // Proponente principal - tipagem estrita
 				};
 
 				console.log('Enviando dados do proponente principal para API:', mainProponentData);
@@ -553,7 +553,7 @@ const DpsInitialForm = ({
 								operationValue: totalValue,
 								percentageParticipation: cpPercentage,
 								financingParticipation: cpFinancingParticipation,
-								participantType: 'C' as 'C', // Coparticipante - tipagem estrita
+								participantType: 'C', // Coparticipante - tipagem estrita
 								typeId: 2, // Mesmo tipo do proponente principal
 							};
 							
@@ -1594,7 +1594,7 @@ const DpsInitialForm = ({
 					</TooltipTrigger>
 					{!isOperationComplete && (
 						<TooltipContent>
-							<p>Preencha todos os campos da seção "Dados da Operação" para habilitar o salvamento</p>
+							<p>Preencha todos os campos da seção &quot;Dados da Operação&quot; para habilitar o salvamento</p>
 						</TooltipContent>
 					)}
 				</Tooltip>
@@ -1744,7 +1744,6 @@ const DpsInitialForm = ({
 			
 			<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<DpsAddressForm
-					data={data?.address as Partial<DpsAddressFormType>}
 					control={control as any}
 					formState={formState}
 					cepDataLoader={loadAddressByCep}

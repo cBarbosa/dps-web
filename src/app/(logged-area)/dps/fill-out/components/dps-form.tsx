@@ -117,23 +117,28 @@ const DpsForm = ({
 				email: initialProposalData.customer.email,
 				phone: '',
 				gender: '',
+				participationPercentage: '100,00%',
 			},
 			product: {
 				product: initialProposalData.product.uid,
 				deadline: initialProposalData.deadLineId?.toString() ?? '',
 				mip: '',
 				dfi: '',
-				propertyType: '',
-				contractNumber: ''
+				propertyType: ''
+			},
+			operation: {
+				operationNumber: '',
+				participantsNumber: '',
+				totalValue: ''
 			},
 			address: {
 				zipcode: '',
-				number: '',
-				city: '',
-				complement: '',
-				neighborhood: '',
 				state: '',
-				street: ''
+				city: '',
+				district: '',
+				street: '',
+				number: '',
+				complement: ''
 			}
 		},
 		health: initialHealthData,

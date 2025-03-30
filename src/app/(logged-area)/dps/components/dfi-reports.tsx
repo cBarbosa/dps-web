@@ -211,9 +211,7 @@ export default function DfiReports({
 	)
 
 	const reportDeleteArchive = useCallback(
-
 		async function (archiveUid: string) {
-
 			setAlertDialog({
 				open: true,
 				title: `Confirmação de deleção de arquivo`,
@@ -260,7 +258,7 @@ export default function DfiReports({
 				setIsFinishing(false);
 			}
 		},
-		[reloadReports, token]
+		[reloadReports, token, onConfirmProp]
 	);
 
 	const showReportApproval =
