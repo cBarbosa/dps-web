@@ -157,7 +157,7 @@ const UploadReport = ({
 						type="submit"
 						disabled={
 							isLoading ||
-							message === '' ||
+							// message === '' ||
 							(typeProp === 'DFI' && file == undefined)
 						}
 						onClick={handleSubmit}

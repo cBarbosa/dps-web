@@ -78,6 +78,27 @@ export const maskToBrlCurrency = ({
 	return nextState
 }
 
+export function maskToDigitsAndSuffix(suffix: string) {
+	return ({ nextState }: BeforeMaskedStateChangeStates) => {
+		const { value } = nextState || {}
+
+		let amountFormatted = value?.replace?.(/\D/g, '')
+		amountFormatted = amountFormatted?.replace?.(/^0+/g, '')
+
+		if (amountFormatted)
+			return {
+				...nextState,
+				value: `${amountFormatted}${suffix}`,
+				selection: {
+					start: amountFormatted.length,
+					end: amountFormatted.length,
+				},
+			}
+
+		return nextState
+	}
+}
+
 export function calculateAge(birthday: Date) {
 	if (!birthday) return null
 	if (!isValidDate(birthday)) return null
@@ -101,4 +122,20 @@ export function getProfissionDescription(input?: string): string {
 	const partes = input.split('-')
 
 	return partes[1]?.trim() ?? ''
+}
+
+export function formatToPhone(value: string): string {
+	if (!value) return '';
+	
+	// Remove non-digits
+	const digits = value.replace(/\D/g, '');
+	
+	// Format as (XX) XXXXX-XXXX
+	if (digits.length <= 2) {
+		return `(${digits}`;
+	} else if (digits.length <= 7) {
+		return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+	} else {
+		return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+	}
 }
