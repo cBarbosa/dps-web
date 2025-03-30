@@ -38,6 +38,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
+    "react-hot-toast": "^2.5.2",
     "react-input-mask": "^3.0.0-alpha.2",
     "react-multi-select-component": "^4.3.4",
     "recharts": "^2.14.1",
