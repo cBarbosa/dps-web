@@ -116,7 +116,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 										onBlur();
 										completeCepData(e.target.value);
 									}}
-									value={value}
+									value={typeof value === 'string' ? value : ''}
 									ref={ref}
 									disabled={disabled || loadingCep}
 								/>
@@ -145,7 +145,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 									onChange(val);
 									setTimeout(() => onBlur(), 0);
 								}}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								disabled={disabled}
 							/>
 							<div className="text-xs text-red-500">
@@ -173,7 +173,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								)}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
 							/>
@@ -199,7 +199,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								)}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
 							/>
@@ -229,7 +229,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								)}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
 							/>
@@ -261,7 +261,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 									onChange(cleanValue);
 								}}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
 								maxLength={10}
@@ -290,7 +290,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								)}
 								onChange={onChange}
 								onBlur={onBlur}
-								value={value}
+								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
 							/>

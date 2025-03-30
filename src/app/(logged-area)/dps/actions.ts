@@ -107,7 +107,7 @@ export async function postProposal(
 		operationValue?: number
 		percentageParticipation?: number
 		financingParticipation?: number
-		participantType?: 'P' | 'C'
+		participantType?: string
 	}
 ) {
 	try {
