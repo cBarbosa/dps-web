@@ -1121,7 +1121,12 @@ export async function getParticipantsByOperation(
 					customer: {
 						name: string;
 						document: string;
-					}
+					};
+					product: {
+						uid: string;
+						name: string;
+						description: string;
+					};
 				}>
 			}
 		} else {

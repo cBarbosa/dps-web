@@ -50,6 +50,7 @@ const DpsProductForm = ({
 	formState: FormState<DpsInitialForm>
 	disabled?: boolean
 }) => {
+	console.log('formState', formState)
 	// Ignoramos erros quando em modo somente leitura
 	const errors = disabled ? {} : formState.errors?.product;
 
