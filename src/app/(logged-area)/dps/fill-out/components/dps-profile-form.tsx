@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Control, Controller, FormState, Path } from 'react-hook-form'
 import {
 	custom,
@@ -91,6 +91,8 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	onParticipationPercentageBlur,
 	validateCpf,
 	placeholderPercentage,
+	isSingleParticipant,
+	setValue
 }: {
 	data?: Partial<DpsProfileFormType>
 	control: Control<T>
@@ -102,10 +104,25 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	onParticipationPercentageBlur?: (value: string) => void
 	validateCpf?: (cpf: string) => boolean
 	placeholderPercentage?: string
+	isSingleParticipant?: boolean
+	setValue?: (name: string, value: any) => void
 }) => {
 	const errors = formState.errors?.profile as any
 	const isSubmitting = formState.isSubmitting
 	const [loadingCpf, setLoadingCpf] = useState(false)
+
+	// Modificar a lógica para usar o setValue recebido como prop
+	useEffect(() => {
+		if (isSingleParticipant && setValue) {
+			// Use the setValue prop instead of accessing control directly
+			setValue("profile.participationPercentage", "100,00%");
+			
+			// Call the callback to update participation value if provided
+			if (onParticipationPercentageBlur) {
+				onParticipationPercentageBlur("100,00%");
+			}
+		}
+	}, [isSingleParticipant, setValue, onParticipationPercentageBlur]);
 
 	const handleCpfBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
 		const cpf = e.target.value
@@ -408,123 +425,141 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 				<Controller
 					control={control}
 					name={"profile.participationPercentage" as Path<T>}
-					render={({ field: { onChange, onBlur, value } }) => (
-						<label>
-							<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
-							<Input
-								id="participationPercentage"
-								type="text"
-								placeholder={placeholderPercentage ? `Sugestão: ${placeholderPercentage}` : "0,00%"}
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									errors?.participationPercentage && 'border-red-500 focus-visible:border-red-500'
-								)}
-								disabled={disabled}
-								onChange={e => {
-									// Obtém o valor original do input
-									let inputValue = e.target.value;
-									
-									// Se o usuário está tentando apagar, permita isso
-									// Comparando o tamanho do valor atual com o tamanho do anterior
-									if (inputValue.length < (value as string || '').length) {
-										// O usuário está apagando, simplesmente deixe isso acontecer
-										// Remova apenas o símbolo de porcentagem se presente
-										inputValue = inputValue.replace(/%/g, '');
-										onChange(inputValue);
-										return;
-									}
-									
-									// Para entrada normal, aplique a formatação
-									// Remove tudo exceto dígitos e vírgula
-									let rawValue = inputValue.replace(/[^\d,]/g, '')
-									
-									// Limita a uma única vírgula
-									if (rawValue.split(',').length > 2) {
-										rawValue = rawValue.replace(/,/g, function(match, offset, string) {
-											return offset === string.indexOf(',') ? ',' : '';
-										});
-									}
-									
-									// Limita o número de dígitos antes da vírgula a 3 (para permitir 100)
-									if (rawValue.includes(',')) {
-										const [intPart, decPart] = rawValue.split(',');
-										if (intPart.length > 3) {
-											rawValue = intPart.substring(0, 3) + ',' + decPart;
+					render={({ field: { onChange, onBlur, value } }) => {
+						// Se for participante único, renderizar versão somente leitura
+						if (isSingleParticipant) {
+							return (
+								<label>
+									<div className="text-gray-500">% Participação</div>
+									<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
+										100,00%
+									</div>
+									<div className="text-xs text-red-500">
+										{errors?.participationPercentage?.message}
+									</div>
+								</label>
+							);
+						}
+						
+						// Caso contrário, renderizar o componente normal
+						return (
+							<label>
+								<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+								<Input
+									id="participationPercentage"
+									type="text"
+									placeholder={placeholderPercentage ? `Sugestão: ${placeholderPercentage}` : "0,00%"}
+									className={cn(
+										'w-full px-4 py-6 rounded-lg',
+										errors?.participationPercentage && 'border-red-500 focus-visible:border-red-500'
+									)}
+									disabled={disabled}
+									onChange={e => {
+										// Obtém o valor original do input
+										let inputValue = e.target.value;
+										
+										// Se o usuário está tentando apagar, permita isso
+										// Comparando o tamanho do valor atual com o tamanho do anterior
+										if (inputValue.length < (value as string || '').length) {
+											// O usuário está apagando, simplesmente deixe isso acontecer
+											// Remova apenas o símbolo de porcentagem se presente
+											inputValue = inputValue.replace(/%/g, '');
+											onChange(inputValue);
+											return;
 										}
-									} else if (rawValue.length > 3) {
-										rawValue = rawValue.substring(0, 3);
-									}
-									
-									// Limita valor máximo a 100 para a parte inteira
-									if (rawValue.includes(',')) {
-										const [intPart, decPart] = rawValue.split(',');
-										const intValue = parseInt(intPart, 10);
-										if (intValue > 100) {
-											rawValue = '100,' + decPart;
+										
+										// Para entrada normal, aplique a formatação
+										// Remove tudo exceto dígitos e vírgula
+										let rawValue = inputValue.replace(/[^\d,]/g, '')
+										
+										// Limita a uma única vírgula
+										if (rawValue.split(',').length > 2) {
+											rawValue = rawValue.replace(/,/g, function(match, offset, string) {
+												return offset === string.indexOf(',') ? ',' : '';
+											});
 										}
-									} else {
-										const intValue = parseInt(rawValue, 10);
-										if (intValue > 100) {
-											rawValue = '100';
+										
+										// Limita o número de dígitos antes da vírgula a 3 (para permitir 100)
+										if (rawValue.includes(',')) {
+											const [intPart, decPart] = rawValue.split(',');
+											if (intPart.length > 3) {
+												rawValue = intPart.substring(0, 3) + ',' + decPart;
+											}
+										} else if (rawValue.length > 3) {
+											rawValue = rawValue.substring(0, 3);
 										}
-									}
-									
-									// Adiciona o símbolo de porcentagem apenas se houver algum valor
-									if (rawValue !== '') {
-										rawValue += rawValue.includes('%') ? '' : '%';
-									}
-									
-									onChange(rawValue);
-								}}
-								onBlur={e => {
-									onBlur();
-									
-									// Normaliza o formato ao perder o foco
-									const rawValue = e.target.value.replace(/[^\d,]/g, '');
-									
-									if (rawValue === '') {
-										onChange('0,00%');
+										
+										// Limita valor máximo a 100 para a parte inteira
+										if (rawValue.includes(',')) {
+											const [intPart, decPart] = rawValue.split(',');
+											const intValue = parseInt(intPart, 10);
+											if (intValue > 100) {
+												rawValue = '100,' + decPart;
+											}
+										} else {
+											const intValue = parseInt(rawValue, 10);
+											if (intValue > 100) {
+												rawValue = '100';
+											}
+										}
+										
+										// Adiciona o símbolo de porcentagem apenas se houver algum valor
+										if (rawValue !== '') {
+											rawValue += rawValue.includes('%') ? '' : '%';
+										}
+										
+										onChange(rawValue);
+									}}
+									onBlur={e => {
+										onBlur();
+										
+										// Normaliza o formato ao perder o foco
+										const rawValue = e.target.value.replace(/[^\d,]/g, '');
+										
+										if (rawValue === '') {
+											onChange('0,00%');
+											if (onParticipationPercentageBlur) {
+												onParticipationPercentageBlur('0,00%');
+											}
+											return;
+										}
+										
+										let numValue;
+										if (rawValue.includes(',')) {
+											// Se tem vírgula, processa como decimal
+											const parts = rawValue.split(',');
+											const intPart = parseInt(parts[0], 10) || 0;
+											// Se a parte decimal existe, usa ela, senão usa '00'
+											const decPart = parts.length > 1 ? parts[1] : '00';
+											
+											// Garante que a parte decimal tenha 2 dígitos
+											const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
+											
+											numValue = intPart + (parseInt(paddedDecPart, 10) / 100);
+											if (numValue > 100) numValue = 100;
+										} else {
+											// Se não tem vírgula, é um número inteiro
+											numValue = parseInt(rawValue, 10);
+											if (numValue > 100) numValue = 100;
+										}
+										
+										// Formata com 2 casas decimais
+										const formattedValue = numValue.toFixed(2).replace('.', ',') + '%';
+										onChange(formattedValue);
+										
+										// Chama o callback para calcular a participação no financiamento
 										if (onParticipationPercentageBlur) {
-											onParticipationPercentageBlur('0,00%');
+											onParticipationPercentageBlur(formattedValue);
 										}
-										return;
-									}
-									
-									let numValue;
-									if (rawValue.includes(',')) {
-										// Se tem vírgula, processa como decimal
-										const parts = rawValue.split(',');
-										const intPart = parseInt(parts[0], 10) || 0;
-										// Se a parte decimal existe, usa ela, senão usa '00'
-										const decPart = parts.length > 1 ? parts[1] : '00';
-										
-										// Garante que a parte decimal tenha 2 dígitos
-										const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
-										
-										numValue = intPart + (parseInt(paddedDecPart, 10) / 100);
-										if (numValue > 100) numValue = 100;
-									} else {
-										// Se não tem vírgula, é um número inteiro
-										numValue = parseInt(rawValue, 10);
-										if (numValue > 100) numValue = 100;
-									}
-									
-									// Formata com 2 casas decimais
-									const formattedValue = numValue.toFixed(2).replace('.', ',') + '%';
-									onChange(formattedValue);
-									
-									// Chama o callback para calcular a participação no financiamento
-									if (onParticipationPercentageBlur) {
-										onParticipationPercentageBlur(formattedValue);
-									}
-								}}
-								value={typeof value === 'string' ? value : ''}
-							/>
-							<div className="text-xs text-red-500">
-								{errors?.participationPercentage?.message}
-							</div>
-						</label>
-					)}
+									}}
+									value={typeof value === 'string' ? value : ''}
+								/>
+								<div className="text-xs text-red-500">
+									{errors?.participationPercentage?.message}
+								</div>
+							</label>
+						);
+					}}
 				/>
 
 				<div>
