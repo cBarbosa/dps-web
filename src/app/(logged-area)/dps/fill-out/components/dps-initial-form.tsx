@@ -423,8 +423,8 @@ const DpsInitialForm = ({
 				
 				// Array para armazenar todas as propostas de coparticipantes criadas
 				const createdProposals = [];
-				let allProposalsSaved = true;
-				let lastError = '';
+				const allProposalsSaved = true;
+				const lastError = '';
 
 				// No caso de continuação de preenchimento, não processar coparticipantes adicionais
 				// Os coparticipantes só são processados em novo preenchimento
