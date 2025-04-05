@@ -5,6 +5,7 @@ import { GoBackButton } from '@/components/ui/go-back-button'
 import {
 	Building2Icon,
 	CalendarIcon,
+	CopyIcon,
 	DollarSignIcon,
 	IdCardIcon,
 	LucideAlertOctagon,
@@ -108,6 +109,39 @@ const DetailsPresent = ({
 
 		setPdfUrl(createPdfUrlFromBase64(response.data))
 	}, [token, uid])
+
+	const handleCopyLink = React.useCallback(() => {
+		/**
+		 * Generates a shareable link to this DPS page and copies it to the clipboard.
+		 * Shows a success dialog when copied or an error dialog if copying fails.
+		 */
+		// Create the URL for the current page
+		const baseUrl = window.location.origin;
+		const url = `${baseUrl}/external/fill-out/form/${uid}`;
+
+		// Copy to clipboard
+		navigator.clipboard.writeText(url)
+			.then(() => {
+				// Show success dialog
+				setAlertDialog({
+					open: true,
+					title: 'Link copiado',
+					body: (
+						<p>O link para este processo foi copiado para a área de transferência.</p>
+					),
+				})
+			})
+			.catch(err => {
+				console.error('Erro ao copiar link:', err)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: (
+						<p>Não foi possível copiar o link. Por favor, tente novamente.</p>
+					),
+				})
+			})
+	}, [uid]);
 
 	const reportAnalisys = React.useCallback(
 		async function (action: `REOPEN`) {
@@ -313,7 +347,7 @@ const DetailsPresent = ({
 		}
 	}
 
-	const lastSituation: number | undefined =
+const lastSituation: number | undefined =
 		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean | undefined =
@@ -347,6 +381,8 @@ const DetailsPresent = ({
 		role === 'subscritor-sup' &&
 		proposalData.riskStatus === 'REVIEW' &&
 		proposalData.closed === undefined
+
+	const showCopyLink =  proposalSituation.id === 10;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -508,6 +544,15 @@ const DetailsPresent = ({
 							>
 								Visualizar DPS
 							</Button>
+							{showCopyLink && (
+								<Button
+									variant="outline"
+									onClick={handleCopyLink}
+								>
+									<CopyIcon className="mr-2" size={18} />
+									Copiar Link
+								</Button>
+							)}
 							{showReanalisys && (
 								<Button
 									variant={`secondary`}
