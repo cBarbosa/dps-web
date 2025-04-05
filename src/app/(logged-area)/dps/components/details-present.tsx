@@ -6,7 +6,6 @@ import {
 	Building2Icon,
 	CalendarIcon,
 	CopyIcon,
-	DockIcon,
 	DollarSignIcon,
 	IdCardIcon,
 	LucideAlertOctagon,
