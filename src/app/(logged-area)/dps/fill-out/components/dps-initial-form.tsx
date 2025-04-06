@@ -30,7 +30,7 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
-import DpsOperationForm, { dpsOperationForm, DpsOperationFormType } from './dps-operation-form'
+import DpsOperationForm, { dpsOperationForm } from './dps-operation-form'
 import { 
 	Dialog, 
 	DialogContent, 
@@ -41,9 +41,7 @@ import {
 	DialogClose,
 	DialogFooter,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { AlertCircle, CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
-import { useState as useStateToast } from 'react'
+import { CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
 import {
 	Tooltip,
 	TooltipContent,
@@ -188,8 +186,7 @@ const DpsInitialForm = ({
 	const [isLoadingCoparticipant, setIsLoadingCoparticipant] = useState(false)
 	const [fetchingCpfDataCoparticipant, setFetchingCpfDataCoparticipant] = useState(false)
 	const [operationDataLoaded, setOperationDataLoaded] = useState(false)
-	const [shouldShowOperationSection, setShouldShowOperationSection] = useState(true)
-	const [showOtherSections, setShowOtherSections] = useState(false) // Controla a visibilidade das demais seções
+		const [showOtherSections, setShowOtherSections] = useState(false) // Controla a visibilidade das demais seções
 
 	const [prazosOptions, setPrazosOptions] = useState<
 		{ value: string; label: string }[]
@@ -201,8 +198,6 @@ const DpsInitialForm = ({
 	const [participationValue, setParticipationValue] = useState<string>('')
 	const [coparticipantParticipationValue, setCoparticipantParticipationValue] = useState<string>('')
 	const [coparticipantSuggestedPercentage, setCoparticipantSuggestedPercentage] = useState<string>('')
-	const [dialogOpen, setDialogOpen] = useState(false)
-	const [mainFormData, setMainFormData] = useState<DpsInitialForm | null>(null)
 	const [isCoparticipantDialogOpen, setIsCoparticipantDialogOpen] = useState(false)
 	const [coparticipants, setCoparticipants] = useState<Coparticipant[]>([])
 	const [editingCoparticipantId, setEditingCoparticipantId] = useState<string | null>(null)
@@ -285,51 +280,12 @@ const DpsInitialForm = ({
 		reValidateMode: "onBlur",
 	})
 	
-	// Form for co-participant
-	const {
-		handleSubmit: handleSubmitCoparticipant,
-		control: controlCoparticipant,
-		reset: resetCoparticipant,
-		formState: { isSubmitting: isSubmittingCoparticipant, errors: errorsCoparticipant, ...formStateRestCoparticipant },
-	} = useForm<DpsCoparticipantForm>({
-		resolver: valibotResolver(dpsCoparticipantForm),
-		defaultValues: {
-			operation: {
-				operationNumber: '',
-				participantsNumber: '',
-				totalValue: '',
-			},
-			profile: {
-				cpf: '',
-				name: '',
-				birthdate: undefined,
-				profession: '',
-				email: '',
-				phone: '',
-				socialName: '',
-				gender: '',
-			},
-			address: {
-				zipcode: '',
-				state: '',
-				city: '',
-				district: '',
-				street: '',
-				number: '',
-				complement: '',
-			}
-		},
-		disabled: isLoadingCoparticipant,
-		mode: "onBlur",
-		reValidateMode: "onBlur",
-	});
 
 	const [autocompletedByCpf, setAutocompletedByCpf] = useState<
 		Partial<Record<keyof typeof dpsProfileForm.entries, boolean>>
 	>({})
 
 	const formState = { ...formStateRest, errors, isSubmitting, isSubmitted }
-	const coparticipantFormState = { ...formStateRestCoparticipant, errors: errorsCoparticipant, isSubmitting: isSubmittingCoparticipant }
 
 	// Remove automatic calculation for participation percentage and value
 	useEffect(() => {
@@ -393,7 +349,7 @@ const DpsInitialForm = ({
 	const handleConfirmSubmit = () => {
 		setIsConfirmDialogOpen(false);
 		if (pendingSubmitData) {
-			// submitForm(pendingSubmitData);
+			submitForm(pendingSubmitData);
 			setPendingSubmitData(null);
 		}
 		setIsSubmitPending(false);
@@ -830,32 +786,6 @@ const DpsInitialForm = ({
 			}
 		}
 	}
-
-	async function handleSaveAndAddCoparticipation(v: DpsInitialForm) {
-		// Store the main form data to copy relevant fields to the coparticipant form
-		setMainFormData(v)
-		
-		// Populate the coparticipant form with operation data
-		const numParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
-		
-		// Open dialog for coparticipant
-		setDialogOpen(true)
-	}
-	
-	async function onCoparticipantSubmit(v: DpsCoparticipantForm) {
-		setIsLoadingCoparticipant(true)
-		// Here you would post the coparticipant data to the backend
-		
-		console.log('Coparticipant data:', v)
-		
-		// Simulating API call
-		setTimeout(() => {
-			resetCoparticipant()
-			setDialogOpen(false)
-			setIsLoadingCoparticipant(false)
-			// After adding coparticipant, refresh the main form or navigate
-		}, 1000)
-	}
 	
 	async function getDataByCpfForCoparticipant(cpf: string) {
 		// Limpar o CPF para comparação
@@ -877,24 +807,6 @@ const DpsInitialForm = ({
 		
 		const proponentDataRaw = await getProponentDataByCpf(cpf);
 		
-		if (proponentDataRaw) {
-			// Process data similar to the main form
-			const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
-					? proponentDataRaw?.detalhes.nascimento.split('/')
-					: undefined;
-
-			const proponentDataBirthdate = proponentDataBirthdateAux
-					? new Date(
-							Number(proponentDataBirthdateAux[2]),
-							Number(proponentDataBirthdateAux[1]) - 1,
-							Number(proponentDataBirthdateAux[0])
-					  )
-					: undefined;
-			
-			// Set data in the coparticipant form
-			// Similar to the main form but with controlCoparticipant
-		}
-		
 		setIsLoadingCoparticipant(false);
 	}
 
@@ -908,6 +820,18 @@ const DpsInitialForm = ({
 		// Verificar se é o mesmo CPF já consultado anteriormente
 		if (cleanCpf === lastQueriedCpf) {
 			console.log(`CPF ${cleanCpf} já foi consultado anteriormente. Ignorando consulta duplicada.`);
+			return;
+		}
+
+		console.log('coparticipants', coparticipants)
+		console.log('cleanCpf', coparticipants.find(c => c.cpf === cleanCpf))
+
+		const mainProponent = existingMainProponent;
+
+		if(coparticipants.find(c => c.cpf === cleanCpf) || mainProponent?.cpf === cleanCpf) {
+			console.log(`CPF ${cleanCpf} já foi consultado anteriormente para coparticipante. Ignorando consulta duplicada.`);
+			toast.error(`CPF ${cleanCpf} já consta na lista de participantes, não é possível cadastrar novamente.`);
+			setAutocompletedByCpf({});
 			return;
 		}
 		
@@ -1266,40 +1190,6 @@ const DpsInitialForm = ({
 		return true;
 	};
 
-	const getCoparticipantDataByCpf = async (cpf: string) => {
-		try {
-			// Verificar se o CPF é válido
-			if (!validarCpf(cpf)) {
-				toast.error('CPF inválido. Verifique o número informado.');
-				return;
-			}
-			
-			// A validação de CPF duplo já é feita pela função validateCpfNotDuplicated
-			// Verifica novamente aqui para garantir que o fluxo seja interrompido
-			if (!validateCpfNotDuplicated(cpf)) {
-				// Limpar o campo CPF após validação falhar
-				coparticipantForm.setValue('profile.cpf', '');
-				return;
-			}
-			
-			setFetchingCpfDataCoparticipant(true);
-			
-			// Implement CPF data fetching for co-participant
-			// This is just a placeholder - implement actual API call
-			await new Promise(resolve => setTimeout(resolve, 500));
-			
-			// Example auto-filling data
-			coparticipantForm.setValue('profile.name', 'Nome do Co-participante');
-			coparticipantForm.setValue('profile.email', 'coparticipante@example.com');
-			
-			setFetchingCpfDataCoparticipant(false);
-		} catch (error) {
-			console.error(error);
-			toast.error('Erro ao buscar dados do CPF. Tente novamente.');
-			setFetchingCpfDataCoparticipant(false);
-		}
-	}
-
 	//useEffect(() => {
 		// if (typeof watchBirthdate !== 'undefined' && watchBirthdate !== null) {
 			// Calculate age here if needed
@@ -1529,12 +1419,19 @@ const DpsInitialForm = ({
 			// Fazer a chamada para a API
 			const response = await getParticipantsByOperation(token, operationNumber);
 			console.log('response', response)
-			
+			// Limpar os coparticipantes existentes
+			setCoparticipants([]);
+			// Limpar o proponente principal existente
+			setExistingMainProponent(null);
+			// Limpar o último CPF consultado para permitir novas consultas
+			setLastQueriedCpf('');
+			// reset();
+
 			if (response && response.success && response.data && response.data.length > 0) {
+
 				// CASO DE CONTINUAÇÃO: Operação existente com participantes
 				// Habilitar as seções após consultado os dados da operação
 				setShowOtherSections(true);
-				setShouldShowOperationSection(true);
 				
 				// Usar o primeiro registro para dados da operação
 				const mainData = response.data[0];
@@ -1882,7 +1779,6 @@ const DpsInitialForm = ({
 			// Sem alerta de erro, apenas log
 			console.log('Erro ao buscar dados da operação. Configurando para novo preenchimento.');
 		} finally {
-			setShouldShowOperationSection(true);
 			setIsLoadingOperationData(false);
 		}
 	};
@@ -2042,12 +1938,12 @@ const DpsInitialForm = ({
 		if (cpfParam || existingMainProponent || !operationNumber) {
 			return null;
 		}
-		
+
 		// Lógica de validação para verificar se pode adicionar mais coparticipantes
 		const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
 		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal atual
 		const canAddMore = currentParticipants < declaredParticipants;
-		
+
 		if (canAddMore) {
 			return (
 				<Button
@@ -2061,31 +1957,6 @@ const DpsInitialForm = ({
 				</Button>
 			);
 		}
-	};
-
-	// Função para gerar mensagem de confirmação
-	const getConfirmationMessage = () => {
-		if (!pendingSubmitData) {
-			return '';
-		}
-		
-		// Calcular corretamente o número atual de participantes
-		const declaredParticipants = parseInt(pendingSubmitData.operation.participantsNumber, 10) || 0;
-		
-		// Participantes já cadastrados antes da operação atual
-		let currentRegisteredParticipants;
-		if (existingMainProponent) {
-			// Com proponente principal existente: proponente (1) + coparticipantes já cadastrados
-			currentRegisteredParticipants = 1 + coparticipants.length;
-		} else {
-			// Sem proponente principal existente: apenas coparticipantes cadastrados
-			currentRegisteredParticipants = coparticipants.length;
-		}
-		
-		// Adicionar +1 para o participante que está sendo cadastrado agora
-		const totalAfterSubmission = currentRegisteredParticipants + 1;
-		
-		return `Você informou ${declaredParticipants} participantes no total, mas está cadastrando apenas ${totalAfterSubmission}. Deseja continuar mesmo assim?`;
 	};
 
 	// Adicionar uma função wrapper para converter o setValue antes de passar para o componente
