@@ -17,5 +17,5 @@ export default withAuth({
 })
 
 export const config = {
-	matcher: '/((?!login|forgot-password|static|favicon.ico).*)',
+	matcher: '/((?!login|forgot-password|external|static|favicon.ico).*)',
 }
