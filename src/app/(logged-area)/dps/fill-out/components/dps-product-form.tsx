@@ -53,6 +53,13 @@ const DpsProductForm = ({
 	console.log('formState', formState)
 	// Ignoramos erros quando em modo somente leitura
 	const errors = disabled ? {} : formState.errors?.product;
+	const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
+	
+	// Manipulador genérico para quando campos perdem foco
+	const handleFieldBlur = () => {
+		// Ativar o destaque para campos não preenchidos
+		setHighlightMissing(true);
+	};
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -74,12 +81,18 @@ const DpsProductForm = ({
 								<SelectComp
 									placeholder="Produto"
 									options={productOptions}
-									triggerClassName="p-4 h-12 rounded-lg"
+									triggerClassName={cn(
+										"p-4 h-12 rounded-lg",
+										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
 									disabled={disabled}
 									onValueChange={(val) => {
 										onChange(val);
 										// Chamar onBlur após a mudança para disparar a revalidação
-										setTimeout(() => onBlur(), 0);
+										setTimeout(() => {
+											onBlur();
+											handleFieldBlur();
+										}, 0);
 									}}
 									value={value || ''}
 									defaultValue={value || ''}
@@ -105,12 +118,18 @@ const DpsProductForm = ({
 								<SelectComp
 									placeholder="Prazo"
 									options={prazosOptions}
-									triggerClassName="p-4 h-12 rounded-lg"
+									triggerClassName={cn(
+										"p-4 h-12 rounded-lg",
+										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
 									disabled={disabled}
 									onValueChange={(val) => {
 										onChange(val);
 										// Chamar onBlur após a mudança para disparar a revalidação
-										setTimeout(() => onBlur(), 0);
+										setTimeout(() => {
+											onBlur();
+											handleFieldBlur();
+										}, 0);
 									}}
 									value={value || ''}
 									defaultValue={value || ''}
@@ -141,11 +160,15 @@ const DpsProductForm = ({
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500'
+									!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500',
+									!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								autoComplete="mip"
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={value}
 								ref={ref}
 								disabled={disabled}
@@ -174,11 +197,15 @@ const DpsProductForm = ({
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									!disabled && errors?.dfi && 'border-red-500 focus-visible:border-red-500'
+									!disabled && errors?.dfi && 'border-red-500 focus-visible:border-red-500',
+									!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								autoComplete="dfi"
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={value}
 								ref={ref}
 								disabled={disabled}
@@ -205,12 +232,18 @@ const DpsProductForm = ({
 								<SelectComp
 									placeholder="Tipo de Imóvel"
 									options={tipoImovelOptions}
-									triggerClassName="p-4 h-12 rounded-lg"
+									triggerClassName={cn(
+										"p-4 h-12 rounded-lg",
+										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
 									disabled={disabled}
 									onValueChange={(val) => {
 										onChange(val);
 										// Chamar onBlur após a mudança para disparar a revalidação
-										setTimeout(() => onBlur(), 0);
+										setTimeout(() => {
+											onBlur();
+											handleFieldBlur();
+										}, 0);
 									}}
 									value={value || ''}
 									defaultValue={value || ''}
