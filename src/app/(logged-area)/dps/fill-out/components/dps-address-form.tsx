@@ -51,6 +51,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 }) => {
 	const errors = formState.errors?.address as any
 	const [loadingCep, setLoadingCep] = useState(false)
+	const [highlightMissing, setHighlightMissing] = useState(false)
 
 	const completeCepData = async (cep: string) => {
 		if (!cep || cep.replace(/\D/g, '').length < 8) return;
@@ -84,6 +85,12 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 			return `${cepDigits.substring(0, 5)}-${cepDigits.substring(5)}`;
 		}
 	};
+	
+	// Manipulador para quando qualquer campo perde o foco
+	const handleFieldBlur = () => {
+		// Ativar o destaque para campos não preenchidos
+		setHighlightMissing(true);
+	};
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -104,6 +111,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
 										errors?.zipcode && 'border-red-500 focus-visible:border-red-500',
+										highlightMissing && !value && 'border-orange-400 bg-orange-50',
 										loadingCep && 'pr-10'
 									)}
 									onChange={(e) => {
@@ -114,6 +122,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 									}}
 									onBlur={(e) => {
 										onBlur();
+										handleFieldBlur();
 										completeCepData(e.target.value);
 									}}
 									value={typeof value === 'string' ? value : ''}
@@ -140,10 +149,16 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 							<SelectComp
 								placeholder="UF"
 								options={states}
-								triggerClassName="p-4 h-12 rounded-lg"
+								triggerClassName={cn(
+									"p-4 h-12 rounded-lg",
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
+								)}
 								onValueChange={(val) => {
 									onChange(val);
-									setTimeout(() => onBlur(), 0);
+									setTimeout(() => {
+										onBlur();
+										handleFieldBlur();
+									}, 0);
 								}}
 								value={typeof value === 'string' ? value : ''}
 								disabled={disabled}
@@ -169,10 +184,14 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								placeholder="Cidade"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.city && 'border-red-500 focus-visible:border-red-500'
+									errors?.city && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
@@ -194,11 +213,14 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								placeholder="Bairro"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.district &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.district && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
@@ -224,11 +246,14 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								placeholder="Rua/Avenida/Alameda"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.street &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.street && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
@@ -252,15 +277,18 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								placeholder="Número"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.number &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.number && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								onChange={(e) => {
 									// Limita a 10 caracteres alfanuméricos
 									const cleanValue = e.target.value.slice(0, 10);
 									onChange(cleanValue);
 								}}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}
@@ -285,11 +313,13 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								placeholder="Complemento"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.complement &&
-										'border-red-500 focus-visible:border-red-500'
+									errors?.complement && 'border-red-500 focus-visible:border-red-500'
 								)}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 								disabled={disabled}

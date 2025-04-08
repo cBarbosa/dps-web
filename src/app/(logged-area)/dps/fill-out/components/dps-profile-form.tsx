@@ -19,6 +19,7 @@ import {
 	string,
 	minLength,
 	forward,
+	regex,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
 import { RecursivePartial, maskToBrlCurrency } from '@/lib/utils'
@@ -47,7 +48,11 @@ export const dpsProfileForm = object({
 	),
 	phone: pipe(string(), nonEmpty('Campo obrigatório.')),
 	gender: pipe(string(), nonEmpty('Campo obrigatório.')),
-	participationPercentage: pipe(string(), nonEmpty('Campo obrigatório.')),
+	participationPercentage: pipe(
+		string(), 
+		nonEmpty('Campo obrigatório.'),
+		regex(/^\d{1,3}(,\d{1,2})?%$/, 'Formato inválido. Use: 0,00%')
+	),
 })
 
 export type DpsProfileFormType = InferInput<typeof dpsProfileForm>
@@ -92,7 +97,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	validateCpf,
 	placeholderPercentage,
 	isSingleParticipant,
-	setValue
+	setValue,
 }: {
 	data?: Partial<DpsProfileFormType>
 	control: Control<T>
@@ -110,6 +115,13 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	const errors = formState.errors?.profile as any
 	const isSubmitting = formState.isSubmitting
 	const [loadingCpf, setLoadingCpf] = useState(false)
+	const [highlightMissing, setHighlightMissing] = useState(false)
+
+	// Manipulador genérico para quando campos perdem foco
+	const handleFieldBlur = () => {
+		// Ativar o destaque para campos não preenchidos
+		setHighlightMissing(true);
+	};
 
 	// Modificar a lógica para usar o setValue recebido como prop
 	useEffect(() => {
@@ -126,11 +138,31 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 
 	const handleCpfBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
 		const cpf = e.target.value
-		if (validateCpf && !validateCpf(cpf) || cpf === data?.cpf) return
+		if (!cpf || cpf === data?.cpf) return
+		
+		// Verificar se é um CPF válido via regex básico antes de fazer a validação completa
+		if (cpf.replace(/\D/g, '').length !== 11) {
+			return; // Não é um CPF com 11 dígitos, não prosseguir com a validação
+		}
 
+		// Destacar visualmente campos não preenchidos
+		handleFieldBlur();
+		
+		// Se a validação de CPF duplicado falhar, o erro será definido no campo
+		// e o foco deve permanecer no campo para correção
 		setLoadingCpf(true)
 		await getDataByCpf(cpf)
 		setLoadingCpf(false)
+		
+		// Verificar se há erro após a validação e manter o foco no campo se necessário
+		setTimeout(() => {
+			if (errors?.cpf?.message) {
+				// Destacar visualmente o campo com erro
+				e.target.classList.add('border-red-500');
+				e.target.classList.add('focus-visible:border-red-500');
+				e.target.focus();
+			}
+		}, 100);
 	}
 	
 	// Function to handle percentage input formatting
@@ -166,37 +198,22 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
 										errors?.cpf && 'border-red-500 focus-visible:border-red-500',
-										disabled || loadingCpf ? 'opacity-50 cursor-not-allowed' : ''
+										disabled || loadingCpf ? 'opacity-50 cursor-not-allowed' : '',
+										highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
 									disabled={disabled || (data?.cpf ? true : false) || loadingCpf}
 									autoComplete="cpf"
-									onChange={onChange}
-									onBlur={async (e) => {
-										const cpfValue = e.target.value;
-										onBlur();
-										
-										// Não continuar se o CPF já está preenchido e desabilitado
-										if (disabled || (data?.cpf ? true : false) || loadingCpf) {
-											return;
+									onChange={(e) => {
+										onChange?.(e);
+										// Limpar erro quando o usuário modificar o valor
+										if (!errors?.cpf?.message) {
+											// Em vez de usar clearErrors diretamente, vamos remover a invalidação visual
+											// O erro será limpo automaticamente no próximo onBlur
+											e.currentTarget.classList.remove('border-red-500');
+											e.currentTarget.classList.remove('focus-visible:border-red-500');
 										}
-										
-										// Verificar se é um CPF válido
-										if (validateCpf && !validateCpf(cpfValue)) {
-											return;
-										}
-										
-										// Verificar se o CPF pertence a outro participante
-										if (validateCpf && !validateCpf(cpfValue)) {
-											// Limpar o campo para evitar o preenchimento com CPF duplicado
-											onChange('');
-											return;
-										}
-										
-										// Buscar dados do CPF se todas as validações passarem
-										setLoadingCpf(true);
-										await getDataByCpf(cpfValue);
-										setLoadingCpf(false);
 									}}
+									onBlur={handleCpfBlur}
 									value={typeof value === 'string' ? formatToCPF(value) : ''}
 									ref={ref}
 								/>
@@ -221,7 +238,8 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
 									errors?.birthdate &&
-										'border-red-500 focus-visible:border-red-500'
+										'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								disabled={
 									disabled ||
@@ -229,7 +247,10 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									data?.birthdate !== undefined
 								}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={value instanceof Date ? value : undefined}
 								ref={ref}
 							/>
@@ -254,7 +275,8 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								placeholder="Nome do proponente"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.name && 'border-red-500 focus-visible:border-red-500'
+									errors?.name && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								autoComplete="name"
 								disabled={
@@ -263,7 +285,10 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									data?.name !== undefined
 								}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
@@ -287,14 +312,17 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
 									errors?.socialName &&
-										'border-red-500 focus-visible:border-red-500'
+										'border-red-500 focus-visible:border-red-500',
 								)}
 								autoComplete="socialName"
 								disabled={
 									disabled || isSubmitting || data?.socialName !== undefined
 								}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
@@ -320,12 +348,16 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
 									errors?.profession &&
-										'border-red-500 focus-visible:border-red-500'
+										'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								autoComplete="profession"
 								disabled={disabled}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
@@ -348,12 +380,16 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								placeholder="conta@exemplo.com.br"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.email && 'border-red-500 focus-visible:border-red-500'
+									errors?.email && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								autoComplete="email"
 								disabled={disabled}
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
@@ -379,12 +415,16 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								mask="(99) 99999-99999"
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
-									errors?.phone && 'border-red-500 focus-visible:border-red-500'
+									errors?.phone && 'border-red-500 focus-visible:border-red-500',
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
 								)}
 								disabled={disabled}
 								autoComplete="tel"
 								onChange={onChange}
-								onBlur={onBlur}
+								onBlur={() => {
+									onBlur();
+									handleFieldBlur();
+								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}
 							/>
@@ -404,12 +444,18 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 							<SelectComp
 								placeholder="Sexo"
 								options={genderOptions}
-								triggerClassName="p-4 h-12 rounded-lg"
+								triggerClassName={cn(
+									"p-4 h-12 rounded-lg",
+									highlightMissing && !value && 'border-orange-400 bg-orange-50'
+								)}
 								disabled={disabled || data?.gender !== undefined}
 								onValueChange={(val) => {
 									onChange(val);
 									// Chamar onBlur após a mudança para disparar a revalidação
-									setTimeout(() => onBlur(), 0);
+									setTimeout(() => {
+										onBlur();
+										handleFieldBlur();
+									}, 0);
 								}}
 								defaultValue={typeof value === 'string' ? value : ''}
 							/>
@@ -448,10 +494,11 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 								<Input
 									id="participationPercentage"
 									type="text"
-									placeholder={placeholderPercentage ? `Sugestão: ${placeholderPercentage}` : "0,00%"}
+									placeholder="0,00%"
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
-										errors?.participationPercentage && 'border-red-500 focus-visible:border-red-500'
+										errors?.participationPercentage && 'border-red-500 focus-visible:border-red-500',
+										highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
 									disabled={disabled}
 									onChange={e => {
@@ -511,20 +558,22 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 										onChange(rawValue);
 									}}
 									onBlur={e => {
-										onBlur();
+										// Não chamar onBlur() aqui para permitir validação primeiro
+										handleFieldBlur();
 										
 										// Normaliza o formato ao perder o foco
 										const rawValue = e.target.value.replace(/[^\d,]/g, '');
 										
+										// Se o campo estiver vazio, deixar vazio e não forçar valor mínimo
 										if (rawValue === '') {
-											onChange('0,00%');
-											if (onParticipationPercentageBlur) {
-												onParticipationPercentageBlur('0,00%');
-											}
+											// Manter vazio
+											onBlur(); // Agora sim chama o onBlur original
 											return;
 										}
 										
-										let numValue;
+										// Formatar o valor mantendo o que o usuário informou
+										let formattedValue;
+										
 										if (rawValue.includes(',')) {
 											// Se tem vírgula, processa como decimal
 											const parts = rawValue.split(',');
@@ -534,22 +583,34 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 											
 											// Garante que a parte decimal tenha 2 dígitos
 											const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
-											
-											numValue = intPart + (parseInt(paddedDecPart, 10) / 100);
-											if (numValue > 100) numValue = 100;
+											formattedValue = `${intPart},${paddedDecPart}%`;
 										} else {
 											// Se não tem vírgula, é um número inteiro
-											numValue = parseInt(rawValue, 10);
-											if (numValue > 100) numValue = 100;
+											const intValue = parseInt(rawValue, 10) || 0;
+											formattedValue = `${intValue},00%`;
 										}
 										
-										// Formata com 2 casas decimais
-										const formattedValue = numValue.toFixed(2).replace('.', ',') + '%';
+										// Atualizar o valor formatado
 										onChange(formattedValue);
 										
-										// Chama o callback para calcular a participação no financiamento
+										// Chamar o callback para validar
 										if (onParticipationPercentageBlur) {
+											// Se a validação retornar mensagem de erro, voltar o foco para o campo
 											onParticipationPercentageBlur(formattedValue);
+											
+											// Se o campo tem erro após a validação, não permitir retirar o foco
+											if (errors?.participationPercentage?.message) {
+												// Manter foco no campo
+												setTimeout(() => {
+													e.target.focus();
+												}, 100);
+											} else {
+												// Se não tem erro, permitir retirar o foco
+												onBlur();
+											}
+										} else {
+											// Se não houver callback de validação, permitir retirar o foco
+											onBlur();
 										}
 									}}
 									value={typeof value === 'string' ? value : ''}
