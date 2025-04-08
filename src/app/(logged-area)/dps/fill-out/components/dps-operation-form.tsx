@@ -58,6 +58,13 @@ const DpsOperationForm = ({
   
   // Adicionar estado para armazenar o valor anterior do número da operação
   const [previousOperationNumber, setPreviousOperationNumber] = React.useState<string>('');
+  const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
+  
+  // Manipulador genérico para quando campos perdem foco
+  const handleFieldBlur = () => {
+    // Ativar o destaque para campos não preenchidos
+    setHighlightMissing(true);
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -79,6 +86,7 @@ const DpsOperationForm = ({
                   className={cn(
                     'w-full px-4 py-6 rounded-lg',
                     errors?.operationNumber && 'border-red-500 focus-visible:border-red-500',
+                    highlightMissing && !value && 'border-orange-400 bg-orange-50',
                     isLoadingOperationData ? 'opacity-70' : ''
                   )}
                   onChange={(e) => {
@@ -87,6 +95,7 @@ const DpsOperationForm = ({
                   }}
                   onBlur={(e) => {
                     onBlur();
+                    handleFieldBlur();
                     // Verificar se o valor mudou e se não está vazio antes de consultar
                     if (value && value !== previousOperationNumber && onOperationNumberBlur) {
                       console.log(`Valor mudou de "${previousOperationNumber}" para "${value}". Consultando dados...`);
@@ -155,6 +164,7 @@ const DpsOperationForm = ({
                   className={cn(
                     'w-full px-4 py-6 rounded-lg',
                     errors?.participantsNumber && 'border-red-500 focus-visible:border-red-500',
+                    highlightMissing && !value && 'border-orange-400 bg-orange-50',
                     (isLoadingOperationData || isReadOnly) ? 'bg-gray-100 opacity-70' : ''
                   )}
                   onChange={(e) => {
@@ -173,7 +183,10 @@ const DpsOperationForm = ({
                       };
                     }
                   }}
-                  onBlur={onBlur}
+                  onBlur={(e) => {
+                    onBlur();
+                    handleFieldBlur();
+                  }}
                   value={value}
                   ref={ref}
                   disabled={disabled || isLoadingOperationData || isReadOnly}
@@ -207,6 +220,7 @@ const DpsOperationForm = ({
                   className={cn(
                     'w-full px-4 py-6 rounded-lg',
                     errors?.totalValue && 'border-red-500 focus-visible:border-red-500',
+                    highlightMissing && !value && 'border-orange-400 bg-orange-50',
                     (isLoadingOperationData || isReadOnly) ? 'bg-gray-100 opacity-70' : ''
                   )}
                   onChange={(e) => {
@@ -225,7 +239,10 @@ const DpsOperationForm = ({
                       };
                     }
                   }}
-                  onBlur={onBlur}
+                  onBlur={(e) => {
+                    onBlur();
+                    handleFieldBlur();
+                  }}
                   value={value}
                   ref={ref}
                   disabled={disabled || isLoadingOperationData || isReadOnly}
