@@ -306,53 +306,66 @@ export async function getProductList(token: string): Promise<{
 }
 
 export type ProposalByUid = {
-	uid: string
-	code: string
-	capitalMIP: number
-	capitalDFI: number
-	uploadMIP?: boolean
-	uploadDFI?: boolean
-	contractNumber?: string
+	uid: string;
+	code: string;
+	contractNumber?: string; // Opcional, pois é opcional em ProposalByUidA
+	capitalMIP: number;
+	capitalDFI: number;
+	uploadMIP?: boolean; // Opcional, pois é opcional em ProposalByUidA
+	uploadDFI?: boolean; // Opcional, pois é opcional em ProposalByUidA
+	uploadReturnMIP?: boolean; // Opcional, pois existe apenas em ProposalByUidE
 	customer: {
-		uid: string
-		document: string
-		name: string
-		gender: string
-		cellphone: string
-		socialName?: string
-		email: string
-		birthdate: string
-	}
+	  uid: string;
+	  document: string;
+	  name: string;
+	  socialName?: string; // Opcional, pois é opcional em ProposalByUidA
+	  email: string;
+	  cellphone: string;
+	  profession?: string; // Opcional, pois existe apenas em ProposalByUidE
+	  gender: string;
+	  birthdate: string;
+	};
 	product: {
-		uid: string
-		name: string
-	}
-	deadLineId?: number
+	  uid: string;
+	  name: string;
+	  description?: string; // Opcional, pois existe apenas em ProposalByUidE
+	};
+	type: {
+	  id: number;
+	  description: string;
+	};
+	statusId?: number; // Opcional, pois existe apenas em ProposalByUidE
+	status: {
+	  id: number;
+	  description: string;
+	};
+	dfiStatus?: { // Opcional, pois existe apenas em ProposalByUidA
+	  id: number;
+	  description: string;
+	};
+	propertyTypeId?: number; // Opcional, pois é opcional em ProposalByUidA
+	deadLineId?: number; // Opcional, pois é opcional em ProposalByUidA
 	deadLine?: {
-		id: number
-		description: string
-	}
-	status: { id: number; description: string }
-	dfiStatus: { id: number; description: string }
-	type: { id: number; description: string }
-	propertyTypeId?: number
-	created: string
+	  id: number;
+	  description: string;
+	}; // Opcional, pois é opcional em ProposalByUidA
+	created: string;
+	addressZipcode?: string; // Opcional, pois é opcional em ProposalByUidA
+	addressStreet?: string; // Opcional, pois é opcional em ProposalByUidA
+	addressNumber?: string; // Opcional, pois é opcional em ProposalByUidA
+	addressComplement?: string; // Opcional, pois é opcional em ProposalByUidA
+	addressNeighborhood?: string; // Opcional, pois existe apenas em ProposalByUidA
+	addressCity?: string; // Opcional, pois é opcional em ProposalByUidA
+	addressState?: string; // Opcional, pois é opcional em ProposalByUidA
 	history: {
-		description: string
-		statusId: number
-		created: string
-	}[]
-	riskStatus?: string
-	addressZipcode?: string
-	addressStreet?: string
-	addressNumber?: string
-	addressComplement?: string
-	addressNeighborhood?: string
-	addressCity?: string
-	addressState?: string
-	closed?: string
-	refused?: string
-};
+	  description: string;
+	  statusId: number;
+	  created: string;
+	}[];
+	riskStatus?: string; // Opcional, pois existe apenas em ProposalByUidA
+	closed?: string; // Opcional, pois existe apenas em ProposalByUidA
+	refused?: string; // Opcional, pois existe apenas em ProposalByUidA
+  };
 
 export async function getProposalByUid(
 	token: string,
