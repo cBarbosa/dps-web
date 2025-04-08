@@ -48,7 +48,7 @@ export default function ExternalDpsForm({
       return initialHealthData.reduce((acc, item) => ({
         ...acc,
         [item.code]: {
-          has: item.exists ? 'yes' : 'no',
+          has: item.exists ? 'yes' : '',
           description: item.description || ''
         }
       }), {});
