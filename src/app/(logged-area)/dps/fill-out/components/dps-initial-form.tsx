@@ -30,7 +30,7 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
-import DpsOperationForm, { dpsOperationForm, DpsOperationFormType } from './dps-operation-form'
+import DpsOperationForm, { dpsOperationForm } from './dps-operation-form'
 import { 
 	Dialog, 
 	DialogContent, 
@@ -41,9 +41,7 @@ import {
 	DialogClose,
 	DialogFooter,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { AlertCircle, CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
-import { useState as useStateToast } from 'react'
+import { CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
 import {
 	Tooltip,
 	TooltipContent,
@@ -182,14 +180,15 @@ const DpsInitialForm = ({
 		return value.replace(/[^0-9]/g, '')
 	}
 
+	// Adicionar estado para submissão
 	const [isLoading, setIsLoading] = useState(false)
 	const [isLoadingData, setIsLoadingData] = useState(false)
 	const [isLoadingOperationData, setIsLoadingOperationData] = useState(false)
 	const [isLoadingCoparticipant, setIsLoadingCoparticipant] = useState(false)
 	const [fetchingCpfDataCoparticipant, setFetchingCpfDataCoparticipant] = useState(false)
 	const [operationDataLoaded, setOperationDataLoaded] = useState(false)
-	const [shouldShowOperationSection, setShouldShowOperationSection] = useState(true)
-	const [showOtherSections, setShowOtherSections] = useState(false) // Controla a visibilidade das demais seções
+		const [showOtherSections, setShowOtherSections] = useState(false) // Controla a visibilidade das demais seções
+	const [showOperationGuidance, setShowOperationGuidance] = useState(false); // Adicionar estado para orientação
 
 	const [prazosOptions, setPrazosOptions] = useState<
 		{ value: string; label: string }[]
@@ -201,8 +200,6 @@ const DpsInitialForm = ({
 	const [participationValue, setParticipationValue] = useState<string>('')
 	const [coparticipantParticipationValue, setCoparticipantParticipationValue] = useState<string>('')
 	const [coparticipantSuggestedPercentage, setCoparticipantSuggestedPercentage] = useState<string>('')
-	const [dialogOpen, setDialogOpen] = useState(false)
-	const [mainFormData, setMainFormData] = useState<DpsInitialForm | null>(null)
 	const [isCoparticipantDialogOpen, setIsCoparticipantDialogOpen] = useState(false)
 	const [coparticipants, setCoparticipants] = useState<Coparticipant[]>([])
 	const [editingCoparticipantId, setEditingCoparticipantId] = useState<string | null>(null)
@@ -240,6 +237,7 @@ const DpsInitialForm = ({
 		watch,
 		control,
 		reset,
+		setError,
 		formState: { isSubmitting, isSubmitted, errors, ...formStateRest },
 	} = useForm<DpsInitialForm>({
 		resolver: valibotResolver(dpsInitialForm),
@@ -285,51 +283,12 @@ const DpsInitialForm = ({
 		reValidateMode: "onBlur",
 	})
 	
-	// Form for co-participant
-	const {
-		handleSubmit: handleSubmitCoparticipant,
-		control: controlCoparticipant,
-		reset: resetCoparticipant,
-		formState: { isSubmitting: isSubmittingCoparticipant, errors: errorsCoparticipant, ...formStateRestCoparticipant },
-	} = useForm<DpsCoparticipantForm>({
-		resolver: valibotResolver(dpsCoparticipantForm),
-		defaultValues: {
-			operation: {
-				operationNumber: '',
-				participantsNumber: '',
-				totalValue: '',
-			},
-			profile: {
-				cpf: '',
-				name: '',
-				birthdate: undefined,
-				profession: '',
-				email: '',
-				phone: '',
-				socialName: '',
-				gender: '',
-			},
-			address: {
-				zipcode: '',
-				state: '',
-				city: '',
-				district: '',
-				street: '',
-				number: '',
-				complement: '',
-			}
-		},
-		disabled: isLoadingCoparticipant,
-		mode: "onBlur",
-		reValidateMode: "onBlur",
-	});
 
 	const [autocompletedByCpf, setAutocompletedByCpf] = useState<
 		Partial<Record<keyof typeof dpsProfileForm.entries, boolean>>
 	>({})
 
 	const formState = { ...formStateRest, errors, isSubmitting, isSubmitted }
-	const coparticipantFormState = { ...formStateRestCoparticipant, errors: errorsCoparticipant, isSubmitting: isSubmittingCoparticipant }
 
 	// Remove automatic calculation for participation percentage and value
 	useEffect(() => {
@@ -393,7 +352,7 @@ const DpsInitialForm = ({
 	const handleConfirmSubmit = () => {
 		setIsConfirmDialogOpen(false);
 		if (pendingSubmitData) {
-			// submitForm(pendingSubmitData);
+			submitForm(pendingSubmitData);
 			setPendingSubmitData(null);
 		}
 		setIsSubmitPending(false);
@@ -719,27 +678,61 @@ const DpsInitialForm = ({
 	};
 
 	async function onSubmit(v: DpsInitialForm) {
-		console.log("Form submitted with values:", v);
-		console.log("Current isSubmitting state:", isSubmitting);
-		console.log("Current isLoading state:", isLoading);
-		console.log("Operation fields complete:", !!(
-			v.operation.operationNumber && 
-			v.operation.participantsNumber && 
-			v.operation.totalValue
-		));
-		
-		// Verificar se o número de participantes não excede o informado
+		try {
+			// Usar setIsLoading em vez de setIsSubmitting para controlar o estado de envio
+			setIsLoading(true);
+			
+			// Logging para depuração
+			console.log("Form submission data:", v);
+			
+			// Log de diagnóstico para verificar o critério de identificação da operação
+			console.log("DIAGNÓSTICO DO CRITÉRIO DE IDENTIFICAÇÃO:");
+			console.log("- operationDataLoaded:", operationDataLoaded);
+			console.log("- existingMainProponent:", existingMainProponent);
+			
+			if (operationDataLoaded && existingMainProponent) {
+				console.log("=> CONTINUAÇÃO DE CADASTRO: Adicionando coparticipante a uma operação existente");
+			} else {
+				console.log("=> NOVA OPERAÇÃO: Cadastrando proponente principal");
+			}
+			
+			// Verificar se há erros no campo percentual de participação
+			const percentErrors = formState.errors?.profile?.participationPercentage;
+			if (percentErrors) {
+				// Se houver erro no percentual, exibir o erro e impedir o envio
+				toast.error(typeof percentErrors.message === 'string' ? percentErrors.message : 'Percentual de participação inválido');
+					setIsLoading(false);
+					return;
+				}
+
+			// Validar o percentual de participação antes de salvar
+			if (participantsNumber !== '1') {
+				const percentValue = v.profile.participationPercentage;
+				const validationResult = validateParticipationPercentage(percentValue);
+				
+				if (!validationResult.valid) {
+					// Se a validação falhar, exibir erro e impedir o salvamento
+					setError('profile.participationPercentage', {
+						type: 'manual',
+						message: validationResult.message
+					});
+					toast.error(validationResult.message);
+					setIsLoading(false);
+					return;
+				}
+			}
+			
+			// Verificar se a seção do produto está desabilitada
+			if (isProductDisabled) {
+				console.log("Product section is disabled, skipping product validation");
+			}
+			
+		// Verificar quantos participantes foram declarados vs. quantos estão sendo cadastrados
 		const declaredParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
 		
-		// Se já existe um proponente principal, contamos apenas os coparticipantes
-		let actualParticipants;
-		if (existingMainProponent) {
-			// Contamos apenas os coparticipantes (não adicionamos +1 para o proponente principal)
-			actualParticipants = coparticipants.length;
-		} else {
-			// Caso normal: contamos o proponente principal (1) + coparticipantes
-			actualParticipants = 1 + coparticipants.length;
-		}
+		// Quantos participantes estamos efetivamente cadastrando
+		// O proponente principal + todos os coparticipantes
+		const actualParticipants = 1 + coparticipants.length;
 		
 		console.log("Declared participants:", declaredParticipants);
 		console.log("Actual participants:", actualParticipants);
@@ -747,6 +740,7 @@ const DpsInitialForm = ({
 		if (actualParticipants > declaredParticipants) {
 			console.log("Error: Too many participants");
 			toast.error(`Não é possível salvar. O número de participantes (${actualParticipants}${existingMainProponent ? ' + 1 proponente principal existente' : ''}) excede o informado em Dados da Operação (${declaredParticipants}). Ajuste o número de participantes ou remova coparticipantes.`);
+				setIsLoading(false);
 			return;
 		}
 		
@@ -769,21 +763,114 @@ const DpsInitialForm = ({
 		// Verificar se temos menos coparticipantes do que o esperado
 		if (declaredParticipants > 1 && coparticipants.length < expectedCoparticipants && declaredParticipants !== totalAfterSubmission) {
 			console.log("Warning: Not enough coparticipants, showing confirm dialog");
-			// Armazenar os dados do formulário para uso posterior após confirmação
-			setPendingSubmitData(v);
-			setIsSubmitPending(true);
-			// Abrir o diálogo de confirmação em vez de usar window.alert
-			setIsConfirmDialogOpen(true);
+				// Chamar a função para verificar se o formulário está válido antes de mostrar o diálogo
+				if (showConfirmDialog(v)) {
+					setIsLoading(false);
+					return;
+				} else {
+					// Se não mostrar o diálogo por falta de validação, finalizar submissão
+					setIsLoading(false);
 			return;
+				}
 		}
 		
 		console.log("Proceeding with form submission");
 		// Se não precisar de confirmação ou após confirmação, continuar com o envio
 		await submitForm(v);
+		} catch (error) {
+			console.error('Erro ao processar envio do formulário:', error);
+			toast.error('Ocorreu um erro ao salvar os dados. Tente novamente.');
+			setIsLoading(false);
+		}
 	}
+
+	// Modificar o diálogo de confirmação para incluir uma verificação de formulário válido
+	const showConfirmDialog = (v: DpsInitialForm) => {
+		// Verificar se o formulário está completamente preenchido e válido
+		const isOperationValid = !!(
+			v.operation.operationNumber && 
+			v.operation.participantsNumber && 
+			v.operation.totalValue
+		);
+		
+		const isProfileValid = !!(
+			v.profile.cpf &&
+			v.profile.name &&
+			v.profile.birthdate &&
+			v.profile.email &&
+			v.profile.phone &&
+			v.profile.gender &&
+			v.profile.participationPercentage
+		);
+		
+		const isProductValid = !!(
+			v.product.product &&
+			v.product.deadline &&
+			v.product.propertyType &&
+			v.product.mip &&
+			v.product.dfi
+		);
+		
+		const isAddressValid = !!(
+			v.address.zipcode &&
+			v.address.street &&
+			v.address.number &&
+			v.address.district &&
+			v.address.city &&
+			v.address.state
+		);
+		
+		const isFormValid = isOperationValid && isProfileValid && isProductValid && isAddressValid;
+		
+		if (!isFormValid) {
+			console.log("Form is not valid, can't show confirmation dialog");
+			// Identificar e mostrar mensagem sobre campos faltantes
+			if (!isOperationValid) {
+				toast.error("Preencha corretamente todos os campos da seção Dados da Operação");
+			} else if (!isProfileValid) {
+				toast.error("Preencha corretamente todos os campos da seção Dados do Proponente");
+			} else if (!isProductValid) {
+				toast.error("Preencha corretamente todos os campos da seção Dados do Produto");
+			} else if (!isAddressValid) {
+				toast.error("Preencha corretamente todos os campos da seção Dados de Endereço");
+			}
+			return false;
+		}
+		
+		// Se o formulário está válido, armazenar os dados e abrir o diálogo
+		setPendingSubmitData(v);
+		setIsSubmitPending(true);
+		setIsConfirmDialogOpen(true);
+		return true;
+	};
 
 	// Adicionar um manipulador direto para o botão de submissão
 	const handleFormSubmitClick = async () => {
+		// Ativar o estado de loading
+		setIsLoading(true);
+
+		try {
+			// Verificar se o percentual total está dentro do limite (não excede 100%)
+			const totalPercentage = calculateTotalParticipation();
+			const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
+			
+			if (totalPercentageNumber > 100) {
+				toast.error(`O percentual total de participação (${totalPercentage}) excede 100%. Ajuste os percentuais antes de salvar.`);
+				setIsLoading(false);
+				return;
+			}
+			
+			// Verificar se é o último participante (quando o número de participantes declarados é igual ao número atual)
+			const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
+			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+			
+			// Se for o último participante, o total deve ser exatamente 100%
+			if (declaredParticipants === currentParticipants && totalPercentageNumber !== 100) {
+				toast.error(`O percentual total deve ser exatamente 100% quando todos os participantes estão cadastrados. Total atual: ${totalPercentage}`);
+				setIsLoading(false);
+				return;
+			}
+
 		console.log("Manual form submission triggered");
 		
 		// Validar o formulário completo antes de submeter
@@ -802,9 +889,12 @@ const DpsInitialForm = ({
 		if (isOperationValid && isProfileValid && isProductValid && isAddressValid) {
 			console.log("All form sections are valid, submitting form");
 			const formData = getValues();
-			onSubmit(formData);
+				await onSubmit(formData);
 		} else {
 			console.log("Form validation failed");
+				
+				// Desativar o estado de loading se a validação falhar
+				setIsLoading(false);
 			
 			// Função para rolar para um elemento específico com suavidade
 			const scrollToElement = (selector: string) => {
@@ -828,33 +918,12 @@ const DpsInitialForm = ({
 				toast.error("Preencha corretamente todos os campos da seção Dados de Endereço");
 				scrollToElement('.dps-address-section');
 			}
+			}
+		} catch (error) {
+			console.error("Erro ao processar formulário:", error);
+			toast.error("Ocorreu um erro ao processar o formulário. Tente novamente.");
+			setIsLoading(false);
 		}
-	}
-
-	async function handleSaveAndAddCoparticipation(v: DpsInitialForm) {
-		// Store the main form data to copy relevant fields to the coparticipant form
-		setMainFormData(v)
-		
-		// Populate the coparticipant form with operation data
-		const numParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
-		
-		// Open dialog for coparticipant
-		setDialogOpen(true)
-	}
-	
-	async function onCoparticipantSubmit(v: DpsCoparticipantForm) {
-		setIsLoadingCoparticipant(true)
-		// Here you would post the coparticipant data to the backend
-		
-		console.log('Coparticipant data:', v)
-		
-		// Simulating API call
-		setTimeout(() => {
-			resetCoparticipant()
-			setDialogOpen(false)
-			setIsLoadingCoparticipant(false)
-			// After adding coparticipant, refresh the main form or navigate
-		}, 1000)
 	}
 	
 	async function getDataByCpfForCoparticipant(cpf: string) {
@@ -869,33 +938,87 @@ const DpsInitialForm = ({
 			console.log(`CPF ${cleanCpf} já foi consultado anteriormente para coparticipante. Ignorando consulta duplicada.`);
 			return;
 		}
+
+		// Verificar se o CPF já está cadastrado como participante (proponente principal ou coparticipante)
+		const mainProponentCpf = existingMainProponent?.cpf.replace(/\D/g, '') || getValues().profile.cpf.replace(/\D/g, '');
+		
+		if (cleanCpf === mainProponentCpf || coparticipants.some(cp => cp.cpf.replace(/\D/g, '') === cleanCpf && (!editingCoparticipantId || cp.id !== editingCoparticipantId))) {
+			console.log(`CPF ${cleanCpf} já consta na lista de participantes.`);
+			
+			// Definir erro no campo CPF para impedir o prosseguimento
+			coparticipantForm.setError('profile.cpf', { 
+				type: 'manual', 
+				message: `CPF ${cpf} já consta na lista de participantes.` 
+			});
+			
+			// Limpar dados preenchidos automaticamente para evitar confusão
+			coparticipantForm.setValue('profile.name', '');
+			coparticipantForm.setValue('profile.birthdate', null as any);
+			coparticipantForm.setValue('profile.profession', '');
+			coparticipantForm.setValue('profile.gender', '');
+			
+			// Mostrar mensagem de erro mas não fechar o diálogo
+			toast.error(`CPF ${cpf} já consta na lista de participantes.`);
+			
+			return;
+		}
+		
+		// Limpar qualquer erro existente de CPF se o CPF é válido e único
+		coparticipantForm.clearErrors('profile.cpf');
 		
 		setIsLoadingCoparticipant(true);
 		
 		// Armazenar o CPF como o último consultado
 		setLastQueriedCoparticipantCpf(cleanCpf);
 		
-		const proponentDataRaw = await getProponentDataByCpf(cpf);
-		
-		if (proponentDataRaw) {
-			// Process data similar to the main form
-			const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
+		try {
+			const proponentDataRaw = await getProponentDataByCpf(cpf);
+			
+			if (proponentDataRaw) {
+				const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 					? proponentDataRaw?.detalhes.nascimento.split('/')
 					: undefined;
 
-			const proponentDataBirthdate = proponentDataBirthdateAux
+				const proponentDataBirthdate = proponentDataBirthdateAux
 					? new Date(
 							Number(proponentDataBirthdateAux[2]),
-							Number(proponentDataBirthdateAux[1]) - 1,
-							Number(proponentDataBirthdateAux[0])
+								Number(proponentDataBirthdateAux[1]) - 1,
+								Number(proponentDataBirthdateAux[0])
 					  )
 					: undefined;
-			
-			// Set data in the coparticipant form
-			// Similar to the main form but with controlCoparticipant
+
+				// Preencher os dados do coparticipante com os resultados obtidos
+				if (proponentDataRaw?.detalhes.nome) {
+					coparticipantForm.setValue('profile.name', proponentDataRaw.detalhes.nome);
+				}
+				
+				if (proponentDataBirthdate) {
+					coparticipantForm.setValue('profile.birthdate', proponentDataBirthdate);
+				}
+				
+				if (proponentDataRaw?.detalhes.profissao) {
+					coparticipantForm.setValue(
+						'profile.profession',
+						getProfissionDescription(proponentDataRaw.detalhes.profissao)
+					);
+				}
+				
+				if (proponentDataRaw?.detalhes.sexo) {
+					coparticipantForm.setValue('profile.gender', proponentDataRaw.detalhes.sexo);
+				}
+				
+				// Atualizar o formulário para refletir as mudanças
+				coparticipantForm.trigger();
+				console.log("Dados do coparticipante preenchidos com sucesso:", proponentDataRaw);
+			} else {
+				console.log("Não foram encontrados dados para o CPF:", cpf);
+			}
+		} catch (error) {
+			console.error("Erro ao buscar dados por CPF:", error);
+			toast.error("Ocorreu um erro ao buscar dados por CPF. Tente novamente.");
+		} finally {
+			setIsLoadingCoparticipant(false);
 		}
-		
-		setIsLoadingCoparticipant(false);
 	}
 
 	async function getDataByCpf(cpf: string) {
@@ -910,6 +1033,33 @@ const DpsInitialForm = ({
 			console.log(`CPF ${cleanCpf} já foi consultado anteriormente. Ignorando consulta duplicada.`);
 			return;
 		}
+
+		const mainProponent = existingMainProponent;
+
+		// Verificar se o CPF já está cadastrado como participante
+		if(coparticipants.find(c => c.cpf.replace(/\D/g, '') === cleanCpf) || mainProponent?.cpf.replace(/\D/g, '') === cleanCpf) {
+			console.log(`CPF ${cleanCpf} já consta na lista de participantes, não é possível cadastrar novamente.`);
+			
+			// Definir erro no campo CPF para impedir o prosseguimento
+			setError('profile.cpf', { 
+				type: 'manual', 
+				message: `CPF ${cpf} já consta na lista de participantes, não é possível cadastrar novamente.` 
+			});
+			
+			// Limpar dados preenchidos automaticamente para evitar confusão
+			setValue('profile.name', '');
+			setValue('profile.birthdate', null as any);
+			setValue('profile.profession', '');
+			setValue('profile.gender', '');
+			
+			// Mostrar mensagem de erro sem fechar diálogos
+			toast.error(`CPF ${cpf} já consta na lista de participantes, não é possível cadastrar novamente.`);
+			
+			return;
+		}
+		
+		// Limpar qualquer erro existente de CPF se o CPF é válido e único
+		setError('profile.cpf', { type: 'manual', message: undefined });
 		
 		setAutocompletedByCpf({});
 		setIsLoadingData(true);
@@ -1022,6 +1172,7 @@ const DpsInitialForm = ({
 				socialName: '',
 				birthdate: undefined,
 				profession: '',
+				
 				email: '',
 				phone: '',
 				gender: '',
@@ -1081,23 +1232,81 @@ const DpsInitialForm = ({
 
 	// Function to load address data by CEP (zipcode)
 	const loadAddressByCep = async (cep: string): Promise<void> => {
-		return handleAddress(cep, (field, value) => {
-			// Usando as propriedades específicas com tipos corretos
-			if (field === 'street') setValue('address.street', value);
-			if (field === 'city') setValue('address.city', value);
-			if (field === 'state') setValue('address.state', value);
-			if (field === 'district') setValue('address.district', value);
-		});
+		try {
+			await handleAddress(cep, (field, value) => {
+				// Usando as propriedades específicas com tipos corretos
+				if (field === 'street') setValue('address.street', value);
+				if (field === 'city') setValue('address.city', value);
+				if (field === 'state') setValue('address.state', value);
+				if (field === 'district') setValue('address.district', value);
+			});
+			
+			// Após preencher os dados do endereço, validar os campos
+			console.log("Validando campos de endereço após preenchimento automático pelo CEP");
+			
+			// Disparar validação para os campos preenchidos
+			trigger('address.street');
+			trigger('address.city');
+			trigger('address.state');
+			trigger('address.district');
+			
+			// Validar o formulário de endereço completo
+			trigger('address');
+			
+			// Verificar se há erros após a validação
+			const addressErrors = errors.address;
+			if (addressErrors) {
+				console.log("Erros encontrados na validação do endereço:", addressErrors);
+				
+				// Informar campos que ainda precisam ser preenchidos
+				if (addressErrors.number) {
+					toast.error("Por favor, preencha o número do endereço");
+				}
+			} else {
+				console.log("Validação de endereço concluída sem erros");
+			}
+		} catch (error) {
+			console.error("Erro ao carregar ou validar endereço:", error);
+		}
 	};
 	
 	const loadCoparticipantAddressByCep = async (cep: string): Promise<void> => {
-		return handleAddress(cep, (field, value) => {
-			// Usando as propriedades específicas com tipos corretos
-			if (field === 'street') coparticipantForm.setValue('address.street', value);
-			if (field === 'city') coparticipantForm.setValue('address.city', value);
-			if (field === 'state') coparticipantForm.setValue('address.state', value);
-			if (field === 'district') coparticipantForm.setValue('address.district', value);
-		});
+		try {
+			await handleAddress(cep, (field, value) => {
+				// Usando as propriedades específicas com tipos corretos
+				if (field === 'street') coparticipantForm.setValue('address.street', value);
+				if (field === 'city') coparticipantForm.setValue('address.city', value);
+				if (field === 'state') coparticipantForm.setValue('address.state', value);
+				if (field === 'district') coparticipantForm.setValue('address.district', value);
+			});
+			
+			// Após preencher os dados do endereço, validar os campos
+			console.log("Validando campos de endereço do coparticipante após preenchimento automático pelo CEP");
+			
+			// Disparar validação para os campos preenchidos
+			coparticipantForm.trigger('address.street');
+			coparticipantForm.trigger('address.city');
+			coparticipantForm.trigger('address.state');
+			coparticipantForm.trigger('address.district');
+			
+			// Validar o formulário de endereço completo
+			coparticipantForm.trigger('address');
+			
+			// Verificar se há erros após a validação
+			const addressErrors = coparticipantForm.formState.errors.address;
+			if (addressErrors) {
+				console.log("Erros encontrados na validação do endereço do coparticipante:", addressErrors);
+				
+				// Informar campos que ainda precisam ser preenchidos
+				if (addressErrors.number) {
+					toast.error("Por favor, preencha o número do endereço do coparticipante");
+				}
+			} else {
+				console.log("Validação de endereço do coparticipante concluída sem erros");
+			}
+		} catch (error) {
+			console.error("Erro ao carregar ou validar endereço do coparticipante:", error);
+		}
 	};
 
 	// Add a function to calculate total participation percentage
@@ -1132,6 +1341,36 @@ const DpsInitialForm = ({
 	// Lidar com o formulário do coparticipante
 	const handleCoparticipantSubmit = async (formData: any) => {
 		try {
+			// Verificar se o CPF já consta como duplicado
+			const cpfErrors = coparticipantForm.formState.errors?.profile?.cpf;
+			if (cpfErrors) {
+				// Se houver erro de CPF, exibir o erro e impedir o envio
+				toast.error(typeof cpfErrors.message === 'string' ? cpfErrors.message : 'CPF inválido ou já cadastrado');
+				return;
+			}
+			
+			// Verificar se há erros no campo percentual de participação
+			const percentErrors = coparticipantForm.formState.errors?.profile?.participationPercentage;
+			if (percentErrors) {
+				// Se houver erro no percentual, exibir o erro e impedir o envio
+				toast.error(typeof percentErrors.message === 'string' ? percentErrors.message : 'Percentual de participação inválido');
+				return;
+			}
+			
+			// Validar o percentual de participação antes de salvar
+			const percentValue = formData.profile.participationPercentage;
+			const validationResult = validateCoparticipantPercentage(percentValue);
+			
+			if (!validationResult.valid) {
+				// Se a validação falhar, exibir erro e impedir o salvamento
+				coparticipantForm.setError('profile.participationPercentage', {
+					type: 'manual',
+					message: validationResult.message
+				});
+				toast.error(validationResult.message);
+				return;
+			}
+			
 			setIsLoadingCoparticipant(true);
 			
 			// Informações para adicionar à lista de coparticipantes
@@ -1236,11 +1475,20 @@ const DpsInitialForm = ({
 		
 		// Se é o mesmo CPF do proponente principal, não é válido
 		if (cleanCpf === cleanMainCpf) {
-			// toast.error('Este CPF pertence ao proponente principal. Cada participante deve ter um CPF único.');
-			// Fechar o popup de coparticipante após um breve delay
-			setTimeout(() => {
-				setIsCoparticipantDialogOpen(false);
-			}, 1500);
+			// Definir erro no campo CPF para impedir o prosseguimento
+			coparticipantForm.setError('profile.cpf', { 
+				type: 'manual', 
+				message: `Este CPF pertence ao proponente principal. Cada participante deve ter um CPF único.` 
+			});
+			
+			// Mostrar mensagem de erro
+			toast.error('Este CPF pertence ao proponente principal. Cada participante deve ter um CPF único.');
+			
+			// Remover o fechamento automático do diálogo para permitir correção
+			// setTimeout(() => {
+			//   setIsCoparticipantDialogOpen(false);
+			// }, 1500);
+			
 			return false;
 		}
 		
@@ -1255,50 +1503,28 @@ const DpsInitialForm = ({
 		});
 		
 		if (duplicatedCoparticipant) {
+			// Definir erro no campo CPF para impedir o prosseguimento
+			coparticipantForm.setError('profile.cpf', { 
+				type: 'manual', 
+				message: `Este CPF já pertence ao coparticipante "${duplicatedCoparticipant.name}". Cada participante deve ter um CPF único.` 
+			});
+			
+			// Mostrar mensagem de erro
 			toast.error(`Este CPF já pertence ao coparticipante "${duplicatedCoparticipant.name}". Cada participante deve ter um CPF único.`);
-			// Fechar o popup de coparticipante após um breve delay
-			setTimeout(() => {
-				setIsCoparticipantDialogOpen(false);
-			}, 1500);
+			
+			// Remover o fechamento automático do diálogo para permitir correção
+			// setTimeout(() => {
+			//   setIsCoparticipantDialogOpen(false);
+			// }, 1500);
+			
 			return false;
 		}
 		
+		// Se o CPF é válido e único, limpar qualquer erro existente
+		coparticipantForm.clearErrors('profile.cpf');
+		
 		return true;
 	};
-
-	const getCoparticipantDataByCpf = async (cpf: string) => {
-		try {
-			// Verificar se o CPF é válido
-			if (!validarCpf(cpf)) {
-				toast.error('CPF inválido. Verifique o número informado.');
-				return;
-			}
-			
-			// A validação de CPF duplo já é feita pela função validateCpfNotDuplicated
-			// Verifica novamente aqui para garantir que o fluxo seja interrompido
-			if (!validateCpfNotDuplicated(cpf)) {
-				// Limpar o campo CPF após validação falhar
-				coparticipantForm.setValue('profile.cpf', '');
-				return;
-			}
-			
-			setFetchingCpfDataCoparticipant(true);
-			
-			// Implement CPF data fetching for co-participant
-			// This is just a placeholder - implement actual API call
-			await new Promise(resolve => setTimeout(resolve, 500));
-			
-			// Example auto-filling data
-			coparticipantForm.setValue('profile.name', 'Nome do Co-participante');
-			coparticipantForm.setValue('profile.email', 'coparticipante@example.com');
-			
-			setFetchingCpfDataCoparticipant(false);
-		} catch (error) {
-			console.error(error);
-			toast.error('Erro ao buscar dados do CPF. Tente novamente.');
-			setFetchingCpfDataCoparticipant(false);
-		}
-	}
 
 	//useEffect(() => {
 		// if (typeof watchBirthdate !== 'undefined' && watchBirthdate !== null) {
@@ -1306,10 +1532,19 @@ const DpsInitialForm = ({
 		// }
 	// }, [watchBirthdate])
 
-	// Função para validar se o percentual de participação excede 100%
+	// Função para validar se o percentual de participação é válido (maior que 0 e não excede 100%)
 	const validateParticipationPercentage = (value: string) => {
 		// Extrair percentual do valor formatado (ex: "25,00%" => 25.00)
 		const newPercentage = parseFloat(value.replace('%', '').replace(',', '.')) || 0;
+		
+		// Verificar se o percentual é maior que zero
+		if (newPercentage <= 0) {
+			return {
+				valid: false, 
+				message: 'O percentual deve ser maior que zero',
+				availablePercentage: '1,00%'
+			};
+		}
 		
 		// Calcular a soma dos percentuais já existentes
 		let existingTotal = 0;
@@ -1381,35 +1616,130 @@ const DpsInitialForm = ({
 		}
 	};
 
+	// Função para validar se o percentual de participação é válido para coparticipante, considerando o total já alocado
+	const validateCoparticipantPercentage = (value: string) => {
+		// Extrair percentual do valor formatado (ex: "25,00%" => 25.00)
+		const newPercentage = parseFloat(value.replace('%', '').replace(',', '.')) || 0;
+		
+		// Verificar se o percentual é maior que zero
+		if (newPercentage <= 0) {
+			return {
+				valid: false, 
+				message: 'O percentual deve ser maior que zero',
+				availablePercentage: ''  // Não sugerir valor
+			};
+		}
+		
+		// Calcular a soma dos percentuais já existentes
+		let existingTotal = 0;
+		
+		// Se temos proponente principal existente, incluir seu percentual
+		if (existingMainProponent) {
+			const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+			existingTotal += mainPercentage;
+		} else {
+			// Caso contrário, usar o percentual do proponente atual
+			const mainPercentStr = getValues().profile.participationPercentage || '0,00%';
+			const mainPercent = parseFloat(mainPercentStr.replace('%', '').replace(',', '.')) || 0;
+			existingTotal += mainPercent;
+		}
+		
+		// Incluir percentuais dos coparticipantes existentes, exceto o que estamos editando atualmente
+		coparticipants.forEach(cp => {
+			// Pular o coparticipante atual que está sendo editado
+			if (editingCoparticipantId && cp.id === editingCoparticipantId) {
+				return;
+			}
+			const cpPercentage = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+			existingTotal += cpPercentage;
+		});
+		
+		// Verificar se o novo percentual excederia 100%
+		const totalWithNew = existingTotal + newPercentage;
+		if (totalWithNew > 100) {
+			return {
+				valid: false, 
+				message: `O percentual excede o limite disponível. Total seria: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
+				availablePercentage: ''  // Não sugerir valor
+			};
+		}
+		
+		// Verificar o total de participantes informado
+		const numParticipants = parseInt(getValues().operation.participantsNumber, 10) || 2;
+		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+		const participantsLeft = numParticipants - currentParticipants;
+		
+		// Se este é o último participante, verificar se o total fecha em 100%
+		if (participantsLeft === 0 && !editingCoparticipantId && totalWithNew < 100) {
+			return {
+				valid: false,
+				message: `O último participante deve completar 100%. Total atual: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
+				availablePercentage: ''  // Não sugerir valor
+			};
+		}
+		
+		// Se este é o penúltimo participante ou menos, verificar se há espaço para outros
+		if (participantsLeft > 0) {
+			// Verificar se o percentual deixa pelo menos 1% para cada participante restante
+			const minimumPercentageNeeded = participantsLeft * 1; // 1% mínimo por participante
+			const remainingPercentage = 100 - totalWithNew;
+			
+			if (remainingPercentage < minimumPercentageNeeded) {
+				return {
+					valid: false,
+					message: `Percentual muito alto. Necessário deixar pelo menos ${minimumPercentageNeeded}% para os outros ${participantsLeft} participante(s)`,
+					availablePercentage: ''  // Não sugerir valor
+				};
+			}
+			
+			// Redundância para garantir que nunca exceda 100%
+			if (totalWithNew >= 100) {
+				return {
+					valid: false,
+					message: `Não há percentual disponível para os outros ${participantsLeft} participante(s)`,
+					availablePercentage: ''  // Não sugerir valor
+				};
+			}
+		}
+		
+		return { valid: true, message: '', availablePercentage: '' };
+	};
+
 	// Manipulador para o campo de percentual no formulário do coparticipante
 	const handleCoparticipantPercentageBlur = (value: string) => {
 		try {
 			if (!value) return;
 			
-			// Validar se o percentual excede 100%
-			const validation = validateParticipationPercentage(value);
-			if (!validation.valid) {
-				toast.error(validation.message);
-				// Sugerir o valor máximo disponível
-				coparticipantForm.setValue('profile.participationPercentage', validation.availablePercentage);
+			// Validar o percentual usando a função específica para coparticipantes
+			const coparticipantValidation = validateCoparticipantPercentage(value);
+			if (!coparticipantValidation.valid) {
+				// Definir erro no campo percentual para impedir o prosseguimento
+				coparticipantForm.setError('profile.participationPercentage', {
+					type: 'manual',
+					message: coparticipantValidation.message
+				});
 				
-				// Calcular valor da participação com o percentual ajustado
-				const totalValue = coparticipantForm.getValues().operation.totalValue || '';
-				const participationValue = calculateParticipationValue(validation.availablePercentage, totalValue);
+				// Mostrar mensagem de erro no toast para feedback adicional
+				toast.error(coparticipantValidation.message);
 				
-				// Aqui não usamos setValue diretamente pois o participationValue não está no schema
-				// Vamos apenas guardar o valor para exibir na interface
-				setCoparticipantParticipationValue(participationValue);
-				return;
+				// Manter o foco no campo de percentual até que seja corrigido
+				setTimeout(() => {
+					const percentInput = document.querySelector('[name="profile.participationPercentage"]') as HTMLInputElement;
+					if (percentInput) {
+						percentInput.focus();
+					}
+				}, 100);
+			} else {
+				// Limpar erro se o valor for válido
+				coparticipantForm.setError('profile.participationPercentage', { type: 'manual', message: undefined });
 			}
 			
-			// Calcular o valor com base no percentual
+			// Sempre calcular o valor com base no percentual informado, mesmo se inválido
 			const totalValue = coparticipantForm.getValues().operation.totalValue || '';
 			const participationValue = calculateParticipationValue(value, totalValue);
 			
-			// Armazenar o valor calculado
+			// Atualizar o valor da participação para exibição
 			setCoparticipantParticipationValue(participationValue);
-			
 		} catch (error) {
 			console.error('Erro ao processar percentual de participação:', error);
 		}
@@ -1432,16 +1762,27 @@ const DpsInitialForm = ({
 			}
 			
 			// Validar se o percentual excede 100%
-			const validation = validateParticipationPercentage(value);
-			if (!validation.valid) {
-				toast.error(validation.message);
-				// Sugerir o valor máximo disponível 
-				setValue('profile.participationPercentage', validation.availablePercentage);
+			const percentValidation = validateParticipationPercentage(value);
+			if (!percentValidation.valid) {
+				// Definir erro no campo percentual para impedir o prosseguimento
+				setError('profile.participationPercentage', {
+					type: 'manual',
+					message: percentValidation.message
+				});
 				
-				// Calcular valor com base no percentual ajustado
-				const participationValue = calculateParticipationValue(validation.availablePercentage, totalValue);
-				setParticipationValue(participationValue);
-				return;
+				// Mostrar mensagem de erro no toast para feedback adicional
+				toast.error(percentValidation.message);
+				
+				// Manter o foco no campo de percentual até que seja corrigido
+				setTimeout(() => {
+					const percentInput = document.querySelector('[name="profile.participationPercentage"]') as HTMLInputElement;
+					if (percentInput) {
+						percentInput.focus();
+					}
+				}, 100);
+			} else {
+				// Limpar erro se o valor for válido
+				setError('profile.participationPercentage', { type: 'manual', message: undefined });
 			}
 			
 			// Calcular valor com base na porcentagem e valor total
@@ -1461,18 +1802,25 @@ const DpsInitialForm = ({
 			const formData = getValues();
 			coparticipantForm.setValue('operation', formData.operation);
 			
-			// Calcular sugestão de percentual com base no número de participantes e participações já existentes
+			// Calcular informações sobre percentuais já alocados para exibição
 			const numParticipants = parseInt(formData.operation.participantsNumber, 10) || 2;
-			const participantsLeft = numParticipants - coparticipants.length - 1; // -1 pelo proponente principal
+			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+			const participantsLeft = numParticipants - currentParticipants;
 			
 			if (participantsLeft > 0) {
 				// Calcular o percentual total já alocado
 				let totalAllocated = 0;
 				
-				// Adicionar percentual do proponente principal
+				// Se temos proponente principal existente, incluir seu percentual
+				if (existingMainProponent) {
+					const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+					totalAllocated += mainPercentage;
+				} else {
+					// Adicionar percentual do proponente principal do formulário
 				const mainPercentStr = formData.profile.participationPercentage || '0,00%';
 				const mainPercent = parseFloat(mainPercentStr.replace('%', '').replace(',', '.')) || 0;
 				totalAllocated += mainPercent;
+				}
 				
 				// Adicionar percentuais dos coparticipantes existentes
 				coparticipants.forEach(cp => {
@@ -1480,21 +1828,17 @@ const DpsInitialForm = ({
 					totalAllocated += cpPercent;
 				});
 				
-				// Calcular o percentual disponível e dividir igualmente entre os participantes restantes
+				// Calcular o percentual disponível (apenas para exibição na informação, não para sugestão)
 				const availablePercent = 100 - totalAllocated;
-				const suggestedPercent = (availablePercent / participantsLeft).toFixed(2).replace('.', ',');
 				
-				// Definir o percentual sugerido para ser exibido na interface, mas não preencher o campo
-				// O campo vai ser inicializado vazio, mas teremos um valor sugerido disponível
-				setCoparticipantSuggestedPercentage(suggestedPercent + '%');
+				// Não armazenar valor sugerido, deixar vazio para o usuário decidir
+				setCoparticipantSuggestedPercentage('');
 				
-				// Não definimos o valor no formulário para que o campo comece vazio
-				// coparticipantForm.setValue('profile.participationPercentage', suggestedPercent + '%');
-				
-				// Calculamos o valor de participação mas não definimos no formulário
-				const totalValue = formData.operation.totalValue || '';
-				const participationValue = calculateParticipationValue(suggestedPercent + '%', totalValue);
+				// Não preencher automaticamente o campo, deixar vazio para o usuário informar
+				coparticipantForm.setValue('profile.participationPercentage', '');
 				setCoparticipantParticipationValue('');
+				
+				console.log(`Percentual alocado: ${totalAllocated.toFixed(2)}%, Restante: ${availablePercent.toFixed(2)}%, Participantes restantes: ${participantsLeft}`);
 			}
 			
 			// Open coparticipant dialog
@@ -1520,6 +1864,10 @@ const DpsInitialForm = ({
 		}
 
 		try {
+			// Resetar o estado de orientação ao iniciar nova consulta
+			setShowOperationGuidance(false);
+			setShowOtherSections(false);
+			
 			setIsLoadingOperationData(true);
 			console.log(`Buscando dados da operação ${operationNumber}`);
 			
@@ -1529,12 +1877,18 @@ const DpsInitialForm = ({
 			// Fazer a chamada para a API
 			const response = await getParticipantsByOperation(token, operationNumber);
 			console.log('response', response)
-			
+			// Limpar os coparticipantes existentes
+			setCoparticipants([]);
+			// Limpar o proponente principal existente
+			setExistingMainProponent(null);
+			// Limpar o último CPF consultado para permitir novas consultas
+			setLastQueriedCpf('');
+			// reset();
+
 			if (response && response.success && response.data && response.data.length > 0) {
 				// CASO DE CONTINUAÇÃO: Operação existente com participantes
 				// Habilitar as seções após consultado os dados da operação
 				setShowOtherSections(true);
-				setShouldShowOperationSection(true);
 				
 				// Usar o primeiro registro para dados da operação
 				const mainData = response.data[0];
@@ -1840,26 +2194,29 @@ const DpsInitialForm = ({
 				setExistingMainProponent(null);
 				setOperationDataLoaded(false);
 				setIsProductDisabled(false);
-				setShowOtherSections(true);
 				
-				// Garantir que os campos estejam habilitados para edição
+				// Não mostrar as seções adicionais até que os dados da operação sejam preenchidos
+				setShowOtherSections(false);
+				
+				// Limpar valores de operação carregados previamente
+				if (getValues().operation.participantsNumber) {
+				setValue('operation.participantsNumber', '');
+				setParticipantsNumber('');
+				}
+				if (getValues().operation.totalValue) {
+					setValue('operation.totalValue', '');
+				setTotalValue('');
+				}
+				
+				// Liberar os campos para edição
 				setValue('operation.isParticipantsNumberReadOnly', '');
 				setValue('operation.isTotalValueReadOnly', '');
 				
-				// Resetar os campos de número de participantes e valor total da operação
-				setValue('operation.participantsNumber', '');
-				setValue('operation.totalValue', '');
-				setParticipantsNumber('');
-				setTotalValue('');
-
-				if (response && response.success) {
-					// Operação existe mas não tem participantes
-					toast.success(`Operação ${operationNumber} encontrada, mas sem participantes cadastrados. Preencha os dados do proponente principal.`);
-				} else {
-					// Operação não encontrada - sem alerta de erro, apenas habilitar seções
+				// Mostrar a mensagem de orientação para o usuário
+				setShowOperationGuidance(true);
+				
+				// Não exibir toast, apenas orientação na interface
 					console.log(`Operação ${operationNumber} não encontrada. Configurando para nova operação.`);
-					// Remover o toast.error - não mostrar alerta 
-				}
 			}
 		} catch (error) {
 			// Erro ao consultar a operação - tratado como novo preenchimento
@@ -1867,22 +2224,28 @@ const DpsInitialForm = ({
 			setExistingMainProponent(null);
 			setOperationDataLoaded(false);
 			setIsProductDisabled(false);
-			setShowOtherSections(true);
+			
+			// Mostrar a mensagem de orientação para o usuário
+			setShowOperationGuidance(true);
+			setShowOtherSections(false);
 			
 			// Garantir que os campos estejam habilitados para edição
 			setValue('operation.isParticipantsNumberReadOnly', '');
 			setValue('operation.isTotalValueReadOnly', '');
 			
-			// Resetar os campos de número de participantes e valor total da operação
+			// Limpar valores de operação carregados previamente
+			if (getValues().operation.participantsNumber) {
 			setValue('operation.participantsNumber', '');
-			setValue('operation.totalValue', '');
 			setParticipantsNumber('');
+			}
+			if (getValues().operation.totalValue) {
+				setValue('operation.totalValue', '');
 			setTotalValue('');
+			}
 			
 			// Sem alerta de erro, apenas log
 			console.log('Erro ao buscar dados da operação. Configurando para novo preenchimento.');
 		} finally {
-			setShouldShowOperationSection(true);
 			setIsLoadingOperationData(false);
 		}
 	};
@@ -1909,184 +2272,146 @@ const DpsInitialForm = ({
 		}
 	}, [cpfParam, setValue]); // Remover getDataByCpf da lista de dependências para evitar erro
 
-	// Componente auxiliar para o botão Salvar com tooltip
-	const SaveButton = ({ 
-		isSubmitting, 
-		isLoading
-	}: { 
-		isSubmitting: boolean;
-		isLoading: boolean;
-	}) => {
-		// Verificar todos os campos obrigatórios em todas as seções
-		const formData = getValues();
-		
-		// Verificar seção de operação
-		const isOperationValid = !!(
-			formData.operation.operationNumber && 
-			formData.operation.participantsNumber && 
-			formData.operation.totalValue
-		);
-		
-		// Verificar seção de proponente (profile)
-		const isProfileValid = showOtherSections && !!(
-			formData.profile.cpf &&
-			formData.profile.name &&
-			formData.profile.birthdate &&
-			formData.profile.email &&
-			formData.profile.phone &&
-			formData.profile.gender &&
-			formData.profile.participationPercentage
-		);
-		
-		// Verificar seção de produto
-		const isProductValid = showOtherSections && !!(
-			formData.product.product &&
-			formData.product.deadline &&
-			formData.product.propertyType &&
-			formData.product.mip &&
-			formData.product.dfi
-		);
-		
-		// Verificar seção de endereço
-		const isAddressValid = showOtherSections && !!(
-			formData.address.zipcode &&
-			formData.address.street &&
-			formData.address.number &&
-			formData.address.district &&
-			formData.address.city &&
-			formData.address.state
-		);
-		
-		// Verificar se todas as seções obrigatórias estão válidas
-		const isFormValid = isOperationValid && 
-			(!showOtherSections || (isProfileValid && isProductValid && isAddressValid));
-		
-		// Determinar se o botão deve estar desabilitado
-		const isDisabled = isSubmitting || isLoading || !isFormValid;
-		
-		console.log("SaveButton validation results:");
-		console.log("- Operation section:", isOperationValid);
-		console.log("- Profile section:", isProfileValid);
-		console.log("- Product section:", isProductValid);
-		console.log("- Address section:", isAddressValid);
-		console.log("- Overall form valid:", isFormValid);
-		console.log("- Button disabled:", isDisabled);
-
-		// Determinar qual mensagem de erro mostrar na tooltip
-		const getTooltipMessage = () => {
-			if (!isOperationValid) {
-				return "Preencha todos os campos da seção 'Dados da Operação'";
-			} else if (showOtherSections) {
-				if (!isProfileValid) {
-					return "Preencha todos os campos da seção 'Dados do Proponente'";
-				} else if (!isProductValid) {
-					return "Preencha todos os campos da seção 'Dados do Produto'";
-				} else if (!isAddressValid) {
-					return "Preencha todos os campos da seção 'Dados de Endereço'";
-				}
-			}
-			return "Preencha todos os campos obrigatórios para habilitar o salvamento";
+	// Componente auxiliar para o botão Salvar com loading
+	const SaveButton = ({ isSubmitting, isLoading }: { isSubmitting: boolean, isLoading: boolean }) => {
+		// Função para validar o formulário e mostrar mensagens de erro quando o botão for clicado
+		const handleSaveClick = async () => {
+			// Se estiver em processo de submissão, não fazer nada
+			if (isSubmitting || isLoading) return;
+			
+			await handleFormSubmitClick();
 		};
 
 		return (
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<div>
 							<Button
 								type="button"
 								className="w-40"
-								disabled={isDisabled}
-								onClick={() => {
-									console.log("Submit button clicked");
-									handleFormSubmitClick();
-								}}
-							>
-								Salvar
-								{isLoading ? (
+				onClick={handleSaveClick}
+				disabled={isSubmitting || isLoading}
+			>
+				{isSubmitting || isLoading ? (
+					<>
+						Salvando
 									<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
-								) : null}
+					</>
+				) : "Salvar"}
 							</Button>
-						</div>
-					</TooltipTrigger>
-					{isDisabled && !isSubmitting && !isLoading && (
-						<TooltipContent>
-							<p>{getTooltipMessage()}</p>
-						</TooltipContent>
-					)}
-				</Tooltip>
-			</TooltipProvider>
 		);
 	};
+	
+	// ... código existente continua
 
-	useEffect(() => {
-		// Se o número de participantes for 1, automaticamente define 100% para o proponente principal
-		if (participantsNumber === '1') {
-			setValue('profile.participationPercentage', '100,00%');
-			if (totalValue) {
-				const participationValue = calculateParticipationValue('100,00%', totalValue);
-				setParticipationValue(participationValue);
-			}
-		}
-	}, [participantsNumber, totalValue, setValue]);
-
-	// Componente para exibir botão de adicionar coparticipante com base nas validações
-	const AddCoparticipantButtonOrMessage = () => {
-		// Verificar se já temos o número da operação preenchido
-		const operationNumber = getValues().operation.operationNumber;
+	// Criar uma função para determinar qual mensagem de erro mostrar
+	const getErrorMessage = (section: keyof DpsInitialForm) => {
+		const sectionErrors = errors[section];
+		if (!sectionErrors || Object.keys(sectionErrors).length === 0) return null;
 		
-		// Não exibir o botão nas seguintes situações:
-		// 1. Se estamos processando um CPF por parâmetro
-		// 2. Se for continuação de preenchimento (existingMainProponent não é nulo)
-		// 3. Se não temos o número da operação preenchido
-		if (cpfParam || existingMainProponent || !operationNumber) {
+		switch(section) {
+			case 'operation':
+				return "Preencha corretamente todos os campos da seção Dados da Operação";
+			case 'profile':
+				return "Preencha corretamente todos os campos da seção Dados do Proponente";
+			case 'product':
+				return "Preencha corretamente todos os campos da seção Dados do Produto";
+			case 'address':
+				return "Preencha corretamente todos os campos da seção Dados de Endereço";
+			default:
+				return "Há campos obrigatórios não preenchidos";
+		}
+	};
+
+	// Função para iniciar o formulário de coparticipante
+	const startCoparticipantForm = () => {
+		saveAndAddCoparticipant();
+	};
+
+	// Modificar o botão para adicionar co-participante apenas quando o formulário é válido
+	const AddCoparticipantButtonOrMessage = () => {
+		// Se for edição de operação (existingMainProponent existe), não mostrar o botão
+		if (existingMainProponent) {
 			return null;
 		}
-		
-		// Lógica de validação para verificar se pode adicionar mais coparticipantes
+
+		// Verificar se o número de participantes declarados permite adicionar mais
 		const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
-		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal atual
-		const canAddMore = currentParticipants < declaredParticipants;
+		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
 		
-		if (canAddMore) {
+		// Verificar se o botão de adicionar deve ser mostrado
+		if (currentParticipants < declaredParticipants) {
+			// Verificar se o formulário é válido para habilitar o botão
+			const operationErrors = !!errors.operation;
+			const profileErrors = !!errors.profile;
+			const productErrors = !!errors.product;
+			const addressErrors = !!errors.address;
+			
+			// Verificar se todos os campos obrigatórios estão preenchidos
+			const operationComplete = areOperationFieldsComplete();
+			const profileComplete = !!(
+				getValues().profile.cpf &&
+				getValues().profile.name &&
+				getValues().profile.birthdate &&
+				getValues().profile.email &&
+				getValues().profile.phone &&
+				getValues().profile.gender &&
+				getValues().profile.participationPercentage
+			);
+			const productComplete = !!(
+				getValues().product.product &&
+				getValues().product.deadline &&
+				getValues().product.propertyType &&
+				getValues().product.mip &&
+				getValues().product.dfi
+			);
+			const addressComplete = !!(
+				getValues().address.zipcode &&
+				getValues().address.street &&
+				getValues().address.number &&
+				getValues().address.district &&
+				getValues().address.city &&
+				getValues().address.state
+			);
+			
+			// O formulário só é considerado válido se não houver erros E todos os campos obrigatórios estiverem preenchidos
+			const isFormValid = !operationErrors && !profileErrors && !productErrors && !addressErrors &&
+				operationComplete && profileComplete && productComplete && addressComplete;
+			
+			// Log para ajudar na depuração
+			console.log("Estado de validação do formulário para botão de coparticipante:");
+			console.log("- Erros nos campos:", { operationErrors, profileErrors, productErrors, addressErrors });
+			console.log("- Campos preenchidos:", { operationComplete, profileComplete, productComplete, addressComplete });
+			console.log("- Formulário válido:", isFormValid);
+			
 			return (
-				<Button
-					type="button"
-					variant="secondary"
-					className="w-60"
-					onClick={saveAndAddCoparticipant}
-					disabled={isSubmitting || isLoading}
-				>
-					Adicionar Co-participante
-				</Button>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => startCoparticipantForm()}
+									disabled={!isFormValid || isSubmitting || isLoading}
+									className="flex items-center gap-2"
+								>
+									Adicionar Co-participante
+								</Button>
+							</div>
+						</TooltipTrigger>
+						<TooltipContent>
+							{!isFormValid ? 
+								<p>Preencha todos os campos obrigatórios para adicionar um co-participante</p> :
+								<p>Clique para adicionar um co-participante</p>
+							}
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			);
 		}
+		
+		return null;
 	};
 
-	// Função para gerar mensagem de confirmação
-	const getConfirmationMessage = () => {
-		if (!pendingSubmitData) {
-			return '';
-		}
-		
-		// Calcular corretamente o número atual de participantes
-		const declaredParticipants = parseInt(pendingSubmitData.operation.participantsNumber, 10) || 0;
-		
-		// Participantes já cadastrados antes da operação atual
-		let currentRegisteredParticipants;
-		if (existingMainProponent) {
-			// Com proponente principal existente: proponente (1) + coparticipantes já cadastrados
-			currentRegisteredParticipants = 1 + coparticipants.length;
-		} else {
-			// Sem proponente principal existente: apenas coparticipantes cadastrados
-			currentRegisteredParticipants = coparticipants.length;
-		}
-		
-		// Adicionar +1 para o participante que está sendo cadastrado agora
-		const totalAfterSubmission = currentRegisteredParticipants + 1;
-		
-		return `Você informou ${declaredParticipants} participantes no total, mas está cadastrando apenas ${totalAfterSubmission}. Deseja continuar mesmo assim?`;
-	};
+	// ... restante do código continua
 
 	// Adicionar uma função wrapper para converter o setValue antes de passar para o componente
 	const handleSetValueForProfile = (name: string, value: any) => {
@@ -2099,11 +2424,44 @@ const DpsInitialForm = ({
 		}
 	};
 
+	// Criar uma função para validar se todos os campos da operação estão preenchidos
+	const areOperationFieldsComplete = () => {
+		const formData = getValues();
+		return !!(
+			formData.operation.operationNumber && 
+			formData.operation.participantsNumber && 
+			formData.operation.totalValue &&
+			formData.operation.totalValue !== 'R$ '
+		);
+	};
+	
+	// Ouvir mudanças nos campos da operação para mostrar as seções adicionais quando estiverem completos
+	useEffect(() => {
+		// Se a mensagem de orientação estiver sendo exibida e os campos forem preenchidos
+		if (showOperationGuidance && areOperationFieldsComplete()) {
+			// Exibir as seções adicionais
+			setShowOtherSections(true);
+		}
+	}, [
+		watch('operation.operationNumber'),
+		watch('operation.participantsNumber'),
+		watch('operation.totalValue'),
+		showOperationGuidance
+	]);
+
 	return (
 		<form
-			className="pb-12 flex flex-col gap-8"
+			className="pb-12 flex flex-col gap-8 relative"
 			onSubmit={handleSubmit(onSubmit)}
 		>
+			{/* Overlay de loading */}
+			{(isLoading || isSubmitting) && (
+				<div className="absolute inset-0 bg-white/70 z-50 flex flex-col items-center justify-center">
+					<Loader2Icon className="h-12 w-12 animate-spin text-primary mb-4" />
+					<p className="text-lg font-medium text-primary">Processando dados, aguarde...</p>
+				</div>
+			)}
+
 			{/* Container de toast */}
 			<div>
 				{toast && typeof toast.ToastContainer === 'function' && <toast.ToastContainer />}
@@ -2120,6 +2478,18 @@ const DpsInitialForm = ({
 					isLoadingOperationData={isLoadingOperationData}
 					disabled={isSubmitting || isLoading}
 				/>
+				
+				{/* Mensagem de orientação quando a operação não for encontrada */}
+				{showOperationGuidance && !showOtherSections && (
+					<div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+						<p className="text-blue-700 font-medium">
+							Operação não encontrada. Preencha os demais dados da operação para continuar.
+						</p>
+						<p className="text-blue-600 text-sm mt-1">
+							Após preencher o número de participantes e o valor total da operação, as demais seções do formulário serão exibidas.
+						</p>
+					</div>
+				)}
 			</div>
 
 			{/* Restante do formulário só aparece após consultar a operação ou quando temos CPF via param */}
@@ -2163,7 +2533,7 @@ const DpsInitialForm = ({
 					</div>
 
 					{/* Lista de participantes (visível quando há proponente ou coparticipantes) */}
-					{(coparticipants.length > 0 || getValues().profile.name) && (
+					{(coparticipants.length > 0 || getValues().profile.name || existingMainProponent) && (
 						<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl mt-6">
 							<h3 className="text-primary text-xl font-medium mb-4">Participantes da Operação</h3>
 							
@@ -2173,8 +2543,18 @@ const DpsInitialForm = ({
 										Esta operação já possui {coparticipants.length + (existingMainProponent ? 1 : 0)} participante(s) cadastrado(s).
 									</p>
 									{existingMainProponent && (
+										<>
+											<p className="text-blue-700 mt-2">
+												<strong>Atenção:</strong> Esta é uma continuação de cadastro de operação. O proponente principal já está cadastrado.
+											</p>
+											<p className="text-blue-700 mt-1">
+												Você está adicionando um coparticipante a uma operação existente.
+											</p>
+										</>
+									)}
+									{!existingMainProponent && operationDataLoaded && (
 										<p className="text-blue-700 mt-2">
-											<strong>Atenção:</strong> Seus dados serão mantidos e você está adicionando apenas um novo coparticipante.
+											<strong>Atenção:</strong> Esta é uma nova operação. Você está cadastrando o proponente principal.
 										</p>
 									)}
 								</div>
@@ -2326,6 +2706,52 @@ const DpsInitialForm = ({
 							</div>
 						</div>
 
+						{/* Informações sobre percentuais já alocados */}
+						<div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
+							<h3 className="text-blue-700 font-medium mb-2">Informações sobre percentuais de participação</h3>
+							
+							<div className="grid grid-cols-2 gap-4 mb-2">
+								<div>
+									<p className="text-blue-600 text-sm">Total já alocado</p>
+									<p className="font-medium">{calculateTotalParticipation()}</p>
+								</div>
+								<div>
+									<p className="text-blue-600 text-sm">Disponível para alocação</p>
+									<p className="font-medium">
+										{(100 - parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.'))).toFixed(2).replace('.', ',')}%
+									</p>
+								</div>
+							</div>
+							
+							{/* Mostrar informação sobre participantes restantes */}
+							{(() => {
+								const numParticipants = parseInt(coparticipantForm.getValues().operation.participantsNumber, 10) || 2;
+								const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+								const participantsLeft = numParticipants - currentParticipants;
+								
+								if (participantsLeft > 1) {
+									return (
+										<p className="text-blue-600 text-sm">
+											Restam {participantsLeft} participantes a serem cadastrados após este.
+										</p>
+									);
+								} else if (participantsLeft === 1 && !editingCoparticipantId) {
+									return (
+										<p className="text-blue-600 text-sm mt-2">
+											<strong>Este é o último participante.</strong> O percentual total deve completar 100%.
+										</p>
+									);
+								} else if (editingCoparticipantId) {
+									return (
+										<p className="text-blue-600 text-sm mt-2">
+											Você está editando um participante existente. Certifique-se que o total permanecerá em 100%.
+										</p>
+									);
+								}
+								return null;
+							})()}
+						</div>
+
 						<DpsProfileForm
 							control={coparticipantForm.control}
 							formState={coparticipantForm.formState}
@@ -2335,7 +2761,6 @@ const DpsInitialForm = ({
 							participationValue={coparticipantParticipationValue}
 							onParticipationPercentageBlur={handleCoparticipantPercentageBlur}
 							validateCpf={validateCpfNotDuplicated}
-							placeholderPercentage={coparticipantSuggestedPercentage}
 						/>
 
 						<DpsAddressForm
@@ -2375,7 +2800,7 @@ const DpsInitialForm = ({
 						<DialogTitle>Confirmar cadastro</DialogTitle>
 						<DialogDescription>
 							{pendingSubmitData ? 
-								`Você informou ${parseInt(pendingSubmitData.operation.participantsNumber, 10) || 0} participantes no total, mas está cadastrando apenas ${existingMainProponent ? (1 + coparticipants.length + 1) : (coparticipants.length + 1)}. Deseja continuar mesmo assim?` 
+								`Participantes informados nesta operação: ${parseInt(pendingSubmitData.operation.participantsNumber, 10) || 0}, Cadastrados até o momento: ${existingMainProponent ? (1 + coparticipants.length + 1) : (coparticipants.length + 1)}.` 
 								: ''}
 						</DialogDescription>
 					</DialogHeader>
