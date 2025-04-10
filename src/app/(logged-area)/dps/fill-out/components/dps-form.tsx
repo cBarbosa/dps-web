@@ -43,7 +43,7 @@ export const diseaseNames = {
 	'5': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
 	'6': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)',
 	telefoneContato: 'Telefone de Contato',
-}
+};
 
 export type DiseaseKeys = keyof typeof diseaseNames
 
