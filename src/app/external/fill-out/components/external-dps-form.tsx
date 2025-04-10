@@ -2,12 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { ProposalByUid, postHealthDataByUid, signProposal } from '@/app/external/actions'
-import { useState } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { UserIcon, Loader2Icon, CheckIcon, AlertCircleIcon } from 'lucide-react'
+import { diseaseNames } from '@/app/(logged-area)/dps/fill-out/components/dps-form'
+import { cn } from '@/lib/utils'
 
 interface ExternalDpsFormProps {
   initialProposalData: ProposalByUid
@@ -22,14 +24,86 @@ interface ExternalDpsFormProps {
   successRedirect: string
 }
 
-// Health questions mapping
-const diseaseNames = {
-  '1': 'Sofre ou sofreu nos últimos cinco anos de doença que o tenha levado ao médico entre duas ou mais vezes no decorrer deste período e utilizado medicação para o controle dessa doença? Se sim, especificar e detalhar.',
-  '2': 'Tem deficiência de órgãos, membros ou sentidos? Se SIM, especificar abaixo qual é o grau de deficiência e redução.',
-  '3': 'Nos últimos cinco anos, submeteu-se a tratamento cirúrgico, cateterismo ou hospitalizou-se por período superior a dez dias; realizou ou realiza exames de controle de qualquer natureza por uma ou mais vezes ao ano pela mesma doença? Se sim, especificar.',
-  '4': 'Encontra-se aposentado por invalidez? Se SIM, especifique no campo abaixo a natureza ou causa da invalidez e o ano em que passou a receber o benefício da Previdência Social.',
-  '5': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
-  '6': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)'
+// Componente DiseaseField adaptado para o formulário externo
+function DiseaseField({
+  name,
+  label,
+  value,
+  onChange,
+  onDescriptionChange,
+  error,
+  isSubmitting,
+}: {
+  name: string
+  label: string
+  value: { has: string, description: string }
+  onChange: (value: string) => void
+  onDescriptionChange: (value: string) => void
+  error: boolean
+  isSubmitting: boolean
+}) {
+  const hasInputRef = useRef<HTMLElement | null>(null)
+  
+  function handleValidShake(check: boolean) {
+    if (check && hasInputRef.current) {
+      hasInputRef.current.style.animation = 'horizontal-shaking 0.25s backwards'
+      setTimeout(() => {
+        if (hasInputRef.current) hasInputRef.current.style.animation = ''
+      }, 250)
+    }
+    return check
+  }
+
+  useEffect(() => {
+    handleValidShake(error)
+  }, [error])
+
+  return (
+    <div className="py-4 px-4 hover:bg-gray-50" ref={hasInputRef as any}>
+      <div>
+        <div className="text-gray-500">{label}</div>
+        <div className="mt-2">
+          <Textarea
+            id={name}
+            placeholder="Descreva"
+            className={cn(
+              'w-full p-4 h-12 mt-3 rounded-lg',
+              error && 'border-red-500 focus-visible:border-red-500'
+            )}
+            disabled={isSubmitting || value.has !== 'yes'}
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            value={value.description}
+          />
+          {error && value.has === 'yes' && !value.description && (
+            <div className="text-xs text-red-500">
+              Campo obrigatório
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <RadioGroup 
+          value={value.has || ''} 
+          onValueChange={onChange}
+          className="flex items-center gap-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="yes" id={`yes-${name}`} />
+            <Label htmlFor={`yes-${name}`}>Sim</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="no" id={`no-${name}`} />
+            <Label htmlFor={`no-${name}`}>Não</Label>
+          </div>
+        </RadioGroup>
+        
+        {error && !value.has && (
+          <p className="text-sm text-red-500 mt-1">Selecione uma opção</p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function ExternalDpsForm({
@@ -41,7 +115,7 @@ export default function ExternalDpsForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  
+
   // Initialize form data from existing health data or empty state
   const [formData, setFormData] = useState<Record<string, { has: string, description: string }>>(() => {
     if (initialHealthData && initialHealthData.length > 0) {
@@ -49,7 +123,7 @@ export default function ExternalDpsForm({
         ...acc,
         [item.code]: {
           has: item.exists ? 'yes' : '',
-          description: item.description || ''
+          description: ''
         }
       }), {});
     }
@@ -91,6 +165,9 @@ export default function ExternalDpsForm({
     let hasError = false;
     
     Object.keys(diseaseNames).forEach(key => {
+      // Pular a validação do campo telefoneContato
+      if (key === 'telefoneContato') return;
+      
       if (!formData[key]?.has) {
         newErrors[key] = true;
         hasError = true;
@@ -116,14 +193,16 @@ export default function ExternalDpsForm({
     
     try {
       // Format data for API
-      const postData = Object.entries(formData).map(([key, value]) => ({
-        code: key,
-        question: diseaseNames[key as keyof typeof diseaseNames],
-        exists: value.has === 'yes',
-        created: new Date().toISOString(),
-        description: value.description
-      }));
-      
+      const postData = Object.entries(formData)
+        .filter(([key]) => key !== 'telefoneContato') // Excluir o campo telefoneContato
+        .map(([key, value]) => ({
+          code: key,
+          question: diseaseNames[key as keyof typeof diseaseNames],
+          exists: value.has === 'yes',
+          created: new Date().toISOString(),
+          description: value.description
+        }));
+
       // Post health data
       const healthResponse = await postHealthDataByUid(initialProposalData.uid, postData);
       
@@ -307,52 +386,25 @@ export default function ExternalDpsForm({
         <ProfileData />
       </div>
       <div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-        <h3 className="text-primary text-lg mb-6">Formulário de Saúde</h3>
+        <h3 className="text-primary text-lg mb-6">Formulário Declaração Pessoal de Saúde</h3>
         
         <form onSubmit={handleSubmit} className="flex flex-col gap-8 w-full">
           <div>
-            Sofreu nos últimos cinco anos ou sofre atualmente de alguma das condições
-            abaixo? Se sim, descreva nos campos correspondentes.
+            Preencha o formulário abaixo para declarar sua saúde.
           </div>
           
           <div className="space-y-8 divide-y">
-            {Object.entries(diseaseNames).map(([key, question]) => (
-              <div key={key} className={`pt-6 ${errors[key] ? 'animate-shake' : ''}`}>
-                <div className="mb-4">{question}</div>
-                
-                <RadioGroup 
-                  value={formData[key]?.has || ''} 
-                  onValueChange={(value) => handleRadioChange(key, value)}
-                  className="flex items-center gap-4 mb-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id={`yes-${key}`} />
-                    <Label htmlFor={`yes-${key}`}>Sim</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id={`no-${key}`} />
-                    <Label htmlFor={`no-${key}`}>Não</Label>
-                  </div>
-                </RadioGroup>
-                
-                {formData[key]?.has === 'yes' && (
-                  <div className="mt-2">
-                    <Textarea
-                      placeholder="Descreva detalhes aqui"
-                      value={formData[key]?.description || ''}
-                      onChange={(e) => handleDescriptionChange(key, e.target.value)}
-                      className={errors[key] && !formData[key]?.description ? 'border-red-500' : ''}
-                    />
-                    {errors[key] && formData[key]?.has === 'yes' && !formData[key]?.description && (
-                      <p className="text-sm text-red-500 mt-1">Campo obrigatório</p>
-                    )}
-                  </div>
-                )}
-                
-                {errors[key] && !formData[key]?.has && (
-                  <p className="text-sm text-red-500 mt-1">Selecione uma opção</p>
-                )}
-              </div>
+            {Object.entries(diseaseNames).map(([key, question]) => key === 'telefoneContato' ? null : (
+              <DiseaseField
+                key={key}
+                name={key}
+                label={question}
+                value={formData[key] || { has: '', description: '' }}
+                onChange={(value) => handleRadioChange(key, value)}
+                onDescriptionChange={(value) => handleDescriptionChange(key, value)}
+                error={errors[key] || false}
+                isSubmitting={isSubmitting}
+              />
             ))}
           </div>
           

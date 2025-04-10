@@ -70,7 +70,7 @@ export async function getProposalDpsByUid(
     if (response.data) {
       return response.data
     } else {
-      throw new Error('Unsuccessful request')
+      throw new Error(response.data.message);
     }
   } catch (err) {
     console.error(err)
@@ -99,13 +99,13 @@ export async function getHealthDataByUid(
     if (response.data) {
       return response.data
     } else {
-      throw new Error('Unsuccessful request')
+      throw new Error(response.data.message);
     }
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
 
-  return null
+  return null;
 }
 
 export async function postHealthDataByUid(
@@ -118,32 +118,32 @@ export async function postHealthDataByUid(
   }[]
 ) {
   try {
-    const response = await axios.post(`/v1/Proposal/${uid}/dps/questions`, data)
+    const response = await axios.post(`/v1/Proposal/${uid}/dps/questions`, data);
 
     if (response.data) {
       return response.data
     } else {
-      throw new Error('Unsuccessful request')
+      throw new Error(response.data.message);
     }
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
 
-  return null
+  return null;
 }
 
 export async function signProposal(uid: string) {
   try {
-    const response = await axios.post(`/v1/Proposal/${uid}/dps/sign`, null)
+    const response = await axios.post(`/v1/Proposal/${uid}/dps/sign`, null);
 
     if (response.data) {
       return response.data
     } else {
-      throw new Error('Unsuccessful request')
+      throw new Error(response.data.message);
     }
   } catch (err) {
     console.error(err)
   }
 
-  return null
+  return null;
 } 
