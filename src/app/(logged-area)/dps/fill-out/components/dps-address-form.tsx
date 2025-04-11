@@ -101,7 +101,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.zipcode" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">CEP</div>
+							<div className="text-gray-500">CEP <span className="text-red-500">*</span></div>
 							<div className="relative">
 								<Input
 									id="zip"
@@ -145,7 +145,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.state" as Path<T>}
 					render={({ field: { onChange, onBlur, value } }) => (
 						<label>
-							<div className="text-gray-500">UF</div>
+							<div className="text-gray-500">UF <span className="text-red-500">*</span></div>
 							<SelectComp
 								placeholder="UF"
 								options={states}
@@ -177,7 +177,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.city" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Cidade</div>
+							<div className="text-gray-500">Cidade <span className="text-red-500">*</span></div>
 							<Input
 								id="city"
 								type="text"
@@ -206,7 +206,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.district" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Bairro</div>
+							<div className="text-gray-500">Bairro <span className="text-red-500">*</span></div>
 							<Input
 								id="district"
 								type="text"
@@ -239,7 +239,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.street" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Logradouro</div>
+							<div className="text-gray-500">Logradouro <span className="text-red-500">*</span></div>
 							<Input
 								id="street"
 								type="text"
@@ -270,7 +270,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 					name={"address.number" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Número</div>
+							<div className="text-gray-500">Número <span className="text-red-500">*</span></div>
 							<Input
 								id="number"
 								type="text"
