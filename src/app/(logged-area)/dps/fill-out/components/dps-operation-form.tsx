@@ -91,7 +91,7 @@ const DpsOperationForm = ({
           name="operation.operationNumber"
           render={({ field: { onChange, onBlur, value, ref } }) => (
             <label>
-              <div className="text-gray-500">Número da Operação</div>
+              <div className="text-gray-500">Número da Operação <span className="text-red-500">*</span></div>
               <div className="relative">
                 <Input
                   id="operationNumber"
@@ -152,24 +152,7 @@ const DpsOperationForm = ({
             return (
               <label>
                 <div className="text-gray-500">
-                  Nº de Participante(s)
-                  <span 
-                    className="ml-1 inline-block cursor-help"
-                    title="Este valor limita o número máximo de participantes"
-                  >
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor" 
-                      className="w-4 h-4 text-blue-500"
-                    >
-                      <path 
-                        fillRule="evenodd" 
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm-.75 3a.75.75 0 100 1.5.75.75 0 000-1.5z" 
-                        clipRule="evenodd" 
-                      />
-                    </svg>
-                  </span>
+                  Nº de Participante(s) <span className="text-red-500">*</span>
                 </div>
                 <Input
                   id="participantsNumber"
@@ -224,7 +207,7 @@ const DpsOperationForm = ({
             return (
               <label>
                 <div className="text-gray-500">
-                  Valor Total da Operação
+                  Valor Total da Operação <span className="text-red-500">*</span>
                 </div>
                 <Input
                   id="totalValue"

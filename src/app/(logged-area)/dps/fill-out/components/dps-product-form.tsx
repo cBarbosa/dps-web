@@ -8,6 +8,8 @@ import React from 'react'
 import { Control, Controller, FormState } from 'react-hook-form'
 import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
+import { HelpCircle } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -77,7 +79,9 @@ const DpsProductForm = ({
 					render={({ field: { onChange, onBlur, value, ref } }) => {
 						return (
 							<label>
-								<div className="text-gray-500">Produto</div>
+								<div className="text-gray-500">
+									Produto <span className="text-red-500">*</span>
+								</div>
 								<SelectComp
 									placeholder="Produto"
 									options={productOptions}
@@ -114,7 +118,9 @@ const DpsProductForm = ({
 					render={({ field: { onChange, onBlur, value, ref } }) => {
 						return (
 							<label>
-								<div className="text-gray-500">Prazo</div>
+								<div className="text-gray-500">
+									Prazo <span className="text-red-500">*</span>
+								</div>
 								<SelectComp
 									placeholder="Prazo"
 									options={prazosOptions}
@@ -151,12 +157,24 @@ const DpsProductForm = ({
 					name="product.mip"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Capital MIP</div>
+							<div className="text-gray-500 flex items-center gap-2">
+								Capital MIP <span className="text-red-500">*</span>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<HelpCircle className="h-4 w-4 text-gray-400" />
+										</TooltipTrigger>
+										<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
+											<p className="text-sm">Valor financiamento + despesas</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</div>
 							<Input
 								id="mip"
 								type="text"
 								placeholder="R$ 99.999,99"
-								mask="R$ 99999999999999999"
+								mask="R$ 9999999999999"
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
@@ -188,12 +206,24 @@ const DpsProductForm = ({
 					name="product.dfi"
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Capital DFI</div>
+							<div className="text-gray-500 flex items-center gap-2">
+								Capital DFI <span className="text-red-500">*</span>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<HelpCircle className="h-4 w-4 text-gray-400" />
+										</TooltipTrigger>
+										<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
+											<p className="text-sm">Valor de avaliação do imóvel</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</div>
 							<Input
 								id="dfi"
 								type="text"
 								placeholder="R$ 99.999,99"
-								mask="R$ 99999999999999999"
+								mask="R$ 9999999999999"
 								beforeMaskedStateChange={maskToBrlCurrency}
 								className={cn(
 									'w-full px-4 py-6 rounded-lg',
@@ -228,7 +258,9 @@ const DpsProductForm = ({
 					render={({ field: { onChange, onBlur, value, ref } }) => {
 						return (
 							<label>
-								<div className="text-gray-500">Tipo de Imóvel</div>
+								<div className="text-gray-500">
+									Tipo de Imóvel <span className="text-red-500">*</span>
+								</div>
 								<SelectComp
 									placeholder="Tipo de Imóvel"
 									options={tipoImovelOptions}
