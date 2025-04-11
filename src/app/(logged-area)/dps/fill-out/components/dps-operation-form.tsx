@@ -5,13 +5,28 @@ import ShareLine from '@/components/ui/share-line'
 import { cn, maskToBrlCurrency } from '@/lib/utils'
 import React from 'react'
 import { Control, Controller, FormState } from 'react-hook-form'
-import { InferInput, nonEmpty, object, pipe, string, optional } from 'valibot'
+import { InferInput, nonEmpty, object, pipe, string, optional, custom } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 
 export const dpsOperationForm = object({
   operationNumber: pipe(string(), nonEmpty('Campo obrigatório.')),
   participantsNumber: pipe(string(), nonEmpty('Campo obrigatório.')),
-  totalValue: pipe(string(), nonEmpty('Campo obrigatório.')),
+  totalValue: pipe(
+    string(), 
+    nonEmpty('Campo obrigatório.'),
+    custom((value) => {
+      // Extrair o valor numérico do formato de moeda
+      const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+      if (numValue < 1) return false;
+      return true;
+    }, 'Valor mínimo: R$ 1,00.'),
+    custom((value) => {
+      // Extrair o valor numérico do formato de moeda
+      const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+      if (numValue > 10000000) return false;
+      return true;
+    }, 'Valor máximo: R$ 10.000.000,00.')
+  ),
   isParticipantsNumberReadOnly: optional(string()),
   isTotalValueReadOnly: optional(string())
 })
@@ -214,8 +229,8 @@ const DpsOperationForm = ({
                 <Input
                   id="totalValue"
                   type="text"
-                  placeholder="R$ 99.999,99"
-                  mask="R$ 99999999999999999"
+                  placeholder="R$ 10.000.000,00"
+                  mask="R$ 9999999999999"
                   beforeMaskedStateChange={maskToBrlCurrency}
                   className={cn(
                     'w-full px-4 py-6 rounded-lg',
