@@ -189,6 +189,7 @@ const DpsInitialForm = ({
 	const [operationDataLoaded, setOperationDataLoaded] = useState(false)
 		const [showOtherSections, setShowOtherSections] = useState(false) // Controla a visibilidade das demais seções
 	const [showOperationGuidance, setShowOperationGuidance] = useState(false); // Adicionar estado para orientação
+	const [isOperationFull, setIsOperationFull] = useState(false)
 
 	const [prazosOptions, setPrazosOptions] = useState<
 		{ value: string; label: string }[]
@@ -1575,45 +1576,15 @@ const DpsInitialForm = ({
 	};
 
 	// Função para calcular o valor com base na porcentagem
-	const calculateParticipationValue = (percentage: string, totalValueStr: string) => {
-		try {
-			if (!percentage || !totalValueStr) {
-				return '';
-			}
-			
-			// Extrair a porcentagem como número
-			const percentageValue = parseFloat(percentage.replace('%', '').replace(',', '.')) || 0;
-			
-			// Obter o valor total da operação
-			const totalValueNum = convertCapitalValue(totalValueStr) || 0;
-			
-			// Calcular valor com base na porcentagem e valor total
-			const participationValueNum = (totalValueNum * percentageValue) / 100;
-			
-			// Formatar como moeda
-			const valueString = Math.floor(participationValueNum * 100).toString();
-			
-			// Usar maskToBrlCurrency para formatar o valor
-			const result = maskToBrlCurrency({
-				nextState: {
-					value: valueString,
-					selection: { start: 0, end: 0 }
-				},
-				previousState: {
-					value: "",
-					selection: { start: 0, end: 0 }
-				},
-				currentState: {
-					value: `R$ ${valueString}`,
-					selection: { start: 0, end: 0 }
-				}
-			});
-			
-			return result?.value || '';
-		} catch (error) {
-			console.error('Erro ao calcular participação no financiamento:', error);
-			return '';
-		}
+	const calculateParticipationValue = (percentage: string, totalValue: string) => {
+		const numPercentage = parseFloat(percentage?.replace('%', '').replace(',', '.')) || 0;
+		const numValue = parseFloat(totalValue.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+		const participationValue = (numPercentage / 100) * numValue;
+
+		return new Intl.NumberFormat('pt-BR', {
+			style: 'currency',
+			currency: 'BRL'
+		}).format(participationValue);
 	};
 
 	// Função para validar se o percentual de participação é válido para coparticipante, considerando o total já alocado
@@ -2147,6 +2118,9 @@ const DpsInitialForm = ({
 				if (currentParticipants >= declaredParticipants) {
 					// Já atingiu o número máximo de participantes
 					setOperationDataLoaded(true);
+					// Não mostrar as seções pois já atingiu o número máximo de participantes
+					setShowOtherSections(false);
+					setShowOperationGuidance(false);
 					
 					if (foundMainProponent) {
 						toast.error(`A operação já possui ${currentParticipants} participante(s) cadastrado(s), atingindo o limite de ${declaredParticipants}. Não é possível adicionar mais participantes.`);
@@ -2449,6 +2423,32 @@ const DpsInitialForm = ({
 		showOperationGuidance
 	]);
 
+	const calculateTotalValue = () => {
+		const totalOperationValue = getValues().operation.totalValue;
+		let totalValue = 0;
+
+		// Adicionar valor do proponente principal se existir
+		if (existingMainProponent) {
+			const percentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+			totalValue += (percentage / 100) * parseFloat(totalOperationValue.replace(/[^\d,]/g, '').replace(',', '.'));
+		} else if (getValues().profile.name) {
+			const percentage = parseFloat(getValues().profile.participationPercentage?.replace('%', '').replace(',', '.')) || 0;
+			totalValue += (percentage / 100) * parseFloat(totalOperationValue.replace(/[^\d,]/g, '').replace(',', '.'));
+		}
+
+		// Adicionar valores dos coparticipantes
+		coparticipants.forEach(coparticipant => {
+			const percentage = parseFloat(coparticipant.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+			totalValue += (percentage / 100) * parseFloat(totalOperationValue.replace(/[^\d,]/g, '').replace(',', '.'));
+		});
+
+		// Formatar o valor total como moeda
+		return new Intl.NumberFormat('pt-BR', {
+			style: 'currency',
+			currency: 'BRL'
+		}).format(totalValue);
+	};
+
 	return (
 		<form
 			className="pb-12 flex flex-col gap-8 relative"
@@ -2479,6 +2479,14 @@ const DpsInitialForm = ({
 					disabled={isSubmitting || isLoading}
 				/>
 				
+				{!showOperationGuidance && !showOtherSections && participantsNumber && (
+					<div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+						<p className="text-red-700 font-medium">
+							Esta operação já possui {participantsNumber} participante(s) cadastrado(s).
+						</p>
+					</div>
+				)}
+
 				{/* Mensagem de orientação quando a operação não for encontrada */}
 				{showOperationGuidance && !showOtherSections && (
 					<div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -2583,8 +2591,8 @@ const DpsInitialForm = ({
 									<div>Nome</div>
 									<div>CPF</div>
 									<div>Participação</div>
-									<div>Tipo</div>
-									<div></div> {/* Coluna vazia para os botões de ação */}
+									<div>Valor</div>
+									<div></div>
 								</div>
 								
 								{existingMainProponent ? (
@@ -2592,16 +2600,16 @@ const DpsInitialForm = ({
 										<div className="font-medium">{existingMainProponent.name}</div>
 										<div>{existingMainProponent.cpf}</div>
 										<div>{existingMainProponent.participationPercentage}</div>
-										<div className="text-primary">Proponente</div>
-										<div></div> {/* Sem botões para o proponente principal */}
+										<div>{calculateParticipationValue(existingMainProponent.participationPercentage, getValues().operation.totalValue)}</div>
+										<div></div>
 									</div>
 								) : getValues().profile.name && (
 									<div className="grid grid-cols-5 gap-4 py-3 px-4 border-b hover:bg-gray-50">
 										<div className="font-medium">{getValues().profile.name}</div>
 										<div>{getValues().profile.cpf}</div>
 										<div>{getValues().profile.participationPercentage || '0,00%'}</div>
-										<div className="text-primary">Proponente</div>
-										<div></div> {/* Sem botões para o proponente principal */}
+										<div>{calculateParticipationValue(getValues().profile.participationPercentage || '0,00%', getValues().operation.totalValue)}</div>
+										<div></div>
 									</div>
 								)}
 								
@@ -2610,7 +2618,7 @@ const DpsInitialForm = ({
 										<div className="font-medium">{coparticipant.name}</div>
 										<div>{coparticipant.cpf}</div>
 										<div>{coparticipant.participationPercentage}</div>
-										<div className="text-primary">Coparticipante</div>
+										<div>{calculateParticipationValue(coparticipant.participationPercentage, getValues().operation.totalValue)}</div>
 										<div className="flex justify-end gap-2">
 											{/* Exibir botões de ação apenas quando não for continuação de preenchimento */}
 											{!existingMainProponent && (
@@ -2639,8 +2647,16 @@ const DpsInitialForm = ({
 							</div>
 							
 							<div className="flex justify-between mt-6 pt-4 border-t">
-								<div className="font-medium">Total alocado:</div>
-								<div className="font-medium">{calculateTotalParticipation()}</div>
+								<div className="flex gap-8">
+									<div>
+										<span className="font-medium">Total alocado:</span>
+										<span className="ml-2">{calculateTotalParticipation()}</span>
+									</div>
+									<div>
+										<span className="font-medium">Valor total alocado:</span>
+										<span className="ml-2">{calculateTotalValue()}</span>
+									</div>
+								</div>
 							</div>
 							
 							{parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.')) < 100 && (
