@@ -188,7 +188,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.cpf" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">CPF</div>
+							<div className="text-gray-500">CPF <span className="text-red-500">*</span></div>
 							<div className="relative">
 								<Input
 									id="cpf"
@@ -231,7 +231,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.birthdate" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Data de Nascimento</div>
+							<div className="text-gray-500">Data de Nascimento <span className="text-red-500">*</span></div>
 							<DatePicker
 								id="birthdate"
 								placeholder="01/01/1999"
@@ -268,7 +268,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.name" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Nome do Proponente</div>
+							<div className="text-gray-500">Nome do Proponente <span className="text-red-500">*</span></div>
 							<Input
 								id="name"
 								type="text"
@@ -340,7 +340,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.profession" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Atividade profissional</div>
+							<div className="text-gray-500">Atividade profissional <span className="text-red-500">*</span></div>
 							<Input
 								id="profession"
 								type="text"
@@ -373,7 +373,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.email" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">E-mail</div>
+							<div className="text-gray-500">E-mail <span className="text-red-500">*</span></div>
 							<Input
 								id="email"
 								type="text"
@@ -407,7 +407,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.phone" as Path<T>}
 					render={({ field: { onChange, onBlur, value, ref } }) => (
 						<label>
-							<div className="text-gray-500">Telefone</div>
+							<div className="text-gray-500">Telefone <span className="text-red-500">*</span></div>
 							<Input
 								id="phone"
 								type="text"
@@ -440,7 +440,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 					name={"profile.gender" as Path<T>}
 					render={({ field: { onChange, onBlur, value } }) => (
 						<label>
-							<div className="text-gray-500">Sexo</div>
+							<div className="text-gray-500">Sexo <span className="text-red-500">*</span></div>
 							<SelectComp
 								placeholder="Sexo"
 								options={genderOptions}
