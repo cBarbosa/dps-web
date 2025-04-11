@@ -5,7 +5,7 @@ import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn, maskToBrlCurrency, maskToDigitsAndSuffix } from '@/lib/utils'
 import React from 'react'
-import { Control, Controller, FormState } from 'react-hook-form'
+import { Control, Controller, FormState, useWatch } from 'react-hook-form'
 import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
@@ -57,11 +57,32 @@ const DpsProductForm = ({
 	const errors = disabled ? {} : formState.errors?.product;
 	const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
 	
+	// Assistir o valor total da operação para validação
+	const totalOperationValue = useWatch({
+		control,
+		name: "operation.totalValue",
+		defaultValue: ""
+	});
+	
 	// Manipulador genérico para quando campos perdem foco
 	const handleFieldBlur = () => {
 		// Ativar o destaque para campos não preenchidos
 		setHighlightMissing(true);
 	};
+
+	// Função para validar se o valor do capital não excede o valor total da operação
+	const validateCapitalNotExceedTotal = (capitalValue: string, errorMessage: string): string | undefined => {
+		if (!capitalValue || !totalOperationValue) return undefined;
+		
+		const capitalNumeric = convertCapitalValue(capitalValue) || 0;
+		const totalNumeric = convertCapitalValue(totalOperationValue) || 0;
+		
+		if (capitalNumeric > totalNumeric) {
+			return errorMessage;
+		}
+		
+		return undefined;
+	}
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -155,98 +176,144 @@ const DpsProductForm = ({
 					control={control}
 					defaultValue=""
 					name="product.mip"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500 flex items-center gap-2">
-								Capital MIP <span className="text-red-500">*</span>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<HelpCircle className="h-4 w-4 text-gray-400" />
-										</TooltipTrigger>
-										<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
-											<p className="text-sm">Valor financiamento + despesas</p>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							</div>
-							<Input
-								id="mip"
-								type="text"
-								placeholder="R$ 99.999,99"
-								mask="R$ 9999999999999"
-								beforeMaskedStateChange={maskToBrlCurrency}
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500',
-									!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
-								)}
-								autoComplete="mip"
-								onChange={onChange}
-								onBlur={() => {
-									onBlur();
-									handleFieldBlur();
-								}}
-								value={value}
-								ref={ref}
-								disabled={disabled}
-							/>
-							{!disabled && (
-								<div className="text-xs text-red-500">
-									{errors?.mip?.message}
+					render={({ field: { onChange, onBlur, value, ref } }) => {
+						// Validar que o valor não excede o total da operação
+						const exceedsError = !disabled ? 
+							validateCapitalNotExceedTotal(value, 'Capital MIP não pode exceder o valor total da operação') : 
+							undefined;
+						
+						return (
+							<label>
+								<div className="text-gray-500 flex items-center gap-2">
+									Capital MIP <span className="text-red-500">*</span>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger>
+												<HelpCircle className="h-4 w-4 text-gray-400" />
+											</TooltipTrigger>
+											<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
+												<p className="text-sm">Valor financiamento + despesas</p>
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
 								</div>
-							)}
-						</label>
-					)}
+								<Input
+									id="mip"
+									type="text"
+									placeholder="R$ 99.999,99"
+									mask="R$ 9999999999999"
+									beforeMaskedStateChange={maskToBrlCurrency}
+									className={cn(
+										'w-full px-4 py-6 rounded-lg',
+										!disabled && (errors?.mip || exceedsError) && 'border-red-500 focus-visible:border-red-500',
+										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
+									autoComplete="mip"
+									onChange={(e) => {
+										onChange(e);
+										// Validar em tempo real
+										const error = validateCapitalNotExceedTotal(
+											e.target.value, 
+											'Capital MIP não pode exceder o valor total da operação'
+										);
+										if (error && !disabled) {
+											formState.errors.product = {
+												...(formState.errors.product || {}),
+												mip: {
+													type: 'manual',
+													message: error
+												}
+											};
+										}
+									}}
+									onBlur={() => {
+										onBlur();
+										handleFieldBlur();
+									}}
+									value={value}
+									ref={ref}
+									disabled={disabled}
+								/>
+								{!disabled && (
+									<div className="text-xs text-red-500">
+										{exceedsError || errors?.mip?.message}
+									</div>
+								)}
+							</label>
+						);
+					}}
 				/>
 
 				<Controller
 					control={control}
 					defaultValue=""
 					name="product.dfi"
-					render={({ field: { onChange, onBlur, value, ref } }) => (
-						<label>
-							<div className="text-gray-500 flex items-center gap-2">
-								Capital DFI <span className="text-red-500">*</span>
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<HelpCircle className="h-4 w-4 text-gray-400" />
-										</TooltipTrigger>
-										<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
-											<p className="text-sm">Valor de avaliação do imóvel</p>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							</div>
-							<Input
-								id="dfi"
-								type="text"
-								placeholder="R$ 99.999,99"
-								mask="R$ 9999999999999"
-								beforeMaskedStateChange={maskToBrlCurrency}
-								className={cn(
-									'w-full px-4 py-6 rounded-lg',
-									!disabled && errors?.dfi && 'border-red-500 focus-visible:border-red-500',
-									!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
-								)}
-								autoComplete="dfi"
-								onChange={onChange}
-								onBlur={() => {
-									onBlur();
-									handleFieldBlur();
-								}}
-								value={value}
-								ref={ref}
-								disabled={disabled}
-							/>
-							{!disabled && (
-								<div className="text-xs text-red-500">
-									{errors?.dfi?.message}
+					render={({ field: { onChange, onBlur, value, ref } }) => {
+						// Validar que o valor não excede o total da operação
+						const exceedsError = !disabled ? 
+							validateCapitalNotExceedTotal(value, 'Capital DFI não pode exceder o valor total da operação') : 
+							undefined;
+						
+						return (
+							<label>
+								<div className="text-gray-500 flex items-center gap-2">
+									Capital DFI <span className="text-red-500">*</span>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger>
+												<HelpCircle className="h-4 w-4 text-gray-400" />
+											</TooltipTrigger>
+											<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
+												<p className="text-sm">Valor de avaliação do imóvel</p>
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
 								</div>
-							)}
-						</label>
-					)}
+								<Input
+									id="dfi"
+									type="text"
+									placeholder="R$ 99.999,99"
+									mask="R$ 9999999999999"
+									beforeMaskedStateChange={maskToBrlCurrency}
+									className={cn(
+										'w-full px-4 py-6 rounded-lg',
+										!disabled && (errors?.dfi || exceedsError) && 'border-red-500 focus-visible:border-red-500',
+										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
+									autoComplete="dfi"
+									onChange={(e) => {
+										onChange(e);
+										// Validar em tempo real
+										const error = validateCapitalNotExceedTotal(
+											e.target.value, 
+											'Capital DFI não pode exceder o valor total da operação'
+										);
+										if (error && !disabled) {
+											formState.errors.product = {
+												...(formState.errors.product || {}),
+												dfi: {
+													type: 'manual',
+													message: error
+												}
+											};
+										}
+									}}
+									onBlur={() => {
+										onBlur();
+										handleFieldBlur();
+									}}
+									value={value}
+									ref={ref}
+									disabled={disabled}
+								/>
+								{!disabled && (
+									<div className="text-xs text-red-500">
+										{exceedsError || errors?.dfi?.message}
+									</div>
+								)}
+							</label>
+						);
+					}}
 				/>
 			</ShareLine>
 
