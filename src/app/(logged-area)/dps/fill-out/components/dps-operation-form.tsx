@@ -36,16 +36,16 @@ export type DpsOperationFormType = InferInput<typeof dpsOperationForm>
 // Funções de validação separadas para usar no componente
 const validateParticipantsNumber = (value: string): string | undefined => {
   const numValue = parseInt(value, 10);
-  if (isNaN(numValue)) return 'Deve ser um número.';
-  if (numValue < 1) return 'Deve ser no mínimo 1.';
-  if (numValue > 200) return 'Deve ser no máximo 200.';
+  if (isNaN(numValue)) return 'Informe o número de participantes.';
+  if (numValue < 1) return 'Deve ser informado ao menos um participante.';
+  if (numValue > 200) return 'Deve ser informado no máximo 200 participantes.';
   return undefined;
 };
 
 const validateTotalValue = (value: string): string | undefined => {
   // Extrair o valor numérico do formato de moeda
   const numValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-  if (numValue < 1) return 'Valor mínimo: R$ 1,00.';
+  if (numValue < 1) return 'Campo obrigatório.';
   if (numValue > 10000000) return 'Valor máximo: R$ 10.000.000,00.';
   return undefined;
 };
