@@ -19,7 +19,7 @@ export const dpsOperationForm = object({
       const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
       if (numValue < 1) return false;
       return true;
-    }, 'Valor mínimo: R$ 1,00.'),
+    }, 'Valor total da operação é obrigatório.'),
     custom((value) => {
       // Extrair o valor numérico do formato de moeda
       const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
@@ -212,7 +212,7 @@ const DpsOperationForm = ({
                 <Input
                   id="totalValue"
                   type="text"
-                  placeholder="R$ 10.000.000,00"
+                  placeholder="R$ 99.999,99"
                   mask="R$ 9999999999999"
                   beforeMaskedStateChange={maskToBrlCurrency}
                   className={cn(
