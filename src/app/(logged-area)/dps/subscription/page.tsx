@@ -25,6 +25,7 @@ export default async function SubscriptionMedPage({
 	const dataRaw = await getProposals(
 		token,
 		undefined,
+		undefined,
 		29,
 		undefined,
 		undefined,
@@ -37,7 +38,7 @@ export default async function SubscriptionMedPage({
 	const data: DPS[] = dataRaw.items?.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.code,
+			codigo: item.contractNumber ?? item.code,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,

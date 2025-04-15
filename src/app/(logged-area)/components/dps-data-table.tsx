@@ -38,7 +38,7 @@ type DpsStatus = {
 export const columns: ColumnDef<DPS>[] = [
 	{
 		accessorKey: 'codigo',
-		header: 'Cód DPS',
+		header: 'Nº Operação',
 	},
 	{
 		accessorKey: 'cpf',
@@ -82,6 +82,8 @@ export const columns: ColumnDef<DPS>[] = [
 								? `Recusado`
 								: riskStatus === `REVIEW`
 										? `Revisão`
+										: riskStatus === `CANCELED`
+											? `Cancelado`
 											: `-`
 							)}
 					</Badge>

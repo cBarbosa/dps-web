@@ -27,6 +27,7 @@ export default async function SubscriptionPage({
 		undefined,
 		undefined,
 		undefined,
+		undefined,
 		4,
 		`desc`,
 		currentPage
@@ -37,7 +38,7 @@ export default async function SubscriptionPage({
 	const data: DPS[] = dataRaw.items?.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.code,
+			codigo: item.contractNumber ?? item.code,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,

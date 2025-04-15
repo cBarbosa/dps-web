@@ -384,7 +384,7 @@ const lastSituation: number | undefined =
 		proposalData.riskStatus === 'REVIEW' &&
 		proposalData.closed === undefined
 
-	const showCopyLink =  proposalSituation.id === 10;
+	const showCopyLink =  proposalSituation.id === 10 && !proposalData?.riskStatus;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
