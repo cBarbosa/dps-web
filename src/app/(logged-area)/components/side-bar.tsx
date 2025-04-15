@@ -82,14 +82,14 @@ export default function SideBar() {
 									</MenuItem>
 								</RoleBasedRender>
 								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
-									<MenuItem href="/dps/saler-sup">Reanálise</MenuItem>
+									<MenuItem href="/dps/saler-sup">Reanálise Vendedor</MenuItem>
 								</RoleBasedRender>
 								<RoleBasedRender
 									role={role}
 									allowedRoles={[Role.SUBSCRITOR_SUP]}
 								>
 									<MenuItem href="/dps/subscription-review">Revisão do processo</MenuItem>
-									<MenuItem href="/dps/subscription-sup">Reanálise</MenuItem>
+									<MenuItem href="/dps/subscription-sup">Reanálise Subscritor</MenuItem>
 								</RoleBasedRender>
 								<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
 							</MenuSection>
