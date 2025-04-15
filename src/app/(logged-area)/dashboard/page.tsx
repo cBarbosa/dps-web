@@ -266,6 +266,7 @@ async function EndingProposalList() {
 	const data = await getProposals(
 		token,
 		undefined, //cpf
+		undefined, //operation
 		undefined, //dfiStatus
 		undefined, //produto
 		roleBasedData.status, //status
@@ -277,7 +278,7 @@ async function EndingProposalList() {
 	const tableRowsData: DPS[] = data?.items.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.code,
+			codigo: item.contractNumber ?? item.code,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
