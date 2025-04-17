@@ -57,7 +57,7 @@ export default async function DashboardTablePage({
 	const tableRowsData: DPS[] = data?.items.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.contractNumber ?? item.code,
+			codigo: item.contractNumber ?? `-`,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,

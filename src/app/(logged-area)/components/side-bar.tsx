@@ -66,7 +66,7 @@ export default function SideBar() {
 							</MenuItem>
 						</RoleBasedRender>
 						<RoleBasedRender role={role} disallowedRoles={[Role.OFERTA]}>
-							<MenuSection title="Seg. Habitacional" Icon={FileTextIcon}>
+							<MenuSection title="Habitacional" Icon={FileTextIcon}>
 								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR]}>
 									<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
 								</RoleBasedRender>
@@ -91,7 +91,7 @@ export default function SideBar() {
 									<MenuItem href="/dps/subscription-review">Revisão do processo</MenuItem>
 									<MenuItem href="/dps/subscription-sup">Reanálise Subscritor</MenuItem>
 								</RoleBasedRender>
-								<MenuItem href="/dashboard/table">Lista Completa</MenuItem>
+								<MenuItem href="/dashboard/table">Em andamento</MenuItem>
 							</MenuSection>
 						</RoleBasedRender>
 						{/* <MenuSection title="Backup" Icon={SaveIcon}>

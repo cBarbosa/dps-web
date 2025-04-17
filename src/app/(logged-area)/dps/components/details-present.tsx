@@ -10,6 +10,7 @@ import {
 	IdCardIcon,
 	LucideAlertOctagon,
 	PhoneIcon,
+	SquareArrowUpRightIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
 	Undo2Icon,
@@ -32,6 +33,7 @@ import { DataCard } from '../../components/data-card'
 import DfiReports from './dfi-reports'
 import AddressProposal from './address-proposal'
 import DialogReanalisys from './dialog-reanalisys'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 export type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -63,11 +65,35 @@ const DetailsPresent = ({
 	token,
 	uid,
 	propertyTypeDescription,
+	participants,
 }: {
 	token: string
 	uid: string
 	proposalData: ProposalDataType
 	propertyTypeDescription?: string
+	participants?: Array<{
+		uid: string;
+		contractNumber: string;
+		operationValue: number;
+		totalParticipants: number;
+		percentageParticipation: number;
+		financingParticipation: number;
+		participantType: "P" | "C";
+		productId: number;
+		deadlineId: number;
+		propertyTypeId: number;
+		capitalMIP: number;
+		capitalDFI: number;
+		customer: {
+			name: string;
+			document: string;
+		};
+		product: {
+			uid: string;
+			name: string;
+			description: string;
+		};
+	}> | null
 }) => {
 	const session = useSession()
 	const role = (
@@ -143,6 +169,34 @@ const DetailsPresent = ({
 				})
 			})
 	}, [uid]);
+
+	const handleCopyParticipantLink = React.useCallback((participantUid: string) => {
+		const baseUrl = window.location.origin;
+		const url = `${baseUrl}/external/fill-out/form/${participantUid}`;
+
+		// Copy to clipboard
+		navigator.clipboard.writeText(url)
+			.then(() => {
+				// Show success dialog
+				setAlertDialog({
+					open: true,
+					title: 'Link copiado',
+					body: (
+						<p>O link para este participante foi copiado para a área de transferência.</p>
+					),
+				})
+			})
+			.catch(err => {
+				console.error('Erro ao copiar link:', err)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: (
+						<p>Não foi possível copiar o link. Por favor, tente novamente.</p>
+					),
+				})
+			})
+	}, []);
 
 	const reportAnalisys = React.useCallback(
 		async function (action: `REOPEN`) {
@@ -696,7 +750,7 @@ const lastSituation: number | undefined =
 							) : null}
 						</ul>
 					</div>
-					{proposalSituation.id === 10 && (
+					{showCopyLink && (
 						<Button
 							className="bg-orange-600 hover:bg-orange-500 hover:text-white"
 							asChild
@@ -801,6 +855,68 @@ const lastSituation: number | undefined =
 				data={proposalData.history ?? []}
 				onNewInteraction={refetchProposalData}
 			/>
+
+			{participants && participants.length > 1 && (
+				<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<Accordion type="single" collapsible>
+						<AccordionItem value="item-1" className="border-none">
+							<AccordionTrigger className="flex items-center">
+								<h4 className="basis-1 grow text-lg text-primary text-left">Participações</h4>
+							</AccordionTrigger>
+							<AccordionContent>
+								{participants.map((participant, index) => (
+									<div 
+										key={participant.uid} 
+										className={`py-4 ${index < participants.length - 1 ? 'border-b border-gray-200' : ''}`}
+									>
+										<div className="flex justify-between items-center">
+											<div className="flex flex-col">
+												<span className="text-gray-600 mb-1">
+													Coparticipação: {participant.percentageParticipation}%
+												</span>
+												<span className="text-lg font-medium">
+													{participant.customer.name}
+												</span>
+												<span className="text-gray-600">
+													Valor: {Intl.NumberFormat('pt-BR', {
+														style: 'currency',
+														currency: 'BRL',
+													}).format(participant.financingParticipation || 0)}
+												</span>
+											</div>
+											<div className="flex items-center">
+												{participant.uid !== uid ? (
+													<>
+														<Button variant="ghost" className="mr-2" asChild>
+															<Link href={`/dps/details/${participant.uid}`}>
+																<div className="flex items-center">
+																	<SquareArrowUpRightIcon className="mr-2" size={16} />
+																	Ir Detalhe
+																</div>
+															</Link>
+														</Button>
+														<Button 
+															variant="ghost" 
+															onClick={() => handleCopyParticipantLink(participant.uid)}
+														>
+															<div className="flex items-center">
+																<CopyIcon className="mr-2" size={16} />
+																Copiar link
+															</div>
+														</Button>
+													</>
+												) : (
+													<span className="text-gray-400 italic">Detalhes atuais</span>
+												)}
+											</div>
+										</div>
+									</div>
+								))}
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+				</div>
+			)}
 
 			<DialogShowArchive
 				isModalOpen={isModalOpen}

@@ -38,7 +38,7 @@ export default async function SubscriptionPage({
 	const data: DPS[] = dataRaw.items?.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.contractNumber ?? item.code,
+			codigo: item.contractNumber ?? `-`,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
