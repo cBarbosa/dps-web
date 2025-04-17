@@ -53,7 +53,7 @@ export default function Interactions({
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 			<Accordion type="single" collapsible>
 			<AccordionItem value="item-1" className="last:border-none">
-				<AccordionTrigger>
+				<AccordionTrigger className="flex items-center">
 					<h4 className="basis-1 grow text-lg text-primary mb-2 text-left">Interações</h4>
 				</AccordionTrigger>
 				<AccordionContent>
