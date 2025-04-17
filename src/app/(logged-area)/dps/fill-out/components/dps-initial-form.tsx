@@ -693,7 +693,7 @@ const DpsInitialForm = ({
 			
 			if (operationDataLoaded && existingMainProponent) {
 				console.log("=> CONTINUAÇÃO DE CADASTRO: Adicionando coparticipante a uma operação existente");
-			} else {
+		} else {
 				console.log("=> NOVA OPERAÇÃO: Cadastrando proponente principal");
 			}
 			
@@ -973,8 +973,8 @@ const DpsInitialForm = ({
 		setLastQueriedCoparticipantCpf(cleanCpf);
 		
 		try {
-			const proponentDataRaw = await getProponentDataByCpf(cpf);
-			
+		const proponentDataRaw = await getProponentDataByCpf(cpf);
+		
 			if (proponentDataRaw) {
 				const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 					? proponentDataRaw?.detalhes.nascimento.split('/')
@@ -1018,7 +1018,7 @@ const DpsInitialForm = ({
 			console.error("Erro ao buscar dados por CPF:", error);
 			toast.error("Ocorreu um erro ao buscar dados por CPF. Tente novamente.");
 		} finally {
-			setIsLoadingCoparticipant(false);
+		setIsLoadingCoparticipant(false);
 		}
 	}
 
@@ -1235,12 +1235,12 @@ const DpsInitialForm = ({
 	const loadAddressByCep = async (cep: string): Promise<void> => {
 		try {
 			await handleAddress(cep, (field, value) => {
-				// Usando as propriedades específicas com tipos corretos
-				if (field === 'street') setValue('address.street', value);
-				if (field === 'city') setValue('address.city', value);
-				if (field === 'state') setValue('address.state', value);
-				if (field === 'district') setValue('address.district', value);
-			});
+			// Usando as propriedades específicas com tipos corretos
+			if (field === 'street') setValue('address.street', value);
+			if (field === 'city') setValue('address.city', value);
+			if (field === 'state') setValue('address.state', value);
+			if (field === 'district') setValue('address.district', value);
+		});
 			
 			// Após preencher os dados do endereço, validar os campos
 			console.log("Validando campos de endereço após preenchimento automático pelo CEP");
@@ -1274,12 +1274,12 @@ const DpsInitialForm = ({
 	const loadCoparticipantAddressByCep = async (cep: string): Promise<void> => {
 		try {
 			await handleAddress(cep, (field, value) => {
-				// Usando as propriedades específicas com tipos corretos
-				if (field === 'street') coparticipantForm.setValue('address.street', value);
-				if (field === 'city') coparticipantForm.setValue('address.city', value);
-				if (field === 'state') coparticipantForm.setValue('address.state', value);
-				if (field === 'district') coparticipantForm.setValue('address.district', value);
-			});
+			// Usando as propriedades específicas com tipos corretos
+			if (field === 'street') coparticipantForm.setValue('address.street', value);
+			if (field === 'city') coparticipantForm.setValue('address.city', value);
+			if (field === 'state') coparticipantForm.setValue('address.state', value);
+			if (field === 'district') coparticipantForm.setValue('address.district', value);
+		});
 			
 			// Após preencher os dados do endereço, validar os campos
 			console.log("Validando campos de endereço do coparticipante após preenchimento automático pelo CEP");
@@ -2360,15 +2360,15 @@ const DpsInitialForm = ({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<div>
-								<Button
-									type="button"
+				<Button
+					type="button"
 									variant="outline"
 									onClick={() => startCoparticipantForm()}
 									disabled={!isFormValid || isSubmitting || isLoading}
 									className="flex items-center gap-2"
-								>
-									Adicionar Co-participante
-								</Button>
+				>
+					Adicionar Co-participante
+				</Button>
 							</div>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -2552,7 +2552,7 @@ const DpsInitialForm = ({
 									</p>
 									{existingMainProponent && (
 										<>
-											<p className="text-blue-700 mt-2">
+										<p className="text-blue-700 mt-2">
 												<strong>Atenção:</strong> Esta é uma continuação de cadastro de operação. O proponente principal já está cadastrado.
 											</p>
 											<p className="text-blue-700 mt-1">
