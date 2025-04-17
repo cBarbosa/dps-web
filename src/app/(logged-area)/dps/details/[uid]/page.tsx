@@ -1,4 +1,4 @@
-import { getProposalByUid, getTipoImovelOptions } from '../../actions'
+import { getParticipantsByOperation, getProposalByUid, getTipoImovelOptions } from '../../actions'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
@@ -32,12 +32,20 @@ export default async function DetailPage({
 
 	if (!proposalData) redirect('/dashboard')
 
+	// Fetch participants data if contract number is available
+	let participantsData = null
+	if (proposalData.contractNumber) {
+		const participantsResponse = await getParticipantsByOperation(token, proposalData.contractNumber)
+		participantsData = participantsResponse?.data || []
+	}
+
 	return (
 		<DetailsPresent
 			token={token}
 			uid={uid}
 			proposalData={proposalData}
 			propertyTypeDescription={propertyType?.description}
+			participants={participantsData}
 		/>
 	)
 }

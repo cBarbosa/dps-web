@@ -75,7 +75,7 @@ export default async function FillOutPage({
 	const tableRowsData: DPS[] = data?.items.map((item: any) => {
 		return {
 			uid: item.uid,
-			codigo: item.code,
+			codigo: item.code ?? `-`,
 			cpf: item.customer.document,
 			dataCadastro: item?.created && new Date(item.created),
 			tipoDoc: item.type?.description,
