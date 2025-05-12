@@ -38,6 +38,7 @@ import {
 	CarouselNext,
 	CarouselPrevious,
 } from '@/components/ui/carousel'
+import { formatCurrencyBRL } from '@/lib/formatCurrency'
 
 function OfferProfile({
 	uid,
@@ -125,12 +126,14 @@ function OfferProfile({
 			acidente: progressStringToNumber(data.violencia),
 		},
 		perfilFinanceiro: {
-			faixaRenda: data.rendA_FAIXA,
-			score: data.resultadoSPCScoreValor ?? 0,
+			faixaRenda: data.resultadoRendaPfPjFaixa != '' ? data.resultadoRendaPfPjFaixa : 'NÃO CONSTA',
+			score: data.scorE_FAIXA,
 			quantidadeDividas: data.resultadoSPCQuantidadeDasDividas ?? 0,
 			valorDividas: data.resultadoSPCTotalDasDividas,
 			tipoDivida: 'Tipo dívida',
-			resultado: 600
+			resultado: progressStringToNumber(
+				data.resultadoCapaCidadePagamento
+			) ?? 0
 		}
 	})
 
@@ -178,7 +181,7 @@ function OfferProfile({
 							<li>
 								Profissão:{' '}
 								<span className="text-muted-foreground">
-									{offerProfileData.personal.profession ?? 'NADA CONSTA'}
+									{offerProfileData.personal.profession !=='' ? offerProfileData.personal.profession : 'NÃO CONSTA'}
 								</span>
 							</li>
 							<li>
@@ -211,13 +214,14 @@ function OfferProfile({
 
 				<PerfilConsumo data={offerProfileData.perfilConsumo} />
 
-				<PerfilCompra data={offerProfileData.perfilCompra} />
-
 				<PerfilCompliance data={offerProfileData.perfilCompliance} />
+
+				<PerfilFinanceiro data={offerProfileData.perfilFinanceiro} />
 
 				<PerfilRisco data={offerProfileData.perfilRisco} />
 
-				<PerfilFinanceiro data={offerProfileData.perfilFinanceiro} />
+				<PerfilCompra data={offerProfileData.perfilCompra} />
+
 			</div>
 		</div>
 	)
@@ -230,11 +234,13 @@ function ProgressCard({
 	title,
 	progress: progressProp,
 	href,
+	invert
 }: {
 	icon: React.ReactNode
 	title: string
 	progress: number | null
 	href?: string
+	invert?: boolean
 }) {
 	let progress = progressProp
 
@@ -242,7 +248,10 @@ function ProgressCard({
 	if (progress > 100) progress = 100
 	if (progress < 0) progress = 0
 
-	const labelList = ['Baixíssimo', 'Baixo', 'Médio', 'Alto', 'Altíssimo']
+	const labelList = invert
+		? ['Altíssimo', 'Alto', 'Médio', 'Baixo', 'Baixíssimo']
+		: ['Baixíssimo', 'Baixo', 'Médio', 'Alto', 'Altíssimo'];
+
 	const colorList = ['#E45B5E', '#E45B5E', '#EEC232', '#55E47B', '#55E47B']
 
 	const labelIndex = progress === 100 ? 4 : Math.floor((progress / 100) * 5)
@@ -301,7 +310,7 @@ type PerfilConsumo = {
 	indicacaoProduto: number | null
 }
 function PerfilConsumo({ data }: { data: PerfilConsumo }) {
-	const [isOpen, setIsOpen] = useState(false)
+	const [isOpen, setIsOpen] = useState(true)
 	return (
 		<Collapsible
 			open={isOpen}
@@ -376,7 +385,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 		>
 			<CollapsibleTrigger className="w-full">
 				<div className="flex justify-between items-center">
-					<h3 className="text-xl font-medium">Perfil de Risco</h3>
+					<h3 className="text-xl font-medium">Perfil de Risco de Seguro</h3>
 					{isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
 				</div>
 			</CollapsibleTrigger>
@@ -390,6 +399,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 						}
 						title="Risco de morte por qualquer causa"
 						progress={data.morteQualquerCausa}
+						invert={true}
 					/>
 					<ProgressCard
 						icon={
@@ -399,6 +409,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 						}
 						title="Risco de morte natural"
 						progress={data.morteNatural}
+						invert={true}
 					/>
 					<ProgressCard
 						icon={
@@ -408,6 +419,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 						}
 						title="Risco de morte por acidente"
 						progress={data.morteAcidente}
+						invert={true}
 					/>
 					<ProgressCard
 						icon={
@@ -417,6 +429,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 						}
 						title="Risco de doenças crônicas"
 						progress={data.doencaCronica}
+						invert={true}
 					/>
 					<ProgressCard
 						icon={
@@ -426,6 +439,7 @@ function PerfilRisco({ data }: { data: PerfilRisco }) {
 						}
 						title="Risco de acidente"
 						progress={data.acidente}
+						invert={true}
 					/>
 				</div>
 			</CollapsibleContent>
@@ -480,7 +494,7 @@ function PerfilCompliance({ data }: { data: PerfilCompliance }) {
 		>
 			<CollapsibleTrigger className="w-full">
 				<div className="flex justify-between items-center">
-					<h3 className="text-xl font-medium">Perfil de Compliance</h3>
+					<h3 className="text-xl font-medium">Perfil de Risco Compliance</h3>
 					{isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
 				</div>
 			</CollapsibleTrigger>
@@ -691,7 +705,7 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 
 type PerfilFinanceiro = {
 	faixaRenda: string;
-	score: number;
+	score: string;
 	quantidadeDividas: number;
 	valorDividas: number;
 	tipoDivida: string;
@@ -699,6 +713,18 @@ type PerfilFinanceiro = {
 };
 function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 	const [isOpen, setIsOpen] = useState(true)
+
+	const formatResultado = (progress: number): string => {
+
+		if (progress === null) progress = 0
+		if (progress > 100) progress = 100
+		if (progress < 0) progress = 0
+
+		// const labelList = ['Altíssimo', 'Alto', 'Médio', 'Baixo', 'Baixíssimo'];
+		const labelList = ['Baixíssimo', 'Baixo', 'Médio', 'Alto', 'Altíssimo'];
+		const labelIndex = progress === 100 ? 4 : Math.floor((progress / 100) * 5)
+		return labelList[labelIndex];
+	};
 
 	return (
 		<Collapsible
@@ -708,7 +734,7 @@ function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 		>
 			<CollapsibleTrigger className="w-full">
 				<div className="flex justify-between items-center">
-					<h3 className="text-xl font-medium">Perfil Financeiro</h3>
+					<h3 className="text-xl font-medium">Perfil de Risco Financeiro</h3>
 					{isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
 				</div>
 			</CollapsibleTrigger>
@@ -735,19 +761,19 @@ function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 					<CheckListItem check={true}>
 						Valor das dívidas
 						<span className="ml-4 text-muted-foreground">
-							{data.valorDividas ?? `Sem dívidas`}
+							{formatCurrencyBRL(data.valorDividas) ?? `Sem dívidas`}
 						</span>
 					</CheckListItem>
-					<CheckListItem check={true}>
+					{/* <CheckListItem check={true}>
 						Tipo da dívida
 						<span className="ml-4 text-muted-foreground">
 							{data.tipoDivida}
 						</span>
-					</CheckListItem>
+					</CheckListItem> */}
 					<CheckListItem check={true}>
-						Resultado
+						Risco financeiro
 						<span className="ml-4 text-muted-foreground">
-							{data.resultado}
+							{formatResultado(data.resultado)}
 						</span>
 					</CheckListItem>
 				</div>

@@ -111,12 +111,12 @@ export function CatalogCardViva({
 
 	if (productName === 'NOVO TOP CLUBE ') {
 		productImage = `/static/images/card-top-clube.jpg`
-		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`
+		productDescription = `O Novo Top Clube é o Seguro de Vida ideal para a proteção da família.`
 	}
 
 	if (productName === 'NOVO TOP CLUBE  EMPRESARIAL') {
 		productImage = `/static/images/card-top-clube.jpg`
-		productDescription = `O Novo Top Clube Bradesco é o Seguro de Vida ideal para a proteção da família.`
+		productDescription = `O Novo Top Clube é o Seguro de Vida ideal para a proteção da família.`
 	}
 
 	return (
