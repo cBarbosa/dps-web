@@ -126,11 +126,11 @@ function OfferProfile({
 		},
 		perfilFinanceiro: {
 			faixaRenda: data.rendA_FAIXA,
-			score: data.resultadoSPCScoreValor ?? 0,
+			score: data.scorE_FAIXA,
 			quantidadeDividas: data.resultadoSPCQuantidadeDasDividas ?? 0,
 			valorDividas: data.resultadoSPCTotalDasDividas,
 			tipoDivida: 'Tipo dívida',
-			resultado: 600
+			resultado: data.resultadoCapaCidadePagamento
 		}
 	})
 
@@ -691,11 +691,11 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 
 type PerfilFinanceiro = {
 	faixaRenda: string;
-	score: number;
+	score: string;
 	quantidadeDividas: number;
 	valorDividas: number;
 	tipoDivida: string;
-	resultado: number;
+	resultado: string;
 };
 function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 	const [isOpen, setIsOpen] = useState(true)
@@ -738,12 +738,12 @@ function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 							{data.valorDividas ?? `Sem dívidas`}
 						</span>
 					</CheckListItem>
-					<CheckListItem check={true}>
+					{/* <CheckListItem check={true}>
 						Tipo da dívida
 						<span className="ml-4 text-muted-foreground">
 							{data.tipoDivida}
 						</span>
-					</CheckListItem>
+					</CheckListItem> */}
 					<CheckListItem check={true}>
 						Resultado
 						<span className="ml-4 text-muted-foreground">

@@ -50,6 +50,8 @@ export type GetOfferDataByUidResponse = {
 		doc: string
 		status: string
 		risco: string
+		score: number
+		scorE_FAIXA: string
 		natural: string
 		saude: string
 		violencia: string
