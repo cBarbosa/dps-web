@@ -105,6 +105,8 @@ export type GetOfferDataByUidResponse = {
 		resultadoPropensaoDeCompraValor: number
 		resultadoPropensaoDeCompraClassificacao: string
 		resultadoSPCTotalDasDividas: number
+		resultadoSPCQuantidadeDasDividas?: number
+		resultadoSPCScoreValor?: number
 		resultadoNovavidatiRenda: number
 		resultadoCapaCidadePagamento: string
 		resultadoOfertaIdeal: number
