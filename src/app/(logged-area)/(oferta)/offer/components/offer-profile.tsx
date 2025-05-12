@@ -68,6 +68,7 @@ function OfferProfile({
 		perfilCompra: PerfilCompra
 		perfilCompliance: PerfilCompliance
 		perfilRisco: PerfilRisco
+		perfilFinanceiro: PerfilFinanceiro
 	}>({
 		personal: {
 			name: data.nome,
@@ -123,6 +124,14 @@ function OfferProfile({
 			),
 			acidente: progressStringToNumber(data.violencia),
 		},
+		perfilFinanceiro: {
+			faixaRenda: data.rendA_FAIXA,
+			score: data.resultadoSPCScoreValor ?? 0,
+			quantidadeDividas: data.resultadoSPCQuantidadeDasDividas ?? 0,
+			valorDividas: data.resultadoSPCTotalDasDividas,
+			tipoDivida: 'Tipo dívida',
+			resultado: 600
+		}
 	})
 
 	console.log('>>>>', offerProfileData)
@@ -207,6 +216,8 @@ function OfferProfile({
 				<PerfilCompliance data={offerProfileData.perfilCompliance} />
 
 				<PerfilRisco data={offerProfileData.perfilRisco} />
+
+				<PerfilFinanceiro data={offerProfileData.perfilFinanceiro} />
 			</div>
 		</div>
 	)
@@ -675,6 +686,74 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 				</div>
 			</div>
 		</div>
+	)
+}
+
+type PerfilFinanceiro = {
+	faixaRenda: string;
+	score: number;
+	quantidadeDividas: number;
+	valorDividas: number;
+	tipoDivida: string;
+	resultado: number;
+};
+function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
+	const [isOpen, setIsOpen] = useState(true)
+
+	return (
+		<Collapsible
+			open={isOpen}
+			onOpenChange={open => setIsOpen(open)}
+			className="p-5 mx-3 mt-5 rounded-2xl border border-muted"
+		>
+			<CollapsibleTrigger className="w-full">
+				<div className="flex justify-between items-center">
+					<h3 className="text-xl font-medium">Perfil Financeiro</h3>
+					{isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
+				</div>
+			</CollapsibleTrigger>
+			<CollapsibleContent>
+				<div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+					<CheckListItem check={true}>
+						Faixa de Renda
+						<span className="ml-4 text-muted-foreground">
+							{data.faixaRenda}
+						</span>
+					</CheckListItem>
+					<CheckListItem check={true}>
+						Score de crédito
+						<span className="ml-4 text-muted-foreground">
+							{data.score}
+						</span>
+					</CheckListItem>
+					<CheckListItem check={true}>
+						Quantidade de dívidas
+						<span className="ml-4 text-muted-foreground">
+							{data.quantidadeDividas ?? `Sem dívidas`}
+						</span>
+					</CheckListItem>
+					<CheckListItem check={true}>
+						Valor das dívidas
+						<span className="ml-4 text-muted-foreground">
+							{data.valorDividas ?? `Sem dívidas`}
+						</span>
+					</CheckListItem>
+					<CheckListItem check={true}>
+						Tipo da dívida
+						<span className="ml-4 text-muted-foreground">
+							{data.tipoDivida}
+						</span>
+					</CheckListItem>
+					<CheckListItem check={true}>
+						Resultado
+						<span className="ml-4 text-muted-foreground">
+							{data.resultado}
+						</span>
+					</CheckListItem>
+				</div>
+				{/* <p className="mt-10 text-muted-foreground">*NADA CONSTA: Nada consta</p> */}
+			</CollapsibleContent>
+		</Collapsible>
 	)
 }
 
