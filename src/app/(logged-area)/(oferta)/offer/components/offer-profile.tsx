@@ -771,7 +771,7 @@ function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 						</span>
 					</CheckListItem> */}
 					<CheckListItem check={true}>
-						Risco financeiro
+						Capacidade de pagamento
 						<span className="ml-4 text-muted-foreground">
 							{formatResultado(data.resultado)}
 						</span>
