@@ -1,6 +1,6 @@
 'use client'
 import * as React from 'react'
-import InputMask, {
+import ReactInputMask, {
 	BeforeMaskedStateChangeStates,
 	InputState,
 } from 'react-input-mask'
@@ -33,7 +33,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		ref
 	) => {
 		const InputComp = mask ? (
-			<InputMask
+			// @ts-expect-error - ReactInputMask type compatibility issue
+			<ReactInputMask
 				mask={mask}
 				maskPlaceholder={maskPlaceholder ?? ''}
 				beforeMaskedStateChange={beforeMaskedStateChange}
@@ -42,7 +43,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					className
 				)}
 				style={icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined}
-				// inputRef={ref}
+				inputRef={ref}
 				{...props}
 			/>
 		) : (

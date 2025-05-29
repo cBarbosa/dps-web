@@ -10,7 +10,7 @@ import {
 } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { InferInput, object, pipe, string, nonEmpty, optional } from 'valibot'
 import { getProponentDataByCpf, postProposal, getAddressByZipcode, getParticipantsByOperation } from '../../actions'
@@ -23,6 +23,7 @@ import DpsProductForm, {
 	convertCapitalValue,
 	dpsProductForm,
 	DpsProductFormType,
+	createDpsProductFormWithAge
 } from './dps-product-form'
 import { Loader2Icon } from 'lucide-react'
 import DpsAddressForm, {
@@ -30,7 +31,7 @@ import DpsAddressForm, {
 	DpsAddressFormType,
 } from './dps-address-form'
 import validarCpf from 'validar-cpf'
-import DpsOperationForm, { dpsOperationForm } from './dps-operation-form'
+import DpsOperationForm, { dpsOperationForm, DpsOperationFormType } from './dps-operation-form'
 import { 
 	Dialog, 
 	DialogContent, 
@@ -120,6 +121,14 @@ const useToast = () => {
 
 	return { success, error, ToastContainer };
 };
+
+// Função para criar schema dinâmico baseado na idade
+const createDynamicSchema = (proponentAge: number | null) => object({
+	operation: dpsOperationForm,
+	profile: dpsProfileForm,
+	product: createDpsProductFormWithAge(proponentAge),
+	address: dpsAddressForm,
+})
 
 export const dpsInitialForm = object({
 	operation: dpsOperationForm,
@@ -230,6 +239,14 @@ const DpsInitialForm = ({
 	const [lastQueriedCpf, setLastQueriedCpf] = useState<string>('');
 	const [lastQueriedCoparticipantCpf, setLastQueriedCoparticipantCpf] = useState<string>('');
 
+	// Estado para o schema dinâmico baseado na idade
+	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null));
+
+	// Memoizar o resolver para que seja recriado quando o schema mudar
+	const currentResolver = useMemo(() => {
+		return valibotResolver(currentSchema);
+	}, [currentSchema]);
+
 	const {
 		handleSubmit,
 		getValues,
@@ -239,9 +256,10 @@ const DpsInitialForm = ({
 		control,
 		reset,
 		setError,
+		clearErrors,
 		formState: { isSubmitting, isSubmitted, errors, ...formStateRest },
 	} = useForm<DpsInitialForm>({
-		resolver: valibotResolver(dpsInitialForm),
+		resolver: currentResolver,
 		defaultValues: {
 			operation: {
 				operationNumber: '',
@@ -308,37 +326,55 @@ const DpsInitialForm = ({
 	
 	// Watchs para calcular a idade com base na data de nascimento
 	const watchBirthdate = watch('profile.birthdate')
+	
+	// Calcular idade do proponente
+	const proponentAge = useMemo(() => {
+		return calculateAge(watchBirthdate);
+	}, [watchBirthdate]);
 
+	// useEffect para atualizar o schema quando a idade mudar
 	useEffect(() => {
-		const age = calculateAge(watchBirthdate)
+		const newSchema = createDynamicSchema(proponentAge);
+		setCurrentSchema(newSchema);
+		
+		// Forçar revalidação do campo prazo quando a idade mudar
+		if (proponentAge !== null && getValues().product.deadline) {
+			// Usar setTimeout para garantir que o schema seja atualizado primeiro
+			setTimeout(() => {
+				trigger('product.deadline');
+			}, 0);
+		}
+	}, [proponentAge, trigger, getValues]);
 
+	// useEffect para atualizar as opções de prazo baseado na idade
+	useEffect(() => {
 		if(isProductDisabled) return;
 
-		if (age === null) return
+		if (proponentAge === null) return
 
 		switch (true) {
-			case age < 18:
+			case proponentAge < 18:
 				setPrazosOptions([])
 				break
-			case age <= 50:
+			case proponentAge <= 50:
 				setPrazosOptions(prazosOptionsProp)
 				break
-			case age <= 55:
+			case proponentAge <= 55:
 				setPrazosOptions(
 					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 180)
 				)
 				break
-			case age <= 60:
+			case proponentAge <= 60:
 				setPrazosOptions(
 					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 150)
 				)
 				break
-			case age <= 65:
+			case proponentAge <= 65:
 				setPrazosOptions(
 					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 84)
 				)
 				break
-			case age <= 80:
+			case proponentAge <= 80:
 				setPrazosOptions(
 					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 60)
 				)
@@ -347,7 +383,7 @@ const DpsInitialForm = ({
 				setPrazosOptions([])
 				break
 		}
-	}, [watchBirthdate, prazosOptionsProp])
+	}, [proponentAge, prazosOptionsProp])
 
 	// Confirmação para continuar com menos participantes
 	const handleConfirmSubmit = () => {
@@ -682,6 +718,16 @@ const DpsInitialForm = ({
 		try {
 			// Usar setIsLoading em vez de setIsSubmitting para controlar o estado de envio
 			setIsLoading(true);
+			
+			// Verificar se a idade permite o preenchimento de DPS
+			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
+				const ageMessage = proponentAge < 18 
+					? 'Não é possível contratar DPS para menores de 18 anos.'
+					: 'Não é possível contratar DPS para maiores de 80 anos.';
+				toast.error(ageMessage);
+				setIsLoading(false);
+				return;
+			}
 			
 			// Logging para depuração
 			console.log("Form submission data:", v);
@@ -2248,30 +2294,41 @@ const DpsInitialForm = ({
 
 	// Componente auxiliar para o botão Salvar com loading
 	const SaveButton = ({ isSubmitting, isLoading }: { isSubmitting: boolean, isLoading: boolean }) => {
-		// Função para validar o formulário e mostrar mensagens de erro quando o botão for clicado
 		const handleSaveClick = async () => {
-			// Se estiver em processo de submissão, não fazer nada
-			if (isSubmitting || isLoading) return;
+			// Verificar se a idade permite o preenchimento de DPS
+			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
+				const ageMessage = proponentAge < 18 
+					? 'Não é possível contratar DPS para menores de 18 anos.'
+					: 'Não é possível contratar DPS para maiores de 80 anos.';
+				toast.error(ageMessage);
+				return;
+			}
 			
-			await handleFormSubmitClick();
-		};
+			const isValid = await trigger()
+			if (isValid) {
+				// Usar handleSubmit diretamente em vez de onSubmit
+				handleSubmit(onSubmit)()
+			}
+		}
+
+		const isAgeRestricted = proponentAge !== null && (proponentAge < 18 || proponentAge > 80);
 
 		return (
-							<Button
-								type="button"
-								className="w-40"
+			<Button 
+				type="button" 
+				className="w-40" 
+				disabled={isSubmitting || isLoading || isAgeRestricted}
 				onClick={handleSaveClick}
-				disabled={isSubmitting || isLoading}
 			>
 				{isSubmitting || isLoading ? (
 					<>
 						Salvando
-									<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
+						<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
 					</>
-				) : "Salvar"}
-							</Button>
-		);
-	};
+				) : isAgeRestricted ? "Bloqueado" : "Salvar"}
+			</Button>
+		)
+	}
 	
 	// ... código existente continua
 
@@ -2520,6 +2577,24 @@ const DpsInitialForm = ({
 
 					{/* Seção de dados do produto */}
 					<div className="w-full max-w-7xl mx-auto bg-white rounded-3xl p-9 dps-product-section">
+						{/* Alerta de idade restritiva */}
+						{proponentAge !== null && (proponentAge < 18 || proponentAge > 80) && (
+							<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+								<div className="flex items-center">
+									<div className="h-5 w-5 text-red-500 mr-2">⚠️</div>
+									<p className="text-red-700 font-medium">
+										{proponentAge < 18 
+											? `Proponente menor de idade (${proponentAge} anos)`
+											: `Proponente acima da idade permitida (${proponentAge} anos)`
+										}
+									</p>
+								</div>
+								<p className="text-red-600 text-sm mt-2">
+									O preenchimento de DPS é permitido apenas para proponentes com idade entre 18 e 80 anos.
+								</p>
+							</div>
+						)}
+						
 						<DpsProductForm
 							control={control}
 							formState={formState}
@@ -2527,6 +2602,7 @@ const DpsInitialForm = ({
 							productOptions={productOptions}
 							tipoImovelOptions={tipoImovelOptions}
 							disabled={isSubmitting || isLoading || isProductDisabled}
+							proponentAge={proponentAge}
 						/>
 					</div>
 
