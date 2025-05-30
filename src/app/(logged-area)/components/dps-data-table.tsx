@@ -37,6 +37,19 @@ type DpsStatus = {
 
 export const columns: ColumnDef<DPS>[] = [
 	{
+		accessorKey: 'dataCadastro',
+		header: 'Dt Cadastro',
+		cell: ({ getValue }) => {
+			const date = getValue<Date>()
+
+			return date?.toLocaleDateString('pt-BR', {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+			})
+		},
+	},
+	{
 		accessorKey: 'codigo',
 		header: 'Nº Operação',
 	},
