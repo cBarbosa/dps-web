@@ -40,19 +40,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		const inputStyle = icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined;
 		
 		const InputComp = mask ? (
-			// @ts-expect-error - ReactInputMask type compatibility issue  
-			<ReactInputMask
-				mask={mask}
-				maskPlaceholder={maskPlaceholder ?? ''}
-				beforeMaskedStateChange={beforeMaskedStateChange}
-				value={props.value || ''}
-				onChange={props.onChange}
-				disabled={props.disabled || false}
-				placeholder={props.placeholder}
-				className={inputClassName}
-				style={inputStyle}
-				inputRef={ref}
-			/>
+			React.createElement(ReactInputMask as any, {
+				mask,
+				maskPlaceholder: maskPlaceholder ?? '',
+				beforeMaskedStateChange,
+				inputRef: ref,
+				className: inputClassName,
+				style: inputStyle,
+				...props
+			})
 		) : (
 			<input
 				type={type}
