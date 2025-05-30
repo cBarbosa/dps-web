@@ -10,7 +10,7 @@ import {
 } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { InferInput, object, pipe, string, nonEmpty, optional } from 'valibot'
 import { getProponentDataByCpf, postProposal, getAddressByZipcode, getParticipantsByOperation } from '../../actions'
@@ -333,18 +333,20 @@ const DpsInitialForm = ({
 	}, [watchBirthdate]);
 
 	// useEffect para atualizar o schema quando a idade mudar
+	const memoizedGetValues = useCallback(getValues, []);
+
 	useEffect(() => {
 		const newSchema = createDynamicSchema(proponentAge);
 		setCurrentSchema(newSchema);
 		
 		// Forçar revalidação do campo prazo quando a idade mudar
-		if (proponentAge !== null && getValues().product.deadline) {
+		if (proponentAge !== null && memoizedGetValues().product.deadline) {
 			// Usar setTimeout para garantir que o schema seja atualizado primeiro
 			setTimeout(() => {
 				trigger('product.deadline');
 			}, 0);
 		}
-	}, [proponentAge, trigger, getValues]);
+	}, [proponentAge, trigger, memoizedGetValues]);
 
 	// useEffect para atualizar as opções de prazo baseado na idade
 	useEffect(() => {
