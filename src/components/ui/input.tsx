@@ -1,10 +1,5 @@
 'use client'
 import * as React from 'react'
-import ReactInputMask, {
-	BeforeMaskedStateChangeStates,
-	InputState,
-} from 'react-input-mask'
-
 import { cn } from '@/lib/utils'
 
 export interface InputProps
@@ -13,9 +8,7 @@ export interface InputProps
 	iconOffset?: number
 	mask?: string | Array<string | RegExp>
 	maskPlaceholder?: string
-	beforeMaskedStateChange?: (
-		states: BeforeMaskedStateChangeStates
-	) => InputState
+	beforeMaskedStateChange?: any
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -39,8 +32,22 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		
 		const inputStyle = icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined;
 		
-		const InputComp = mask ? (
-			React.createElement(ReactInputMask as any, {
+		// Use dynamic import to avoid SSR issues with ReactInputMask
+		const [ReactInputMask, setReactInputMask] = React.useState<any>(null);
+		
+		React.useEffect(() => {
+			if (mask && typeof window !== 'undefined') {
+				import('react-input-mask').then((module) => {
+					setReactInputMask(() => module.default);
+				}).catch(() => {
+					// Fallback to regular input if import fails
+					setReactInputMask(false);
+				});
+			}
+		}, [mask]);
+		
+		const InputComp = mask && ReactInputMask ? (
+			React.createElement(ReactInputMask, {
 				mask,
 				maskPlaceholder: maskPlaceholder ?? '',
 				beforeMaskedStateChange,
