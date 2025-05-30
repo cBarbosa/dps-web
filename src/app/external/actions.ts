@@ -38,7 +38,8 @@ export type ProposalByUid = {
     description: string
   }
   propertyTypeId: number
-  deadLineId: number
+  deadLineId?: number
+  deadlineMonths?: number
   deadLine: {
     id: number
     description: string
