@@ -80,7 +80,8 @@ const DetailsPresent = ({
 		financingParticipation: number;
 		participantType: "P" | "C";
 		productId: number;
-		deadlineId: number;
+		deadlineId?: number;
+		deadlineMonths?: number;
 		propertyTypeId: number;
 		capitalMIP: number;
 		capitalDFI: number;
@@ -586,6 +587,15 @@ const lastSituation: number | undefined =
 									}
 								>
 									<DollarSignIcon />
+								</DetailDataCard>
+							)}
+
+							{proposalData.deadlineMonths && (
+								<DetailDataCard
+									label="Prazo"
+									value={`${proposalData.deadlineMonths} meses`}
+								>
+									<CalendarIcon />
 								</DetailDataCard>
 							)}
 						</div>
