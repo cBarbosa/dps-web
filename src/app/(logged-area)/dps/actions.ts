@@ -98,7 +98,8 @@ export async function postProposal(
 		productId: string
 		profession: string
 		typeId: number
-		deadlineId: number
+		deadlineId?: number
+		deadlineMonths?: number
 		propertyTypeId: number
 		capitalMip: number
 		capitalDfi: number
@@ -347,6 +348,7 @@ export type ProposalByUid = {
 	};
 	propertyTypeId?: number; // Opcional, pois é opcional em ProposalByUidA
 	deadLineId?: number; // Opcional, pois é opcional em ProposalByUidA
+	deadlineMonths?: number; // Opcional, pois é opcional em ProposalByUidA
 	deadLine?: {
 	  id: number;
 	  description: string;
@@ -1129,7 +1131,8 @@ export async function getParticipantsByOperation(
 					financingParticipation: number;
 					participantType: "P" | "C";
 					productId: number;
-					deadlineId: number;
+					deadlineId?: number;
+					deadlineMonths?: number;
 					propertyTypeId: number;
 					capitalMIP: number;
 					capitalDFI: number;
