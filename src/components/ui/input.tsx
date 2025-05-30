@@ -32,35 +32,28 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		},
 		ref
 	) => {
-		const MaskedInput = ReactInputMask as any;
+		const inputClassName = cn(
+			'flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-base transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+			className
+		);
+		
+		const inputStyle = icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined;
 		
 		const InputComp = mask ? (
-			<MaskedInput
-				mask={mask}
-				maskPlaceholder={maskPlaceholder ?? ''}
-				beforeMaskedStateChange={beforeMaskedStateChange}
-				{...props}
-			>
-				{(inputProps: any) => (
-					<input
-						{...inputProps}
-						ref={ref}
-						className={cn(
-							'flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-base transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-							className
-						)}
-						style={icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined}
-					/>
-				)}
-			</MaskedInput>
+			React.createElement(ReactInputMask as any, {
+				mask,
+				maskPlaceholder: maskPlaceholder ?? '',
+				beforeMaskedStateChange,
+				inputRef: ref,
+				className: inputClassName,
+				style: inputStyle,
+				...props
+			})
 		) : (
 			<input
 				type={type}
-				className={cn(
-					'flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-base transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-					className
-				)}
-				style={icon ? { paddingLeft: 38 + iconOffset + 'px' } : undefined}
+				className={inputClassName}
+				style={inputStyle}
 				ref={ref}
 				{...props}
 			/>
