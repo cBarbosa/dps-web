@@ -80,7 +80,36 @@ const productYelum = {
 	telefoneContato: diseaseSchema,
 }
 
-const healthForm = object(productYelum)
+const productYelumNovo = {
+	'1': diseaseSchema,
+	'2': diseaseSchema,
+	'3': diseaseSchema,
+	'4': diseaseSchema,
+	'5': diseaseSchema,
+	'6': diseaseSchema,
+	'7': diseaseSchema,
+	'8': diseaseSchema,
+	'9': diseaseSchema,
+	'10': diseaseSchema,
+	'11': diseaseSchema,
+	'12': diseaseSchema,
+	'13': diseaseSchema,
+	'14': diseaseSchema,
+	'15': diseaseSchema,
+	'16': diseaseSchema,
+	'17': diseaseSchema,
+	'18': diseaseSchema,
+	'19': diseaseSchema,
+	'20': diseaseSchema,
+	'21': diseaseSchema,
+	'22': diseaseSchema,
+	'23': diseaseSchema,
+	'24': diseaseSchema,
+	'25': diseaseSchema,
+	telefoneContato: diseaseSchema,
+};
+
+const healthForm = object(productYelumNovo)
 
 export type HealthForm = InferInput<typeof healthForm>
 
