@@ -294,7 +294,7 @@ export default function ExternalDpsForm({
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Prazo</div>
                 <div className="font-medium">
-                  {initialProposalData.deadLine?.description || "Não informado"}
+                  {initialProposalData.deadlineMonths ? `${initialProposalData.deadlineMonths} meses` : "Não informado"}
                 </div>
               </div>
             </div>

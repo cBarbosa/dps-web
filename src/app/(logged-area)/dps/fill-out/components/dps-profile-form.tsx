@@ -97,6 +97,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	validateCpf,
 	placeholderPercentage,
 	isSingleParticipant,
+	isLastParticipant,
 	setValue,
 }: {
 	data?: Partial<DpsProfileFormType>
@@ -110,6 +111,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	validateCpf?: (cpf: string) => boolean
 	placeholderPercentage?: string
 	isSingleParticipant?: boolean
+	isLastParticipant?: boolean
 	setValue?: (name: string, value: any) => void
 }) => {
 	const errors = formState.errors?.profile as any
@@ -479,6 +481,24 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 									<div className="text-gray-500">% Participação</div>
 									<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
 										100,00%
+									</div>
+									<div className="text-xs text-red-500">
+										{errors?.participationPercentage?.message}
+									</div>
+								</label>
+							);
+						}
+
+						// Se for o último participante, renderizar versão somente leitura com valor preenchido
+						if (isLastParticipant) {
+							return (
+								<label>
+									<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+									<div className="h-12 w-full rounded-lg border border-input bg-blue-50 px-4 flex items-center">
+										{typeof value === 'string' ? value : '0,00%'}
+									</div>
+									<div className="text-xs text-blue-600">
+										Preenchido automaticamente - último participante deve completar 100%
 									</div>
 									<div className="text-xs text-red-500">
 										{errors?.participationPercentage?.message}
