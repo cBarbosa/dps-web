@@ -239,6 +239,9 @@ const DpsInitialForm = ({
 	const [lastQueriedCpf, setLastQueriedCpf] = useState<string>('');
 	const [lastQueriedCoparticipantCpf, setLastQueriedCoparticipantCpf] = useState<string>('');
 
+	// Estado para controlar se é o último participante sendo cadastrado
+	const [isLastParticipant, setIsLastParticipant] = useState<boolean>(false);
+
 	// Estado para o schema dinâmico baseado na idade
 	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null));
 
@@ -1181,26 +1184,29 @@ const DpsInitialForm = ({
 				return;
 			}
 			
-			// Verificar se há erros no campo percentual de participação
-			const percentErrors = coparticipantForm.formState.errors?.profile?.participationPercentage;
-			if (percentErrors) {
-				// Se houver erro no percentual, exibir o erro e impedir o envio
-				toast.error(typeof percentErrors.message === 'string' ? percentErrors.message : 'Percentual de participação inválido');
-				return;
-			}
-			
-			// Validar o percentual de participação antes de salvar
-			const percentValue = formData.profile.participationPercentage;
-			const validationResult = validateCoparticipantPercentage(percentValue);
-			
-			if (!validationResult.valid) {
-				// Se a validação falhar, exibir erro e impedir o salvamento
-				coparticipantForm.setError('profile.participationPercentage', {
-					type: 'manual',
-					message: validationResult.message
-				});
-				toast.error(validationResult.message);
-				return;
+			// Se for o último participante, NÃO validar o percentual pois foi preenchido automaticamente
+			if (!isLastParticipant) {
+				// Verificar se há erros no campo percentual de participação apenas para participantes que não são o último
+				const percentErrors = coparticipantForm.formState.errors?.profile?.participationPercentage;
+				if (percentErrors) {
+					// Se houver erro no percentual, exibir o erro e impedir o envio
+					toast.error(typeof percentErrors.message === 'string' ? percentErrors.message : 'Percentual de participação inválido');
+					return;
+				}
+				
+				// Validar o percentual de participação antes de salvar apenas se não for o último participante
+				const percentValue = formData.profile.participationPercentage;
+				const validationResult = validateCoparticipantPercentage(percentValue);
+				
+				if (!validationResult.valid) {
+					// Se a validação falhar, exibir erro e impedir o salvamento
+					coparticipantForm.setError('profile.participationPercentage', {
+						type: 'manual',
+						message: validationResult.message
+					});
+					toast.error(validationResult.message);
+					return;
+				}
 			}
 			
 			setIsLoadingCoparticipant(true);
@@ -1251,6 +1257,9 @@ const DpsInitialForm = ({
 			// Limpar o ID do coparticipante sendo editado
 			setEditingCoparticipantId(null);
 			
+			// Resetar o estado do último participante
+			setIsLastParticipant(false);
+			
 			// Fechar o diálogo após salvar
 			setIsCoparticipantDialogOpen(false);
 			
@@ -1274,6 +1283,9 @@ const DpsInitialForm = ({
 		
 		// Set the ID of the coparticipant being edited
 		setEditingCoparticipantId(coparticipant.id);
+		
+		// Na edição, sempre permitir alterar o percentual, mesmo que seja o último participante
+		setIsLastParticipant(false);
 		
 		// Open the dialog
 		setIsCoparticipantDialogOpen(true);
@@ -1456,19 +1468,24 @@ const DpsInitialForm = ({
 		
 		// Verificar o total de participantes informado
 		const numParticipants = parseInt(getValues().operation.participantsNumber, 10) || 2;
-		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+		// CORREÇÃO: Contar participantes já cadastrados + o que está sendo cadastrado agora (se não for edição)
+		const alreadyCadastrated = coparticipants.length + 1; // +1 pelo proponente principal
+		const currentParticipants = editingCoparticipantId ? alreadyCadastrated : alreadyCadastrated + 1;
 		const participantsLeft = numParticipants - currentParticipants;
 		
-		// Se este é o último participante, verificar se o total fecha em 100%
-		if (participantsLeft === 0 && !editingCoparticipantId && totalWithNew < 100) {
-			return {
-				valid: false,
-				message: `O último participante deve completar 100%. Total atual: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
-				availablePercentage: ''  // Não sugerir valor
-			};
+		// Se este é o último participante (participantsLeft === 0), verificar se o total fecha em 100%
+		if (participantsLeft === 0 && !editingCoparticipantId) {
+			// Para o último participante, deve completar exatamente 100%
+			if (totalWithNew !== 100) {
+				return {
+					valid: false,
+					message: `O último participante deve completar exatamente 100%. Total atual: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
+					availablePercentage: ''  // Não sugerir valor
+				};
+			}
 		}
 		
-		// Se este é o penúltimo participante ou menos, verificar se há espaço para outros
+		// Se ainda há participantes para cadastrar (participantsLeft > 0), verificar se há espaço para outros
 		if (participantsLeft > 0) {
 			// Verificar se o percentual deixa pelo menos 1% para cada participante restante
 			const minimumPercentageNeeded = participantsLeft * 1; // 1% mínimo por participante
@@ -1500,7 +1517,17 @@ const DpsInitialForm = ({
 		try {
 			if (!value) return;
 			
-			// Validar o percentual usando a função específica para coparticipantes
+			// Se for o último participante, não validar pois o valor foi preenchido automaticamente
+			if (isLastParticipant) {
+				console.log("Último participante - validação de percentual ignorada (valor preenchido automaticamente)");
+				// Apenas calcular o valor sem validar
+				const totalValue = coparticipantForm.getValues().operation.totalValue || '';
+				const participationValue = calculateParticipationValue(value, totalValue);
+				setCoparticipantParticipationValue(participationValue);
+				return;
+			}
+			
+			// Validar o percentual usando a função específica para coparticipantes (apenas se não for o último)
 			const coparticipantValidation = validateCoparticipantPercentage(value);
 			if (!coparticipantValidation.valid) {
 				// Definir erro no campo percentual para impedir o prosseguimento
@@ -1597,39 +1624,61 @@ const DpsInitialForm = ({
 			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
 			const participantsLeft = numParticipants - currentParticipants;
 			
-			if (participantsLeft > 0) {
-				// Calcular o percentual total já alocado
-				let totalAllocated = 0;
-				
-				// Se temos proponente principal existente, incluir seu percentual
-				if (existingMainProponent) {
-					const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
-					totalAllocated += mainPercentage;
-				} else {
-					// Adicionar percentual do proponente principal do formulário
+			// Calcular o percentual total já alocado de forma precisa
+			let totalAllocated = 0;
+			
+			// Se temos proponente principal existente, incluir seu percentual
+			if (existingMainProponent) {
+				const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+				totalAllocated += mainPercentage;
+			} else {
+				// Adicionar percentual do proponente principal do formulário
 				const mainPercentStr = formData.profile.participationPercentage || '0,00%';
 				const mainPercent = parseFloat(mainPercentStr.replace('%', '').replace(',', '.')) || 0;
 				totalAllocated += mainPercent;
-				}
+			}
+			
+			// Adicionar percentuais dos coparticipantes existentes
+			coparticipants.forEach(cp => {
+				const cpPercent = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+				totalAllocated += cpPercent;
+			});
+			
+			// Calcular o percentual exato disponível
+			const exactAvailablePercent = 100 - totalAllocated;
+			
+			// Se é o último participante (participantsLeft === 0), preencher automaticamente com o percentual restante
+			if (participantsLeft === 0) {
+				// Garantir que o valor seja no mínimo 0,01% e no máximo o disponível
+				const remainingPercent = Math.max(0.01, exactAvailablePercent);
+				const remainingPercentageFormatted = remainingPercent.toFixed(2).replace('.', ',') + '%';
 				
-				// Adicionar percentuais dos coparticipantes existentes
-				coparticipants.forEach(cp => {
-					const cpPercent = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
-					totalAllocated += cpPercent;
-				});
+				console.log(`Último participante detectado. Percentual total alocado: ${totalAllocated.toFixed(2)}%, Restante: ${remainingPercent.toFixed(2)}%`);
 				
-				// Calcular o percentual disponível (apenas para exibição na informação, não para sugestão)
-				const availablePercent = 100 - totalAllocated;
+				coparticipantForm.setValue('profile.participationPercentage', remainingPercentageFormatted);
 				
-				// Não armazenar valor sugerido, deixar vazio para o usuário decidir
-				setCoparticipantSuggestedPercentage('');
+				// Calcular e definir o valor da participação
+				const totalValue = formData.operation.totalValue || '';
+				const participationValue = calculateParticipationValue(remainingPercentageFormatted, totalValue);
+				setCoparticipantParticipationValue(participationValue);
 				
-				// Não preencher automaticamente o campo, deixar vazio para o usuário informar
+				// Definir que este é o último participante para desabilitar edição do percentual
+				setIsLastParticipant(true);
+				
+				console.log(`Campo preenchido automaticamente com ${remainingPercentageFormatted} para o último participante`);
+			} else {
+				// Não é o último participante, deixar vazio para o usuário decidir
 				coparticipantForm.setValue('profile.participationPercentage', '');
 				setCoparticipantParticipationValue('');
+				setIsLastParticipant(false);
 				
-				console.log(`Percentual alocado: ${totalAllocated.toFixed(2)}%, Restante: ${availablePercent.toFixed(2)}%, Participantes restantes: ${participantsLeft}`);
+				console.log(`Não é o último participante. Restam ${participantsLeft} participantes após este.`);
 			}
+			
+			// Limpar outras configurações
+			setCoparticipantSuggestedPercentage('');
+			
+			console.log(`Percentual alocado: ${totalAllocated.toFixed(2)}%, Disponível: ${exactAvailablePercent.toFixed(2)}%, Participantes restantes: ${participantsLeft}`);
 			
 			// Open coparticipant dialog
 			setIsCoparticipantDialogOpen(true);
@@ -1702,7 +1751,7 @@ const DpsInitialForm = ({
 				}
 				if (getValues().operation.totalValue) {
 					setValue('operation.totalValue', '');
-				setTotalValue('');
+			setTotalValue('');
 				}
 				
 				// Liberar os campos para edição
@@ -2173,7 +2222,11 @@ const DpsInitialForm = ({
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={coparticipantForm.handleSubmit(handleCoparticipantSubmit)} className="space-y-8">
+					<form onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						// Não fazer nada aqui, o botão agora chama a função diretamente
+					}} className="space-y-8">
 						<div className="bg-gray-50 p-4 rounded-lg mb-4">
 							<h3 className="text-primary text-lg mb-4">Dados da Operação (somente leitura)</h3>
 							<div className="grid grid-cols-3 gap-4">
@@ -2247,6 +2300,7 @@ const DpsInitialForm = ({
 							participationValue={coparticipantParticipationValue}
 							onParticipationPercentageBlur={handleCoparticipantPercentageBlur}
 							validateCpf={validateCpfNotDuplicated}
+							isLastParticipant={isLastParticipant}
 						/>
 
 						{/* DpsAddressForm removido - co-participantes usam o mesmo endereço da operação
@@ -2266,7 +2320,18 @@ const DpsInitialForm = ({
 							>
 								Cancelar
 							</Button>
-							<Button type="submit" disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}>
+							<Button 
+								type="button" 
+								disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+								onClick={async () => {
+									// Chamar manualmente a validação e submissão do formulário de coparticipante
+									const isValid = await coparticipantForm.trigger();
+									if (isValid) {
+										const formData = coparticipantForm.getValues();
+										await handleCoparticipantSubmit(formData);
+									}
+								}}
+							>
 								{isLoadingCoparticipant ? (
 									<>
 										Salvando
