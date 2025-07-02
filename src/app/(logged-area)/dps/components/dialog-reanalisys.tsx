@@ -18,6 +18,7 @@ const DialogReanalisys = ({
   children,
   onConfirm,
   confirmText = "Continuar",
+  hideCancel = false,
 }: {
   open?: boolean;
   defaultOpen?: boolean;
@@ -26,6 +27,7 @@ const DialogReanalisys = ({
   children: React.ReactNode;
   onConfirm?: () => void;
   confirmText?: string;
+  hideCancel?: boolean;
 }) => {
   return (
     <AlertDialog
@@ -39,7 +41,7 @@ const DialogReanalisys = ({
           <AlertDialogDescription>{children}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Fechar</AlertDialogCancel>
+          {!hideCancel && <AlertDialogCancel>Fechar</AlertDialogCancel>}
           {onConfirm ? (
             <AlertDialogAction onClick={onConfirm}>
               {confirmText}

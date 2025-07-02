@@ -13,6 +13,7 @@ import {
 	SquareArrowUpRightIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
+	Trash2Icon,
 	Undo2Icon,
 	UserRoundIcon,
 } from 'lucide-react'
@@ -21,19 +22,32 @@ import {
 	getProposalSignByUid,
 	putProposalAnalysis,
 	putProposalReview,
+	putProposalCancel,
 } from '../actions'
-import { cn, formatCpf } from '@/lib/utils'
+import {
+	cn,
+	formatCpf
+} from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Interactions from './interactions'
 import MedReports from './med-reports'
-import { createPdfUrlFromBase64, DialogShowArchive } from './dialog-archive'
+import {
+	createPdfUrlFromBase64,
+	DialogShowArchive
+} from './dialog-archive'
 import { useSession } from 'next-auth/react'
 import { DataCard } from '../../components/data-card'
 import DfiReports from './dfi-reports'
 import AddressProposal from './address-proposal'
 import DialogReanalisys from './dialog-reanalisys'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from '@/components/ui/accordion'
 
 export type ProposalDataType = NonNullable<
 	Awaited<ReturnType<typeof getProposalByUid>>
@@ -58,6 +72,9 @@ export const statusDescriptionDict: Record<number, string> = {
 	42: 'MIP Avaliada',
 	52: 'Processo enviado para revisão',
 	53: 'Processo revisado',
+	54: 'Processo enviado para exclusão',
+	55: 'Processo enviado para exclusão',
+	56: 'Processo excluído'
 }
 
 const DetailsPresent = ({
@@ -97,6 +114,7 @@ const DetailsPresent = ({
 	}> | null
 }) => {
 	const session = useSession()
+	const router = useRouter()
 	const role = (
 		(session.data as any)?.role as string | undefined
 	)?.toLowerCase()
@@ -111,6 +129,7 @@ const DetailsPresent = ({
 		body?: ReactNode
 		onConfirm?: () => void
 		confirmText?: string
+		hideCancel?: boolean
 	}>({
 		open: false,
 	})
@@ -369,6 +388,65 @@ const DetailsPresent = ({
 		[token, refetchProposalData, uid]
 	);
 
+	const reportCancelDps = React.useCallback(
+		async function () {
+			setAlertDialog({
+				open: true,
+				title: 'Confirmação de Exclusão',
+				body: (
+					<>
+						Confirma a{' '}
+						<span className="text-base font-semibold text-destructive">
+							SOLICITAÇÃO DE EXCLUSÃO
+						</span>{' '}
+						do processo?
+					</>
+				),
+				onConfirm: handleCancelDps,
+				confirmText: 'Confirmar Exclusão',
+			});
+
+			async function handleCancelDps() {
+				setAlertDialog({
+					open: false,
+				});
+
+				const response = await putProposalCancel(token, uid, {
+					Action: 'CANCEL',
+					IsApproved: false,
+				});
+
+				if (response) {
+					if (response.success) {
+						setAlertDialog({
+							open: true,
+							title: 'Exclusão Realizada',
+							body: (
+								<p>A solicitação de exclusão foi registrada com sucesso. O processo foi enviado para exclusão.</p>
+							),
+							onConfirm: () => router.push('/dashboard'),
+							confirmText: 'Voltar ao Dashboard',
+							hideCancel: true,
+						});
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: response.message,
+						});
+					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao processar a solicitação de exclusão.',
+					});
+				}
+			}
+		},
+		[token, uid, router]
+	);
+
 	const calculateDaysBetween = (
 		dateString?: string,
 		thresholdDays: number = 10
@@ -439,6 +517,7 @@ const lastSituation: number | undefined =
 		proposalData.closed === undefined
 
 	const showCopyLink =  proposalSituation.id === 10 && !proposalData?.riskStatus;
+	const showCancelButton = (proposalSituation.id === 10 || proposalSituation.id === 20) && proposalData?.riskStatus !== `CANCELED`;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -482,7 +561,9 @@ const lastSituation: number | undefined =
 											? `Aprovado`
 											: proposalData?.riskStatus === `REVIEW`
 												? `Em análise pela seguradora`
-												:`Recusado`
+												: proposalData?.riskStatus === `CANCELED`
+													? `Cancelado`
+													: `Recusado`
 									}
 								</Badge>
 							</h4>
@@ -616,6 +697,15 @@ const lastSituation: number | undefined =
 								>
 									<CopyIcon className="mr-2" size={18} />
 									Copiar Link
+								</Button>
+							)}
+							{showCancelButton && (
+								<Button
+									variant="destructive"
+									onClick={reportCancelDps}
+								>
+									<Trash2Icon className="mr-2" size={18} />
+									Solicitar Exclusão
 								</Button>
 							)}
 							{showReanalisys && (
@@ -936,10 +1026,17 @@ const lastSituation: number | undefined =
 
 			<DialogReanalisys
 				open={alertDialog.open}
-				onOpenChange={() => setAlertDialog({ open: false })}
+				onOpenChange={() => {
+					if (alertDialog.hideCancel) {
+						router.push('/dashboard')
+					} else {
+						setAlertDialog({ open: false })
+					}
+				}}
 				title={alertDialog.title ?? ''}
 				onConfirm={alertDialog.onConfirm}
 				confirmText={alertDialog.confirmText ?? 'Continuar'}
+				hideCancel={alertDialog.hideCancel}
 			>
 				{alertDialog.body}
 			</DialogReanalisys>

@@ -20,7 +20,10 @@ export default function AddressProposal({
                     <AccordionTrigger>
                         <div className="flex">
                             <MapIcon className="text-green-950 mr-2"/>
-                            <h4 className="text-lg text-primary mb-2">Dados de Endereço</h4>
+                            <h4 className="text-lg text-primary mb-2">Endereço</h4>
+                            <span className="text-xs text-primary ml-2 no-underline pointer-events-none">
+                                (do imóvel financiado ou imóvel em garantia)
+                            </span>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
