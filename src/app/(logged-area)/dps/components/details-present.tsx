@@ -517,7 +517,9 @@ const lastSituation: number | undefined =
 		proposalData.closed === undefined
 
 	const showCopyLink =  proposalSituation.id === 10 && !proposalData?.riskStatus;
-	const showCancelButton = (proposalSituation.id === 10 || proposalSituation.id === 20) && proposalData?.riskStatus !== `CANCELED`;
+	const showCancelButton = role === 'vendedor'
+		&& (proposalSituation.id === 3 || proposalSituation.id === 10 || proposalSituation.id === 20)
+		&& proposalData?.riskStatus !== `CANCELED`;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
