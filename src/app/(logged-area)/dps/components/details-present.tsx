@@ -5,6 +5,7 @@ import { GoBackButton } from '@/components/ui/go-back-button'
 import {
 	Building2Icon,
 	CalendarIcon,
+	CheckIcon,
 	CopyIcon,
 	DollarSignIcon,
 	IdCardIcon,
@@ -447,6 +448,65 @@ const DetailsPresent = ({
 		[token, uid, router]
 	);
 
+	const reportConfirmCancelDps = React.useCallback(
+		async function () {
+			setAlertDialog({
+				open: true,
+				title: 'Confirmação de Cancelamento',
+				body: (
+					<>
+						Confirma o{' '}
+						<span className="text-base font-semibold text-destructive">
+							CANCELAMENTO
+						</span>{' '}
+						do processo?
+					</>
+				),
+				onConfirm: handleConfirmCancelDps,
+				confirmText: 'Confirmar Cancelamento',
+			});
+
+			async function handleConfirmCancelDps() {
+				setAlertDialog({
+					open: false,
+				});
+
+				const response = await putProposalCancel(token, uid, {
+					Action: 'CANCEL',
+					IsApproved: true,
+				});
+
+				if (response) {
+					if (response.success) {
+						setAlertDialog({
+							open: true,
+							title: 'Cancelamento Realizado',
+							body: (
+								<p>{response.message}</p>
+							),
+							onConfirm: () => router.push('/dashboard'),
+							confirmText: 'Voltar ao Dashboard',
+							hideCancel: true,
+						});
+					} else {
+						setAlertDialog({
+							open: true,
+							title: 'Erro',
+							body: response.message,
+						});
+					}
+				} else {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro ao processar a confirmação de cancelamento.',
+					});
+				}
+			}
+		},
+		[token, uid, router]
+	);
+
 	const calculateDaysBetween = (
 		dateString?: string,
 		thresholdDays: number = 10
@@ -517,9 +577,8 @@ const lastSituation: number | undefined =
 		proposalData.closed === undefined
 
 	const showCopyLink =  proposalSituation.id === 10 && !proposalData?.riskStatus;
-	const showCancelButton = role === 'vendedor'
-		&& (proposalSituation.id === 3 || proposalSituation.id === 10 || proposalSituation.id === 20)
-		&& proposalData?.riskStatus !== `CANCELED`;
+	const showCancelButton = (proposalSituation.id === 10 || proposalSituation.id === 20) && !proposalData?.riskStatus;
+	const showConfirmCancelButton = role === 'vendedor-sup' && proposalData?.riskStatus === 'CANCELED' && !proposalData.closed;
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -708,6 +767,15 @@ const lastSituation: number | undefined =
 								>
 									<Trash2Icon className="mr-2" size={18} />
 									Solicitar Exclusão
+								</Button>
+							)}
+							{showConfirmCancelButton && (
+								<Button
+									variant="destructive"
+									onClick={reportConfirmCancelDps}
+								>
+									<CheckIcon className="mr-2" size={18} />
+									Confirmar Cancelamento
 								</Button>
 							)}
 							{showReanalisys && (
