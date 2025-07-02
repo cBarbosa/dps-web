@@ -1,7 +1,7 @@
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization';
 import { redirect } from 'next/navigation';
 import React from 'react';
-import { getReopenedProposals } from '../actions';
+import { getCanceledProposals } from '../actions';
 import DpsDataTable, { DPS } from '../../components/dps-data-table';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,7 +27,7 @@ export default async function Page({
 
     const currentPage = searchParams?.page ? +searchParams.page : 1;
 
-    const dataRaw = await getReopenedProposals(
+    const dataRaw = await getCanceledProposals(
             token,
             undefined,
             currentPage
