@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 import DpsInitialForm from '../components/dps-initial-form'
 import validateCpf from 'validar-cpf'
-import { getProfissionDescription } from '@/lib/utils'
+
 
 export default async function DpsFormPage({
 	searchParams,
@@ -87,7 +87,6 @@ export default async function DpsFormPage({
 		name: proponentDataRaw?.detalhes.nome,
 		socialName: undefined,
 		birthdate: proponentDataBirthdate,
-		profession: getProfissionDescription(proponentDataRaw?.detalhes.profissao),
 		gender: proponentDataRaw?.detalhes.sexo,
 		email: undefined,
 		phone: undefined,
@@ -114,7 +113,7 @@ export default async function DpsFormPage({
 							birthdate: autocompleteData?.birthdate
 								? new Date(autocompleteData.birthdate)
 								: undefined,
-							profession: autocompleteData.profession
+
 						},
 					}}
 					prazosOptions={prazosOptions}
