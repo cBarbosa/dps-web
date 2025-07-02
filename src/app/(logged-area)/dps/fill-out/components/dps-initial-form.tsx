@@ -818,39 +818,39 @@ const DpsInitialForm = ({
 
 		// Verificar se o CPF já está cadastrado como participante (proponente principal ou coparticipante)
 		const mainProponentCpf = existingMainProponent?.cpf.replace(/\D/g, '') || getValues().profile.cpf.replace(/\D/g, '');
-		
+
 		if (cleanCpf === mainProponentCpf || coparticipants.some(cp => cp.cpf.replace(/\D/g, '') === cleanCpf && (!editingCoparticipantId || cp.id !== editingCoparticipantId))) {
 			console.log(`CPF ${cleanCpf} já consta na lista de participantes.`);
-			
+
 			// Definir erro no campo CPF para impedir o prosseguimento
 			coparticipantForm.setError('profile.cpf', { 
 				type: 'manual', 
 				message: `CPF ${cpf} já consta na lista de participantes.` 
 			});
-			
+
 			// Limpar dados preenchidos automaticamente para evitar confusão
 			coparticipantForm.setValue('profile.name', '');
 			coparticipantForm.setValue('profile.birthdate', null as any);
 			coparticipantForm.setValue('profile.profession', '');
 			coparticipantForm.setValue('profile.gender', '');
-			
+
 			// Mostrar mensagem de erro mas não fechar o diálogo
 			toast.error(`CPF ${cpf} já consta na lista de participantes.`);
-			
+
 			return;
 		}
-		
+
 		// Limpar qualquer erro existente de CPF se o CPF é válido e único
 		coparticipantForm.clearErrors('profile.cpf');
-		
+
 		setIsLoadingCoparticipant(true);
-		
+
 		// Armazenar o CPF como o último consultado
 		setLastQueriedCoparticipantCpf(cleanCpf);
-		
+
 		try {
 		const proponentDataRaw = await getProponentDataByCpf(cpf);
-		
+
 			if (proponentDataRaw) {
 				const proponentDataBirthdateAux = proponentDataRaw?.detalhes.nascimento
 					? proponentDataRaw?.detalhes.nascimento.split('/')
@@ -868,22 +868,22 @@ const DpsInitialForm = ({
 				if (proponentDataRaw?.detalhes.nome) {
 					coparticipantForm.setValue('profile.name', proponentDataRaw.detalhes.nome);
 				}
-				
+
 				if (proponentDataBirthdate) {
 					coparticipantForm.setValue('profile.birthdate', proponentDataBirthdate);
 				}
-				
-				if (proponentDataRaw?.detalhes.profissao) {
-					coparticipantForm.setValue(
-						'profile.profession',
-						getProfissionDescription(proponentDataRaw.detalhes.profissao)
-					);
-				}
-				
+
+				// if (proponentDataRaw?.detalhes.profissao) {
+				// 	coparticipantForm.setValue(
+				// 		'profile.profession',
+				// 		getProfissionDescription(proponentDataRaw.detalhes.profissao)
+				// 	);
+				// }
+
 				if (proponentDataRaw?.detalhes.sexo) {
 					coparticipantForm.setValue('profile.gender', proponentDataRaw.detalhes.sexo);
 				}
-				
+
 				// Atualizar o formulário para refletir as mudanças
 				coparticipantForm.trigger();
 				console.log("Dados do coparticipante preenchidos com sucesso:", proponentDataRaw);
