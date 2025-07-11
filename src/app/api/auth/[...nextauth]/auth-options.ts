@@ -34,12 +34,10 @@ export const authOptions: NextAuthOptions = {
 				)
 
 				if (response.status === 401) {
-					console.log('NÃO AUTENTICADO')
 					throw new Error('Email ou senha inválido')
 				}
 
 				if (!response.ok) {
-					console.log('ERRO AO AUTENTICAR')
 					throw new Error('Ocorreu um erro ao autenticar')
 				}
 
@@ -47,15 +45,16 @@ export const authOptions: NextAuthOptions = {
 
 				if (json.success) {
 					return {
-						id: '1',
+						id: 'x',
 						email: json.data.userData.email,
 						name: json.data.userData.name,
 						accessToken: json.data.accessToken,
 						role: json.data.role,
-					}
+						expires: json.data.expires,
+					};
 				}
 
-				return null
+				return null;
 			},
 		}),
 	],
@@ -71,7 +70,9 @@ export const authOptions: NextAuthOptions = {
 			return token
 		},
 		async session({ session, token }) {
-			if (new Date(token.expires as string) > new Date()) {
+
+			if (new Date(token.expires as string) < new Date()) {
+
 				return {
 					user: undefined,
 					expires: (token.expires as string) ?? '',
@@ -80,8 +81,9 @@ export const authOptions: NextAuthOptions = {
 			session = Object.assign({}, session, {
 				accessToken: token.accessToken,
 				role: token.role,
+				// expires: token.expires,
 			})
-			return session
+			return session;
 		},
 	},
 	pages: {
