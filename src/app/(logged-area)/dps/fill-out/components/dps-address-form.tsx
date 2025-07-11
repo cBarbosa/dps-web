@@ -94,7 +94,7 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
-			<h3 className="text-primary text-lg">Dados de Endereço</h3>
+			<h3 className="text-primary text-lg">Endereço</h3>
 			<ShareLine>
 				<Controller
 					control={control}

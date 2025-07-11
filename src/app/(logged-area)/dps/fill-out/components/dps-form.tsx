@@ -125,8 +125,7 @@ const DpsForm = ({
 			},
 			operation: {
 				operationNumber: '',
-				participantsNumber: '',
-				totalValue: ''
+				participantsNumber: ''
 			},
 			address: {
 				zipcode: '',

@@ -69,10 +69,10 @@ const DpsProductForm = ({
 	const errors = disabled ? {} : formState.errors?.product;
 	const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
 	
-	// Assistir o valor total da operação para validação
-	const totalOperationValue = useWatch({
+	// Monitora o valor do Capital MIP para usar como valor total da operação na validação do DFI
+	const mipValue = useWatch({
 		control,
-		name: "operation.totalValue",
+		name: "product.mip",
 		defaultValue: ""
 	});
 	
@@ -94,15 +94,15 @@ const DpsProductForm = ({
 		setHighlightMissing(true);
 	};
 
-	// Função para validar se o valor do capital não excede o valor total da operação
-	const validateCapitalNotExceedTotal = (capitalValue: string, errorMessage: string): string | undefined => {
-		if (!capitalValue || !totalOperationValue) return undefined;
+	// Função para validar se o DFI não excede o Capital MIP
+	const validateDfiNotExceedMip = (dfiValue: string): string | undefined => {
+		if (!dfiValue || !mipValue) return undefined;
 		
-		const capitalNumeric = convertCapitalValue(capitalValue) || 0;
-		const totalNumeric = convertCapitalValue(totalOperationValue) || 0;
+		const dfiNumeric = convertCapitalValue(dfiValue) || 0;
+		const mipNumeric = convertCapitalValue(mipValue) || 0;
 		
-		if (capitalNumeric > totalNumeric) {
-			return errorMessage;
+		if (dfiNumeric > mipNumeric) {
+			return 'Capital DFI não pode exceder o Capital MIP';
 		}
 		
 		return undefined;
@@ -229,22 +229,17 @@ const DpsProductForm = ({
 					defaultValue=""
 					name="product.mip"
 					render={({ field: { onChange, onBlur, value, ref } }) => {
-						// Validar que o valor não excede o total da operação
-						const exceedsError = !disabled ? 
-							validateCapitalNotExceedTotal(value, 'Capital MIP não pode exceder o valor total da operação') : 
-							undefined;
-						
 						return (
 							<label>
 								<div className="text-gray-500 flex items-center gap-2">
-									Capital MIP <span className="text-red-500">*</span>
+									Capital MIP (Valor Total da Operação) <span className="text-red-500">*</span>
 									<TooltipProvider>
 										<Tooltip>
 											<TooltipTrigger>
 												<HelpCircle className="h-4 w-4 text-gray-400" />
 											</TooltipTrigger>
 											<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
-												<p className="text-sm">Valor financiamento + despesas</p>
+												<p className="text-sm">Valor financiamento + despesas (usado como valor total da operação)</p>
 											</TooltipContent>
 										</Tooltip>
 									</TooltipProvider>
@@ -257,7 +252,7 @@ const DpsProductForm = ({
 									beforeMaskedStateChange={maskToBrlCurrency}
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
-										!disabled && (errors?.mip || exceedsError) && 'border-red-500 focus-visible:border-red-500',
+										!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500',
 										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
 									autoComplete="mip"
@@ -274,7 +269,7 @@ const DpsProductForm = ({
 								/>
 								{!disabled && (
 									<div className="text-xs text-red-500">
-										{exceedsError || errors?.mip?.message}
+										{errors?.mip?.message}
 									</div>
 								)}
 							</label>
@@ -287,9 +282,9 @@ const DpsProductForm = ({
 					defaultValue=""
 					name="product.dfi"
 					render={({ field: { onChange, onBlur, value, ref } }) => {
-						// Validar que o valor não excede o total da operação
+						// Validar que o DFI não excede o Capital MIP
 						const exceedsError = !disabled ? 
-							validateCapitalNotExceedTotal(value, 'Capital DFI não pode exceder o valor total da operação') : 
+							validateDfiNotExceedMip(value) : 
 							undefined;
 						
 						return (
