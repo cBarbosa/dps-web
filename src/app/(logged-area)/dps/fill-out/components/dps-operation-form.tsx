@@ -2,38 +2,21 @@
 
 import { Input } from '@/components/ui/input'
 import ShareLine from '@/components/ui/share-line'
-import { cn, maskToBrlCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import React from 'react'
 import { Control, Controller, FormState } from 'react-hook-form'
-import { InferInput, nonEmpty, object, pipe, string, optional, custom } from 'valibot'
+import { InferInput, nonEmpty, object, pipe, string, optional } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 
 export const dpsOperationForm = object({
   operationNumber: pipe(string(), nonEmpty('Campo obrigatório.')),
   participantsNumber: pipe(string(), nonEmpty('Campo obrigatório.')),
-  totalValue: pipe(
-    string(), 
-    nonEmpty('Campo obrigatório.'),
-    custom((value) => {
-      // Extrair o valor numérico do formato de moeda
-      const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-      if (numValue < 1) return false;
-      return true;
-    }, 'Valor total da operação é obrigatório.'),
-    custom((value) => {
-      // Extrair o valor numérico do formato de moeda
-      const numValue = parseFloat((value as string).replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-      if (numValue > 10000000) return false;
-      return true;
-    }, 'Valor máximo: R$ 10.000.000,00.')
-  ),
   isParticipantsNumberReadOnly: optional(string()),
-  isTotalValueReadOnly: optional(string())
 })
 
 export type DpsOperationFormType = InferInput<typeof dpsOperationForm>
 
-// Funções de validação separadas para usar no componente
+// Função de validação para número de participantes
 const validateParticipantsNumber = (value: string): string | undefined => {
   const numValue = parseInt(value, 10);
   if (isNaN(numValue)) return 'Informe o número de participantes.';
@@ -42,20 +25,11 @@ const validateParticipantsNumber = (value: string): string | undefined => {
   return undefined;
 };
 
-const validateTotalValue = (value: string): string | undefined => {
-  // Extrair o valor numérico do formato de moeda
-  const numValue = parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-  if (numValue < 1) return 'Campo obrigatório.';
-  if (numValue > 10000000) return 'Valor máximo: R$ 10.000.000,00.';
-  return undefined;
-};
-
 const DpsOperationForm = ({
   data,
   control,
   formState,
   onParticipantsChange,
-  onTotalValueChange,
   disabled,
   onOperationNumberBlur,
   isLoadingOperationData
@@ -64,14 +38,13 @@ const DpsOperationForm = ({
   control: Control<DpsInitialForm>
   formState: FormState<DpsInitialForm>
   onParticipantsChange?: (value: string) => void
-  onTotalValueChange?: (value: string) => void
   disabled?: boolean
   onOperationNumberBlur?: (value: string) => void
   isLoadingOperationData?: boolean
 }) => {
   const errors = formState.errors?.operation
   
-  // Adicionar estado para armazenar o valor anterior do número da operação
+  // Estado para armazenar o valor anterior do número da operação
   const [previousOperationNumber, setPreviousOperationNumber] = React.useState<string>('');
   const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
   
@@ -106,7 +79,6 @@ const DpsOperationForm = ({
                   )}
                   onChange={(e) => {
                     onChange(e);
-                    // Não armazenamos o valor aqui para evitar atualizações frequentes
                   }}
                   onBlur={(e) => {
                     onBlur();
@@ -145,7 +117,7 @@ const DpsOperationForm = ({
           defaultValue=""
           name="operation.participantsNumber"
           render={({ field: { onChange, onBlur, value, ref } }) => {
-            // Verificar se o campo deve estar em modo somente leitura - aceitar tanto boolean quanto string 'true'
+            // Verificar se o campo deve estar em modo somente leitura
             const isReadOnly = control._formValues?.operation?.isParticipantsNumberReadOnly === true || 
                                control._formValues?.operation?.isParticipantsNumberReadOnly === 'true';
             
@@ -195,61 +167,9 @@ const DpsOperationForm = ({
           }}
         />
         
-        <Controller
-          control={control}
-          defaultValue=""
-          name="operation.totalValue"
-          render={({ field: { onChange, onBlur, value, ref } }) => {
-            // Verificar se o campo deve estar em modo somente leitura - aceitar tanto boolean quanto string 'true'
-            const isReadOnly = control._formValues?.operation?.isTotalValueReadOnly === true || 
-                               control._formValues?.operation?.isTotalValueReadOnly === 'true';
-            
-            return (
-              <label>
-                <div className="text-gray-500">
-                  Valor Total da Operação <span className="text-red-500">*</span>
-                </div>
-                <Input
-                  id="totalValue"
-                  type="text"
-                  placeholder="R$ 99.999,99"
-                  mask="R$ 9999999999999"
-                  beforeMaskedStateChange={maskToBrlCurrency}
-                  className={cn(
-                    'w-full px-4 py-6 rounded-lg',
-                    errors?.totalValue && 'border-red-500 focus-visible:border-red-500',
-                    highlightMissing && !value && 'border-orange-400 bg-orange-50',
-                    (isLoadingOperationData || isReadOnly) ? 'bg-gray-100 opacity-70' : ''
-                  )}
-                  onChange={(e) => {
-                    onChange(e)
-                    if (onTotalValueChange) onTotalValueChange(e.target.value)
-                    // Validação adicional quando o valor muda
-                    const error = validateTotalValue(e.target.value);
-                    if (error) {
-                      // Exibir erro via formState.errors
-                      formState.errors.operation = {
-                        ...(formState.errors.operation || {}),
-                        totalValue: {
-                          type: 'manual',
-                          message: error
-                        }
-                      };
-                    }
-                  }}
-                  onBlur={(e) => {
-                    onBlur();
-                    handleFieldBlur();
-                  }}
-                  value={value}
-                  ref={ref}
-                  disabled={disabled || isLoadingOperationData || isReadOnly}
-                />
-                <div className="text-xs text-red-500">{errors?.totalValue?.message}</div>
-              </label>
-            );
-          }}
-        />
+        {/* Campo removido: Valor Total da Operação */}
+        {/* Agora o valor total será obtido do Capital MIP na seção de dados do produto */}
+        
       </ShareLine>
     </div>
   )

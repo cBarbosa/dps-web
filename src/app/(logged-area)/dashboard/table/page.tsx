@@ -44,9 +44,12 @@ export default async function DashboardTablePage({
 		status, //status
 		`desc`, // orderBy
 		currentPage
-	)
+	) ?? {
+		totalItems: 0,
+		items: []
+	}
 
-	if (data === null) return redirect('/logout')
+	// if (data === null) return redirect('/logout')
 
 	const pageAmount = Math.ceil(data?.totalItems / 10)
 
