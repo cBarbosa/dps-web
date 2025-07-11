@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import {
 	calculateAge,
 	cn,
-	getProfissionDescription,
 	RecursivePartial,
 	maskToBrlCurrency
 } from '@/lib/utils'
@@ -205,7 +204,7 @@ const DpsInitialForm = ({
 	>([])
 	
 	const [participantsNumber, setParticipantsNumber] = useState<string>('')
-	const [totalValue, setTotalValue] = useState<string>('')
+	// totalValue removido - agora usa product.mip como valor total da operação
 	const [participationPercentage, setParticipationPercentage] = useState<string>('')
 	const [participationValue, setParticipationValue] = useState<string>('')
 	const [coparticipantParticipationValue, setCoparticipantParticipationValue] = useState<string>('')
@@ -220,6 +219,17 @@ const DpsInitialForm = ({
 	// Adicionar estado para controlar submissão pendente
 	const [isSubmitPending, setIsSubmitPending] = useState(false);
 	const [pendingSubmitData, setPendingSubmitData] = useState<DpsInitialForm | null>(null);
+
+	// Adicionar estado para o diálogo de confirmação de cancelamento
+	const [isCancelConfirmDialogOpen, setIsCancelConfirmDialogOpen] = useState(false);
+
+	// Adicionar estado para o modal de participantes faltando
+	const [isMissingParticipantsModalOpen, setIsMissingParticipantsModalOpen] = useState(false);
+	const [missingParticipantsData, setMissingParticipantsData] = useState<{
+		declared: number;
+		current: number;
+		missing: number;
+	} | null>(null);
 
 	// Adicionar estado para controlar se o produto deve estar desabilitado
 	const [isProductDisabled, setIsProductDisabled] = useState(false);
@@ -267,10 +277,7 @@ const DpsInitialForm = ({
 			operation: {
 				operationNumber: '',
 				participantsNumber: '',
-				totalValue: '',
-				// Adicionar valores iniciais para os novos campos
 				isParticipantsNumberReadOnly: undefined,
-				isTotalValueReadOnly: undefined
 			},
 			profile: {
 				cpf: data?.profile?.cpf ?? '',
@@ -314,7 +321,8 @@ const DpsInitialForm = ({
 
 	// Remove automatic calculation for participation percentage and value
 	useEffect(() => {
-		if (participantsNumber && totalValue) {
+		const mipValue = getValues().product?.mip || '';
+		if (participantsNumber && mipValue) {
 			// No longer automatically calculate participation percentage here
 			// Only calculate default values if no participants have been added yet
 			if (coparticipants.length === 0) {
@@ -325,7 +333,7 @@ const DpsInitialForm = ({
 			setParticipationPercentage('')
 			setParticipationValue('')
 		}
-	}, [participantsNumber, totalValue, coparticipants.length])
+	}, [participantsNumber, getValues().product?.mip, coparticipants.length])
 	
 	// Watchs para calcular a idade com base na data de nascimento
 	const watchBirthdate = watch('profile.birthdate')
@@ -408,6 +416,103 @@ const DpsInitialForm = ({
 		setIsLoading(false);
 	};
 
+	// Função para abrir o modal de confirmação de cancelamento
+	const handleCancelFormClick = () => {
+		setIsCancelConfirmDialogOpen(true);
+	};
+
+	// Função para confirmar o cancelamento e resetar o formulário
+	const handleConfirmCancelForm = () => {
+		// Resetar o formulário para valores iniciais
+		reset({
+			operation: {
+				operationNumber: '',
+				participantsNumber: '',
+				isParticipantsNumberReadOnly: undefined,
+			},
+			profile: {
+				cpf: '',
+				name: '',
+				birthdate: undefined,
+				profession: '',
+				email: '',
+				phone: '',
+				socialName: '',
+				gender: '',
+				participationPercentage: '',
+			},
+			product: {
+				product: '',
+				deadline: '',
+				mip: '',
+				dfi: '',
+				propertyType: '',
+			},
+			address: {
+				zipcode: '',
+				street: '',
+				number: '',
+				complement: '',
+				district: '',
+				city: '',
+				state: '',
+			}
+		});
+
+		// Limpar todos os estados relacionados
+		setCoparticipants([]);
+		setExistingMainProponent(null);
+		setParticipantsNumber('');
+		setParticipationPercentage('');
+		setParticipationValue('');
+		setCoparticipantParticipationValue('');
+		setCoparticipantSuggestedPercentage('');
+		setLastQueriedCpf('');
+		setLastQueriedCoparticipantCpf('');
+		setLastQueriedOperation('');
+		setOperationDataLoaded(false);
+		setIsProductDisabled(false);
+		setShowOtherSections(false);
+		setShowOperationGuidance(false);
+		setIsOperationFull(false);
+		setIsLastParticipant(false);
+		setCpfParamPending(null);
+
+		// Fechar o diálogo de confirmação
+		setIsCancelConfirmDialogOpen(false);
+
+		// Limpar erros do formulário
+		clearErrors();
+
+		// Mostrar mensagem de sucesso
+		toast.success('Formulário cancelado com sucesso!');
+
+		// Redirecionar para a página de preenchimento inicial
+		router.push('/dps/fill-out');
+	};
+
+	// Função para cancelar o cancelamento (não fazer nada)
+	const handleCancelCancelForm = () => {
+		setIsCancelConfirmDialogOpen(false);
+	};
+
+	// Função para abrir o modal de participantes faltando
+	const showMissingParticipantsModal = (declared: number, current: number) => {
+		const missing = declared - current;
+		setMissingParticipantsData({
+			declared,
+			current,
+			missing
+		});
+		setIsMissingParticipantsModalOpen(true);
+	};
+
+	// Função para fechar o modal de participantes faltando
+	const closeMissingParticipantsModal = () => {
+		setIsMissingParticipantsModalOpen(false);
+		setMissingParticipantsData(null);
+	};
+
 	// Função separada para o envio efetivo dos dados
 	const submitForm = async (v: DpsInitialForm) => {
 		console.log("submitForm called with data:", v);
@@ -415,7 +520,7 @@ const DpsInitialForm = ({
 
 		try {
 			// Extrair valores necessários para a participação
-			const totalValue = convertCapitalValue(v.operation.totalValue) ?? 0;
+			const totalValue = convertCapitalValue(v.product.mip) ?? 0;
 			const totalParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
 
 			// APENAS NOVO PREENCHIMENTO - deve cadastrar como proponente principal (tipo "P")
@@ -635,8 +740,8 @@ const DpsInitialForm = ({
 				
 				// Validação 2: Para operações com múltiplos participantes, todos devem estar cadastrados
 				if (actualParticipants !== declaredParticipants) {
-					toast.error(`Para operações com ${declaredParticipants} participantes, todos devem estar cadastrados. Atualmente há ${actualParticipants} participante(s). Adicione ${declaredParticipants - actualParticipants} co-participante(s).`);
 					setIsLoading(false);
+					showMissingParticipantsModal(declaredParticipants, actualParticipants);
 					return;
 				}
 				
@@ -666,8 +771,7 @@ const DpsInitialForm = ({
 		// Verificar se o formulário está completamente preenchido e válido
 		const isOperationValid = !!(
 			v.operation.operationNumber && 
-			v.operation.participantsNumber && 
-			v.operation.totalValue
+			v.operation.participantsNumber
 		);
 		
 		const isProfileValid = !!(
@@ -727,23 +831,43 @@ const DpsInitialForm = ({
 		setIsLoading(true);
 
 		try {
+			const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
+			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
+			
+			// VALIDAÇÕES PARA OPERAÇÕES COM MÚLTIPLOS PARTICIPANTES
+			if (declaredParticipants > 1) {
+				// Validação 1: Capital MIP deve estar preenchido para operações com múltiplos participantes
+				const capitalMipFilled = !!(getValues().product?.mip && getValues().product.mip.trim() !== '');
+				if (!capitalMipFilled) {
+					toast.error('Preencha o Capital MIP para finalizar operações com múltiplos participantes.');
+					setIsLoading(false);
+					return;
+				}
+				
+				// Validação 2: Todos os participantes devem estar cadastrados
+				if (currentParticipants !== declaredParticipants) {
+					setIsLoading(false);
+					showMissingParticipantsModal(declaredParticipants, currentParticipants);
+					return;
+				}
+				
+				// Validação 3: O percentual total deve ser exatamente 100%
+				const totalPercentage = calculateTotalParticipation();
+				const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
+				
+				if (Math.abs(totalPercentageNumber - 100) > 0.01) {
+					toast.error(`Para finalizar, o percentual total de participação deve ser exatamente 100%. Total atual: ${totalPercentage}`);
+					setIsLoading(false);
+					return;
+				}
+			}
+			
 			// Verificar se o percentual total está dentro do limite (não excede 100%)
 			const totalPercentage = calculateTotalParticipation();
 			const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
 			
 			if (totalPercentageNumber > 100) {
 				toast.error(`O percentual total de participação (${totalPercentage}) excede 100%. Ajuste os percentuais antes de salvar.`);
-				setIsLoading(false);
-				return;
-			}
-			
-			// Verificar se é o último participante (quando o número de participantes declarados é igual ao número atual)
-			const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
-			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
-			
-			// Se for o último participante, o total deve ser exatamente 100%
-			if (declaredParticipants === currentParticipants && totalPercentageNumber !== 100) {
-				toast.error(`O percentual total deve ser exatamente 100% quando todos os participantes estão cadastrados. Total atual: ${totalPercentage}`);
 				setIsLoading(false);
 				return;
 			}
@@ -984,16 +1108,16 @@ const DpsInitialForm = ({
 					birthdate: true,
 				}))
 			}
-			if (autocompleteData.profession) {
-				setValue(
-					'profile.profession',
-					getProfissionDescription(autocompleteData.profession)
-				)
-				setAutocompletedByCpf(prev => ({
-					...prev,
-					profession: true,
-				}))
-			}
+			// if (autocompleteData.profession) {
+			// 	setValue(
+			// 		'profile.profession',
+			// 		getProfissionDescription(autocompleteData.profession)
+			// 	)
+			// 	setAutocompletedByCpf(prev => ({
+			// 		...prev,
+			// 		profession: true,
+			// 	}))
+			// }
 			if (autocompleteData.email) {
 				setValue('profile.email', autocompleteData.email)
 				setAutocompletedByCpf(prev => ({
@@ -1041,7 +1165,6 @@ const DpsInitialForm = ({
 			operation: {
 				operationNumber: '',
 				participantsNumber: '',
-				totalValue: '',
 			},
 			profile: {
 					cpf: '',
@@ -1407,8 +1530,10 @@ const DpsInitialForm = ({
 	};
 
 	// Função para calcular o valor com base na porcentagem
-	const calculateParticipationValue = (percentage: string, totalValue: string) => {
+	const calculateParticipationValue = (percentage: string) => {
 		const numPercentage = parseFloat(percentage?.replace('%', '').replace(',', '.')) || 0;
+		// Obter o valor total da operação do Capital MIP
+		const totalValue = getValues().product?.mip || '';
 		const numValue = parseFloat(totalValue.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 		const participationValue = (numPercentage / 100) * numValue;
 
@@ -1520,9 +1645,8 @@ const DpsInitialForm = ({
 			// Se for o último participante, não validar pois o valor foi preenchido automaticamente
 			if (isLastParticipant) {
 				console.log("Último participante - validação de percentual ignorada (valor preenchido automaticamente)");
-				// Apenas calcular o valor sem validar
-				const totalValue = coparticipantForm.getValues().operation.totalValue || '';
-				const participationValue = calculateParticipationValue(value, totalValue);
+							// Apenas calcular o valor sem validar
+			const participationValue = calculateParticipationValue(value);
 				setCoparticipantParticipationValue(participationValue);
 				return;
 			}
@@ -1551,9 +1675,8 @@ const DpsInitialForm = ({
 				coparticipantForm.setError('profile.participationPercentage', { type: 'manual', message: undefined });
 			}
 			
-			// Sempre calcular o valor com base no percentual informado, mesmo se inválido
-			const totalValue = coparticipantForm.getValues().operation.totalValue || '';
-			const participationValue = calculateParticipationValue(value, totalValue);
+					// Sempre calcular o valor com base no percentual informado, mesmo se inválido
+		const participationValue = calculateParticipationValue(value);
 			
 			// Atualizar o valor da participação para exibição
 			setCoparticipantParticipationValue(participationValue);
@@ -1565,14 +1688,15 @@ const DpsInitialForm = ({
 	// Manipulador para o campo % Participação do formulário principal
 	const handleParticipationPercentageBlur = (value: string) => {
 		try {
-			if (!value || !totalValue) {
+			const mipValue = getValues().product?.mip || '';
+			if (!value || !mipValue) {
 				setParticipationValue('');
 				return;
 			}
 			
 			// Para participante único, sempre calcular com base em 100%
 			if (participantsNumber === '1') {
-				const participationValue = calculateParticipationValue('100,00%', totalValue);
+				const participationValue = calculateParticipationValue('100,00%');
 				setParticipationValue(participationValue);
 				setValue('profile.participationPercentage', '100,00%');
 				return;
@@ -1603,10 +1727,11 @@ const DpsInitialForm = ({
 			}
 			
 			// Calcular valor com base na porcentagem e valor total
-			const participationValue = calculateParticipationValue(value, totalValue);
+			const participationValue = calculateParticipationValue(value);
 			setParticipationValue(participationValue);
 			
-			console.log(`Calculado participação no financiamento: ${participationValue} (${value} de ${totalValue})`);
+			const operationValue = getValues().product?.mip || '';
+			console.log(`Calculado participação no financiamento: ${participationValue} (${value} de ${operationValue})`);
 		} catch (error) {
 			console.error('Erro ao calcular participação no financiamento:', error);
 			setParticipationValue('');
@@ -1658,8 +1783,7 @@ const DpsInitialForm = ({
 				coparticipantForm.setValue('profile.participationPercentage', remainingPercentageFormatted);
 				
 				// Calcular e definir o valor da participação
-				const totalValue = formData.operation.totalValue || '';
-				const participationValue = calculateParticipationValue(remainingPercentageFormatted, totalValue);
+				const participationValue = calculateParticipationValue(remainingPercentageFormatted);
 				setCoparticipantParticipationValue(participationValue);
 				
 				// Definir que este é o último participante para desabilitar edição do percentual
@@ -1749,14 +1873,8 @@ const DpsInitialForm = ({
 				setValue('operation.participantsNumber', '');
 				setParticipantsNumber('');
 				}
-				if (getValues().operation.totalValue) {
-					setValue('operation.totalValue', '');
-			setTotalValue('');
-				}
-				
 				// Liberar os campos para edição
 				setValue('operation.isParticipantsNumberReadOnly', '');
-				setValue('operation.isTotalValueReadOnly', '');
 				
 				// Mostrar a mensagem de orientação para o usuário
 				setShowOperationGuidance(true);
@@ -1776,16 +1894,11 @@ const DpsInitialForm = ({
 			
 			// Garantir que os campos estejam habilitados para edição
 			setValue('operation.isParticipantsNumberReadOnly', '');
-			setValue('operation.isTotalValueReadOnly', '');
 			
 			// Limpar valores de operação carregados previamente
 			if (getValues().operation.participantsNumber) {
 			setValue('operation.participantsNumber', '');
 			setParticipantsNumber('');
-			}
-			if (getValues().operation.totalValue) {
-				setValue('operation.totalValue', '');
-			setTotalValue('');
 			}
 			
 			console.log('Operação disponível para novo preenchimento.');
@@ -1794,27 +1907,33 @@ const DpsInitialForm = ({
 		}
 	};
 
+	// Estado para controlar se o CPF foi definido via parâmetro mas ainda não foi consultado
+	const [cpfParamPending, setCpfParamPending] = useState<string | null>(null);
+
 	// Ajustar useEffect para tratar CPF via parâmetro de URL
 	useEffect(() => {
 		if (cpfParam) {
 			// Limpar o último CPF consultado para permitir novas consultas via parâmetro
 			setLastQueriedCpf('');
 			
-			// Se temos CPF via query param, já habilitar todas as seções
-			setShowOtherSections(true);
+			// NÃO habilitar todas as seções ainda - aguardar preenchimento da operação
+			setShowOtherSections(false);
 			
-			// Preencher o campo CPF e buscar dados se for um CPF válido
+			// Apenas preencher o campo CPF e marcar como pendente para consulta
 			if (validarCpf(cpfParam)) {
 				setValue('profile.cpf', cpfParam);
-				getDataByCpf(cpfParam);
+				setCpfParamPending(cpfParam);
+				toast.success(`CPF ${cpfParam} definido. Preencha os dados da operação para continuar.`);
 			} else {
 				toast.error(`CPF inválido: ${cpfParam}`);
+				setCpfParamPending(null);
 			}
 		} else {
 			// Se não tem CPF, começar com as seções desabilitadas
 			setShowOtherSections(false);
+			setCpfParamPending(null);
 		}
-	}, [cpfParam, setValue]); // Remover getDataByCpf da lista de dependências para evitar erro
+	}, [cpfParam, setValue]);
 
 	// Componente auxiliar para o botão Salvar com loading
 	const SaveButton = ({ isSubmitting, isLoading }: { isSubmitting: boolean, isLoading: boolean }) => {
@@ -1886,10 +2005,31 @@ const DpsInitialForm = ({
 		const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
 		const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
 		
-		// Verificar se o botão de adicionar deve ser mostrado
-		if (currentParticipants < declaredParticipants && declaredParticipants > 1) {
-			// O botão é habilitado se dados da operação estão completos
+		// Verificar se o botão de adicionar deve ser mostrado (sempre mostrar se declaredParticipants > 1)
+		if (declaredParticipants > 1) {
+			// Verificar se dados da operação estão completos
 			const operationComplete = areOperationFieldsComplete();
+			
+			// Verificar se Capital MIP está preenchido
+			const capitalMipFilled = !!(getValues().product?.mip && getValues().product.mip.trim() !== '');
+			
+			// Verificar se ainda há espaço para mais participantes
+			const canAddMore = currentParticipants < declaredParticipants;
+			
+			// Determinar se o botão deve estar habilitado
+			const isEnabled = operationComplete && capitalMipFilled && canAddMore && !isSubmitting && !isLoading;
+			
+			// Determinar a mensagem do tooltip
+			let tooltipMessage = '';
+			if (!operationComplete) {
+				tooltipMessage = 'Preencha os dados da operação (número da operação e participantes) para adicionar um co-participante';
+			} else if (!capitalMipFilled) {
+				tooltipMessage = 'Preencha o Capital MIP para calcular os percentuais de participação';
+			} else if (!canAddMore) {
+				tooltipMessage = `Todos os ${declaredParticipants} participantes já foram cadastrados`;
+			} else {
+				tooltipMessage = 'Clique para adicionar um co-participante';
+			}
 			
 			return (
 				<TooltipProvider>
@@ -1900,7 +2040,7 @@ const DpsInitialForm = ({
 									type="button"
 									variant="outline"
 									onClick={() => startCoparticipantForm()}
-									disabled={!operationComplete || isSubmitting || isLoading}
+									disabled={!isEnabled}
 									className="flex items-center gap-2"
 								>
 									Adicionar Co-participante
@@ -1908,10 +2048,7 @@ const DpsInitialForm = ({
 							</div>
 						</TooltipTrigger>
 						<TooltipContent>
-							{!operationComplete ? 
-								<p>Preencha os dados da operação (número da operação, participantes e valor total) para adicionar um co-participante</p> :
-								<p>Clique para adicionar um co-participante</p>
-							}
+							<p>{tooltipMessage}</p>
 						</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
@@ -1939,9 +2076,7 @@ const DpsInitialForm = ({
 		const formData = getValues();
 		return !!(
 			formData.operation.operationNumber && 
-			formData.operation.participantsNumber && 
-			formData.operation.totalValue &&
-			formData.operation.totalValue !== 'R$ '
+			formData.operation.participantsNumber
 		);
 	};
 	
@@ -1955,12 +2090,44 @@ const DpsInitialForm = ({
 	}, [
 		watch('operation.operationNumber'),
 		watch('operation.participantsNumber'),
-		watch('operation.totalValue'),
 		showOperationGuidance
 	]);
 
+	// Adicionar useEffect para liberar seções quando o número de participantes for preenchido
+	useEffect(() => {
+		const participantsNum = watch('operation.participantsNumber');
+		// Se o número de participantes estiver preenchido e não há CPF via parâmetro, liberar seções
+		if (participantsNum && !cpfParam && !showOtherSections) {
+			setShowOtherSections(true);
+		}
+	}, [watch('operation.participantsNumber'), cpfParam, showOtherSections]);
+
+	// useEffect para consultar CPF quando dados da operação estão completos e há CPF pendente
+	useEffect(() => {
+		// Verificar se há CPF pendente de consulta e se os dados da operação estão completos
+		if (cpfParamPending && areOperationFieldsComplete()) {
+			console.log(`Dados da operação completos. Consultando CPF: ${cpfParamPending}`);
+			
+			// Fazer a consulta do CPF
+			getDataByCpf(cpfParamPending);
+			
+			// Liberar as seções para preenchimento
+			setShowOtherSections(true);
+			
+			// Limpar o CPF pendente
+			setCpfParamPending(null);
+			
+			toast.success('Dados da operação preenchidos. Consultando informações do CPF...');
+		}
+	}, [cpfParamPending, watch('operation.operationNumber'), watch('operation.participantsNumber')]);
+
+	// Função utilitária para obter o valor total da operação (agora vem do Capital MIP)
+	const getTotalOperationValue = () => {
+		return getValues().product.mip || '';
+	};
+
 	const calculateTotalValue = () => {
-		const totalOperationValue = getValues().operation.totalValue;
+		const totalOperationValue = getTotalOperationValue();
 		let totalValue = 0;
 
 		// Adicionar valor do proponente principal se existir
@@ -2009,7 +2176,6 @@ const DpsInitialForm = ({
 					control={control}
 					formState={formState}
 					onParticipantsChange={setParticipantsNumber}
-					onTotalValueChange={setTotalValue}
 					onOperationNumberBlur={fetchOperationData}
 					isLoadingOperationData={isLoadingOperationData}
 					disabled={isSubmitting || isLoading}
@@ -2030,7 +2196,7 @@ const DpsInitialForm = ({
 							Operação não encontrada. Preencha os demais dados da operação para continuar.
 						</p>
 						<p className="text-blue-600 text-sm mt-1">
-							Após preencher o número de participantes e o valor total da operação, as demais seções do formulário serão exibidas.
+							Após preencher o número de participantes, as demais seções do formulário serão exibidas.
 						</p>
 					</div>
 				)}
@@ -2095,8 +2261,8 @@ const DpsInitialForm = ({
 						/>
 					</div>
 
-					{/* Lista de participantes (visível quando há proponente ou coparticipantes) */}
-					{(coparticipants.length > 0 || getValues().profile.name) && (
+					{/* Lista de participantes (visível quando há proponente ou coparticipantes e Capital MIP preenchido) */}
+					{(coparticipants.length > 0 || getValues().profile.name) && getValues().product?.mip && getValues().product.mip.trim() !== '' && (
 						<div className="p-9 w-full max-w-7xl mx-auto bg-white rounded-3xl mt-6">
 							<h3 className="text-primary text-xl font-medium mb-4">Participantes da Operação</h3>
 							
@@ -2113,7 +2279,7 @@ const DpsInitialForm = ({
 									</div>
 									<div>
 										<p className="text-gray-500 text-sm">Valor Total da Operação</p>
-										<p className="font-medium">{getValues().operation.totalValue}</p>
+										<p className="font-medium">{getValues().product?.mip || 'R$ 0,00'}</p>
 									</div>
 								</div>
 							</div>
@@ -2132,7 +2298,7 @@ const DpsInitialForm = ({
 										<div className="font-medium">{getValues().profile.name}</div>
 										<div>{getValues().profile.cpf}</div>
 										<div>{getValues().profile.participationPercentage || '0,00%'}</div>
-										<div>{calculateParticipationValue(getValues().profile.participationPercentage || '0,00%', getValues().operation.totalValue)}</div>
+										<div>{calculateParticipationValue(getValues().profile.participationPercentage || '0,00%')}</div>
 										<div></div>
 									</div>
 								)}
@@ -2142,7 +2308,7 @@ const DpsInitialForm = ({
 										<div className="font-medium">{coparticipant.name}</div>
 										<div>{coparticipant.cpf}</div>
 										<div>{coparticipant.participationPercentage}</div>
-										<div>{calculateParticipationValue(coparticipant.participationPercentage, getValues().operation.totalValue)}</div>
+										<div>{calculateParticipationValue(coparticipant.participationPercentage)}</div>
 										<div className="flex justify-end gap-2">
 											<Button 
 												type="button" 
@@ -2196,7 +2362,13 @@ const DpsInitialForm = ({
 						</div>
 						
 						<div className="flex gap-4">
-							<Button type="button" variant="outline" className="w-40" disabled={isSubmitting || isLoading}>
+							<Button 
+								type="button" 
+								variant="outline" 
+								className="w-40" 
+								disabled={isSubmitting || isLoading}
+								onClick={handleCancelFormClick}
+							>
 								Cancelar
 							</Button>
 							
@@ -2240,7 +2412,7 @@ const DpsInitialForm = ({
 								</div>
 								<div>
 									<p className="text-gray-500">Valor Total da Operação</p>
-									<p className="font-medium">{coparticipantForm.getValues().operation.totalValue}</p>
+									<p className="font-medium">{getValues().product?.mip || 'R$ 0,00'}</p>
 								</div>
 							</div>
 						</div>
@@ -2370,6 +2542,84 @@ const DpsInitialForm = ({
 							onClick={handleConfirmSubmit}
 						>
 							Continuar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de confirmação de cancelamento */}
+			<Dialog
+				open={isCancelConfirmDialogOpen}
+				onOpenChange={setIsCancelConfirmDialogOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Confirmar cancelamento</DialogTitle>
+						<DialogDescription>
+							Tem certeza que deseja cancelar o preenchimento? Todos os dados inseridos serão perdidos e você será redirecionado para a tela anterior.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button 
+							type="button"
+							variant="outline" 
+							onClick={handleCancelCancelForm}
+						>
+							Não, continuar
+						</Button>
+						<Button 
+							type="button"
+							variant="destructive"
+							onClick={handleConfirmCancelForm}
+						>
+							Sim, cancelar
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de participantes faltando */}
+			<Dialog
+				open={isMissingParticipantsModalOpen}
+				onOpenChange={setIsMissingParticipantsModalOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Participantes faltando</DialogTitle>
+						<DialogDescription>
+							{missingParticipantsData && (
+								<span>
+									Para operações com {missingParticipantsData.declared} participantes, todos devem estar cadastrados. 
+									Atualmente há {missingParticipantsData.current} participante(s). 
+									Adicione {missingParticipantsData.missing} co-participante(s).
+								</span>
+							)}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button 
+							type="button"
+							variant="outline" 
+							onClick={closeMissingParticipantsModal}
+						>
+							Entendi
+						</Button>
+						<Button 
+							type="button"
+							onClick={() => {
+								closeMissingParticipantsModal();
+								// Scroll para o botão de adicionar co-participante se ele estiver visível
+								setTimeout(() => {
+									const addButtons = Array.from(document.querySelectorAll('button')).find(
+										button => button.textContent?.includes('Adicionar Co-participante')
+									);
+									if (addButtons) {
+										addButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
+									}
+								}, 100);
+							}}
+						>
+							Adicionar Co-participante
 						</Button>
 					</DialogFooter>
 				</DialogContent>

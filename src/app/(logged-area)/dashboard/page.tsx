@@ -273,9 +273,9 @@ async function EndingProposalList() {
 		`asc` // orderBy
 	)
 
-	if (data === null) return redirect('/logout')
+	// if (data === null) return redirect('/logout')
 
-	const tableRowsData: DPS[] = data?.items.map((item: any) => {
+	const tableRowsData: DPS[] = !data ? [] :data?.items.map((item: any) => {
 		return {
 			uid: item.uid,
 			codigo: item.contractNumber ?? item.code,
