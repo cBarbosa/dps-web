@@ -94,7 +94,10 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
-			<h3 className="text-primary text-lg">Endereço</h3>
+			<div className="flex flex-col gap-1">
+				<h3 className="text-primary text-lg">Endereço</h3>
+				<span className='text-primary text-sm'>(do imóvel financiado ou imóvel em garantia)</span>
+			</div>
 			<ShareLine>
 				<Controller
 					control={control}
