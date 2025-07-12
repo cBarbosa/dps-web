@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn, maskToBrlCurrency, maskToDigitsAndSuffix } from '@/lib/utils'
-import React from 'react'
-import { Control, Controller, FormState, useWatch, UseFormSetError, UseFormClearErrors } from 'react-hook-form'
+import React, { useEffect } from 'react'
+import { Control, Controller, FormState, useWatch, UseFormSetError, UseFormClearErrors, Path } from 'react-hook-form'
 import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
@@ -53,7 +53,14 @@ const DpsProductForm = ({
 	control,
 	formState,
 	disabled = false,
-	proponentAge = null
+	proponentAge = null,
+	participationPercentage,
+	participationValue,
+	onParticipationPercentageBlur,
+	onMipBlur,
+	isSingleParticipant,
+	isLastParticipant,
+	setValue
 }: {
 	data?: Partial<DpsProductFormType>
 	prazosOptions: { value: string; label: string }[]
@@ -63,6 +70,13 @@ const DpsProductForm = ({
 	formState: FormState<DpsInitialForm>
 	disabled?: boolean
 	proponentAge?: number | null
+	participationPercentage?: string
+	participationValue?: string
+	onParticipationPercentageBlur?: (value: string) => void
+	onMipBlur?: (mipValue: string, participationPercentage: string) => void
+	isSingleParticipant?: boolean
+	isLastParticipant?: boolean
+	setValue?: (name: string, value: any) => void
 }) => {
 	console.log('formState', formState)
 	// Ignoramos erros quando em modo somente leitura
@@ -73,6 +87,13 @@ const DpsProductForm = ({
 	const mipValue = useWatch({
 		control,
 		name: "product.mip",
+		defaultValue: ""
+	});
+	
+	// Monitora o valor da participação em percentual
+	const currentParticipationPercentage = useWatch({
+		control,
+		name: "profile.participationPercentage",
 		defaultValue: ""
 	});
 	
@@ -107,6 +128,37 @@ const DpsProductForm = ({
 		
 		return undefined;
 	}
+
+	// Função para calcular o valor de participação no financiamento
+	const calculateParticipationValue = (percentage: string, mipValue: string) => {
+		if (!percentage || !mipValue) return 'R$ 0,00';
+		
+		const percentageNumber = parseFloat(percentage.replace('%', '').replace(',', '.')) || 0;
+		const mipNumber = convertCapitalValue(mipValue) || 0;
+		
+		const participationValue = (mipNumber * percentageNumber) / 100;
+		
+		// Formatar como moeda brasileira
+		return new Intl.NumberFormat('pt-BR', {
+			style: 'currency',
+			currency: 'BRL',
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2
+		}).format(participationValue);
+	};
+
+	// useEffect para controlar o campo de participação quando é participante único
+	useEffect(() => {
+		if (isSingleParticipant && setValue && mipValue && mipValue.trim() !== '') {
+			// Só preencher automaticamente se o MIP estiver preenchido
+			setValue("profile.participationPercentage", "100,00%");
+			
+			// Call the callback to update participation value if provided
+			if (onParticipationPercentageBlur) {
+				onParticipationPercentageBlur("100,00%");
+			}
+		}
+	}, [isSingleParticipant, setValue, onParticipationPercentageBlur, mipValue]);
 
 	return (
 		<div className="flex flex-col gap-6 w-full">
@@ -262,6 +314,13 @@ const DpsProductForm = ({
 									onBlur={() => {
 										onBlur();
 										handleFieldBlur();
+										
+										// Callback para recalcular participação quando MIP perde o foco
+										if (onMipBlur && value) {
+											// Obter o valor atual da participação
+											const currentPercentage = currentParticipationPercentage || '';
+											onMipBlur(value, currentPercentage);
+										}
 									}}
 									value={value}
 									ref={ref}
@@ -334,6 +393,199 @@ const DpsProductForm = ({
 						);
 					}}
 				/>
+			</ShareLine>
+
+			<ShareLine>
+				<Controller
+					control={control}
+					name={"profile.participationPercentage" as Path<DpsInitialForm>}
+					render={({ field: { onChange, onBlur, value } }) => {
+						const profileErrors = formState.errors?.profile as any;
+						const participationError = profileErrors?.participationPercentage;
+						
+						// Verificar se Capital MIP está preenchido
+						const mipFilled = mipValue && mipValue.trim() !== '';
+						
+						// Se for participante único, renderizar versão somente leitura
+						if (isSingleParticipant) {
+							return (
+								<label>
+									<div className="text-gray-500">% Participação</div>
+									<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
+										100,00%
+									</div>
+									<div className="text-xs text-red-500">
+										{participationError?.message}
+									</div>
+								</label>
+							);
+						}
+
+						// Se for o último participante, renderizar versão somente leitura com valor preenchido
+						if (isLastParticipant) {
+							return (
+								<label>
+									<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+									<div className="h-12 w-full rounded-lg border border-input bg-blue-50 px-4 flex items-center">
+										{typeof value === 'string' ? value : '0,00%'}
+									</div>
+									<div className="text-xs text-blue-600">
+										Preenchido automaticamente - último participante deve completar 100%
+									</div>
+									<div className="text-xs text-red-500">
+										{participationError?.message}
+									</div>
+								</label>
+							);
+						}
+						
+						// Caso contrário, renderizar o componente normal
+						return (
+							<label>
+								<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+								<Input
+									id="participationPercentage"
+									type="text"
+									placeholder="0,00%"
+									className={cn(
+										'w-full px-4 py-6 rounded-lg',
+										participationError && 'border-red-500 focus-visible:border-red-500',
+										highlightMissing && !value && 'border-orange-400 bg-orange-50'
+									)}
+									disabled={disabled || !mipFilled}
+									onChange={e => {
+										// Obtém o valor original do input
+										let inputValue = e.target.value;
+										
+										// Se o usuário está tentando apagar, permita isso
+										// Comparando o tamanho do valor atual com o tamanho do anterior
+										if (inputValue.length < (value as string || '').length) {
+											// O usuário está apagando, simplesmente deixe isso acontecer
+											// Remova apenas o símbolo de porcentagem se presente
+											inputValue = inputValue.replace(/%/g, '');
+											onChange(inputValue);
+											return;
+										}
+										
+										// Para entrada normal, aplique a formatação
+										// Remove tudo exceto dígitos e vírgula
+										let rawValue = inputValue.replace(/[^\d,]/g, '')
+										
+										// Limita a uma única vírgula
+										if (rawValue.split(',').length > 2) {
+											rawValue = rawValue.replace(/,/g, function(match, offset, string) {
+												return offset === string.indexOf(',') ? ',' : '';
+											});
+										}
+										
+										// Limita o número de dígitos antes da vírgula a 3 (para permitir 100)
+										if (rawValue.includes(',')) {
+											const [intPart, decPart] = rawValue.split(',');
+											if (intPart.length > 3) {
+												rawValue = intPart.substring(0, 3) + ',' + decPart;
+											}
+										} else if (rawValue.length > 3) {
+											rawValue = rawValue.substring(0, 3);
+										}
+										
+										// Limita valor máximo a 100 para a parte inteira
+										if (rawValue.includes(',')) {
+											const [intPart, decPart] = rawValue.split(',');
+											const intValue = parseInt(intPart, 10);
+											if (intValue > 100) {
+												rawValue = '100,' + decPart;
+											}
+										} else {
+											const intValue = parseInt(rawValue, 10);
+											if (intValue > 100) {
+												rawValue = '100';
+											}
+										}
+										
+										// Adiciona o símbolo de porcentagem apenas se houver algum valor
+										if (rawValue !== '') {
+											rawValue += rawValue.includes('%') ? '' : '%';
+										}
+										
+										onChange(rawValue);
+									}}
+									onBlur={e => {
+										// Não chamar onBlur() aqui para permitir validação primeiro
+										handleFieldBlur();
+										
+										// Normaliza o formato ao perder o foco
+										const rawValue = e.target.value.replace(/[^\d,]/g, '');
+										
+										// Se o campo estiver vazio, deixar vazio e não forçar valor mínimo
+										if (rawValue === '') {
+											// Manter vazio
+											onBlur(); // Agora sim chama o onBlur original
+											return;
+										}
+										
+										// Formatar o valor mantendo o que o usuário informou
+										let formattedValue;
+										
+										if (rawValue.includes(',')) {
+											// Se tem vírgula, processa como decimal
+											const parts = rawValue.split(',');
+											const intPart = parseInt(parts[0], 10) || 0;
+											// Se a parte decimal existe, usa ela, senão usa '00'
+											const decPart = parts.length > 1 ? parts[1] : '00';
+											
+											// Garante que a parte decimal tenha 2 dígitos
+											const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
+											formattedValue = `${intPart},${paddedDecPart}%`;
+										} else {
+											// Se não tem vírgula, é um número inteiro
+											const intValue = parseInt(rawValue, 10) || 0;
+											formattedValue = `${intValue},00%`;
+										}
+										
+										// Atualizar o valor formatado
+										onChange(formattedValue);
+										
+										// Chamar o callback para validar
+										if (onParticipationPercentageBlur) {
+											// Se a validação retornar mensagem de erro, voltar o foco para o campo
+											onParticipationPercentageBlur(formattedValue);
+											
+											// Se o campo tem erro após a validação, não permitir retirar o foco
+											if (participationError?.message) {
+												// Manter foco no campo
+												setTimeout(() => {
+													e.target.focus();
+												}, 100);
+											} else {
+												// Se não tem erro, permitir retirar o foco
+												onBlur();
+											}
+										} else {
+											// Se não houver callback de validação, permitir retirar o foco
+											onBlur();
+										}
+										
+										// Callback para recalcular participação quando % Participação perde o foco
+										if (onMipBlur && mipValue && formattedValue) {
+											onMipBlur(mipValue, formattedValue);
+										}
+									}}
+									value={typeof value === 'string' ? value : ''}
+								/>
+								<div className="text-xs text-red-500">
+									{participationError?.message}
+								</div>
+							</label>
+						);
+					}}
+				/>
+
+				<div>
+					<div className="text-gray-500">Participação no Financiamento</div>
+					<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
+						{calculateParticipationValue(currentParticipationPercentage || '', mipValue)}
+					</div>
+				</div>
 			</ShareLine>
 
 			<ShareLine>
