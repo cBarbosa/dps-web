@@ -10,6 +10,7 @@ import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import useAlertDialog from '@/hooks/use-alert-dialog'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -19,9 +20,9 @@ export const dpsProductForm = object({
 		custom(
 			v => {
 				const numValue = parseInt(v as string, 10);
-				return !isNaN(numValue) && numValue > 0;
+				return !isNaN(numValue) && numValue >= 1 && numValue <= 420;
 			},
-			'Prazo deve ser um número válido maior que zero.'
+			'Prazo deve ser entre 1 e 420 meses.'
 		)
 	),
 	mip: pipe(
@@ -97,17 +98,21 @@ const DpsProductForm = ({
 		defaultValue: ""
 	});
 	
-	// Função para obter o prazo máximo baseado na idade
-	const getMaxDeadlineByAge = React.useCallback((age: number | null): number | null => {
-		if (age === null) return null;
-		if (age < 18 || age > 80) return null; // Não permitido
-		if (age <= 50) return 240; // Limite oficial: 240 meses para 18-50 anos
-		if (age <= 55) return 180;
-		if (age <= 60) return 150;
-		if (age <= 65) return 84;
-		if (age <= 80) return 60;
-		return null;
-	}, []);
+	// Modal de alerta para idade inválida
+	const alertDialog = useAlertDialog({
+		initialContent: {
+			title: 'Idade Inválida',
+			description: 'A idade do proponente deve estar entre 18 e 80 anos para continuar com o preenchimento do DPS.',
+			closeLabel: 'Entendi'
+		}
+	});
+	
+	// Verificar e mostrar alerta quando idade estiver fora do intervalo
+	useEffect(() => {
+		if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
+			alertDialog.toggle(true);
+		}
+	}, [proponentAge, alertDialog]);
 
 	// Manipulador genérico para quando campos perdem foco
 	const handleFieldBlur = () => {
@@ -225,14 +230,9 @@ const DpsProductForm = ({
 											<TooltipContent className="bg-primary text-primary-foreground font-medium px-4 py-2.5">
 												<div className="text-sm space-y-1">
 													<p>Prazo em meses para pagamento do financiamento</p>
-													{proponentAge !== null && (
-														<p className="text-xs opacity-90">
-															{getMaxDeadlineByAge(proponentAge) 
-																? `Máximo permitido para sua idade: ${getMaxDeadlineByAge(proponentAge)} meses`
-																: 'Nenhum prazo disponível para esta faixa etária'
-															}
-														</p>
-													)}
+													<p className="text-xs opacity-90">
+														Prazo permitido: 1 a 420 meses
+													</p>
 												</div>
 											</TooltipContent>
 										</Tooltip>
@@ -247,11 +247,11 @@ const DpsProductForm = ({
 										!disabled && (errors?.deadline) && 'border-red-500 focus-visible:border-red-500',
 										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
-									disabled={disabled || getMaxDeadlineByAge(proponentAge) === null}
+									disabled={disabled}
 									onChange={(e) => {
 										// Permitir apenas dígitos
 										const numericValue = e.target.value.replace(/\D/g, '');
-										// Limitar a 3 dígitos (máximo 999 meses)
+										// Limitar a 3 dígitos (máximo 420 meses)
 										const limitedValue = numericValue.slice(0, 3);
 										
 										// Atualizar o valor no formulário
@@ -629,6 +629,9 @@ const DpsProductForm = ({
 				/>
 				<div></div>
 			</ShareLine>
+			
+			{/* Modal de alerta para idade inválida */}
+			{alertDialog.dialogComp}
 		</div>
 	)
 }
@@ -652,7 +655,7 @@ function checkCapitalValue(value: string) {
 	return false
 }
 
-// Função para criar schema com validação baseada na idade
+// Função para criar schema com validação simplificada
 export const createDpsProductFormWithAge = (proponentAge: number | null) => object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
 	deadline: pipe(
@@ -661,44 +664,9 @@ export const createDpsProductFormWithAge = (proponentAge: number | null) => obje
 		custom(
 			v => {
 				const numValue = parseInt(v as string, 10);
-				if (isNaN(numValue) || numValue <= 0) {
-					return false;
-				}
-				
-				// Validação baseada na idade
-				if (proponentAge === null) return true;
-				if (proponentAge < 18 || proponentAge > 80) {
-					return false;
-				}
-				
-				let maxDeadline = 240;
-				if (proponentAge <= 50) maxDeadline = 240;
-				else if (proponentAge <= 55) maxDeadline = 180;
-				else if (proponentAge <= 60) maxDeadline = 150;
-				else if (proponentAge <= 65) maxDeadline = 84;
-				else if (proponentAge <= 80) maxDeadline = 60;
-				
-				return numValue <= maxDeadline;
+				return !isNaN(numValue) && numValue >= 1 && numValue <= 420;
 			},
-			(input) => {
-				const numValue = parseInt(input.input as string, 10);
-				if (isNaN(numValue) || numValue <= 0) {
-					return 'Prazo deve ser um número válido maior que zero.';
-				}
-				
-				if (proponentAge === null) return 'Idade do proponente não informada.';
-				if (proponentAge < 18) return 'Não é possível contratar DPS para menores de 18 anos.';
-				if (proponentAge > 80) return 'Não é possível contratar DPS para maiores de 80 anos.';
-				
-				let maxDeadline = 240;
-				if (proponentAge <= 50) maxDeadline = 240;
-				else if (proponentAge <= 55) maxDeadline = 180;
-				else if (proponentAge <= 60) maxDeadline = 150;
-				else if (proponentAge <= 65) maxDeadline = 84;
-				else if (proponentAge <= 80) maxDeadline = 60;
-				
-				return `Prazo informado é inválido. (limite ${maxDeadline} meses).`;
-			}
+			'Prazo deve ser entre 1 e 420 meses.'
 		)
 	),
 	mip: pipe(

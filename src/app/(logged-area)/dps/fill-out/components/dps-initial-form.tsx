@@ -363,44 +363,13 @@ const DpsInitialForm = ({
 		}
 	}, [proponentAge, trigger, memoizedGetValues]);
 
-	// useEffect para atualizar as opções de prazo baseado na idade
+	// useEffect para atualizar as opções de prazo - agora não filtra por idade
 	useEffect(() => {
 		if(isProductDisabled) return;
-
-		if (proponentAge === null) return
-
-		switch (true) {
-			case proponentAge < 18:
-				setPrazosOptions([])
-				break
-			case proponentAge <= 50:
-				setPrazosOptions(prazosOptionsProp)
-				break
-			case proponentAge <= 55:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 180)
-				)
-				break
-			case proponentAge <= 60:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 150)
-				)
-				break
-			case proponentAge <= 65:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 84)
-				)
-				break
-			case proponentAge <= 80:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 60)
-				)
-				break
-			default:
-				setPrazosOptions([])
-				break
-		}
-	}, [proponentAge, prazosOptionsProp])
+		
+		// Sempre usar todas as opções de prazo disponíveis, sem filtrar por idade
+		setPrazosOptions(prazosOptionsProp);
+	}, [prazosOptionsProp, isProductDisabled]);
 
 	// Confirmação para continuar com menos participantes
 	const handleConfirmSubmit = () => {
@@ -677,16 +646,6 @@ const DpsInitialForm = ({
 		try {
 			// Usar setIsLoading em vez de setIsSubmitting para controlar o estado de envio
 			setIsLoading(true);
-			
-			// Verificar se a idade permite o preenchimento de DPS
-			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
-				const ageMessage = proponentAge < 18 
-					? 'Não é possível contratar DPS para menores de 18 anos.'
-					: 'Não é possível contratar DPS para maiores de 80 anos.';
-				toast.error(ageMessage);
-				setIsLoading(false);
-				return;
-			}
 			
 			// Logging para depuração
 			console.log("Form submission data:", v);
@@ -1951,15 +1910,6 @@ const DpsInitialForm = ({
 	// Componente auxiliar para o botão Salvar com loading
 	const SaveButton = ({ isSubmitting, isLoading }: { isSubmitting: boolean, isLoading: boolean }) => {
 		const handleSaveClick = async () => {
-			// Verificar se a idade permite o preenchimento de DPS
-			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
-				const ageMessage = proponentAge < 18 
-					? 'Não é possível contratar DPS para menores de 18 anos.'
-					: 'Não é possível contratar DPS para maiores de 80 anos.';
-				toast.error(ageMessage);
-				return;
-			}
-			
 			const isValid = await trigger()
 			if (isValid) {
 				// Usar handleSubmit diretamente em vez de onSubmit
@@ -1967,13 +1917,11 @@ const DpsInitialForm = ({
 			}
 		}
 
-		const isAgeRestricted = proponentAge !== null && (proponentAge < 18 || proponentAge > 80);
-
 		return (
 			<Button 
 				type="button" 
 				className="w-40" 
-				disabled={isSubmitting || isLoading || isAgeRestricted}
+				disabled={isSubmitting || isLoading}
 				onClick={handleSaveClick}
 			>
 				{isSubmitting || isLoading ? (
@@ -1981,7 +1929,7 @@ const DpsInitialForm = ({
 						Salvando
 						<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
 					</>
-				) : isAgeRestricted ? "Bloqueado" : "Salvar"}
+				) : "Salvar"}
 			</Button>
 		)
 	}
@@ -2230,24 +2178,6 @@ const DpsInitialForm = ({
 
 					{/* Seção de dados do produto */}
 					<div className="w-full max-w-7xl mx-auto bg-white rounded-3xl p-9 dps-product-section">
-						{/* Alerta de idade restritiva */}
-						{proponentAge !== null && (proponentAge < 18 || proponentAge > 80) && (
-							<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="h-5 w-5 text-red-500 mr-2">⚠️</div>
-									<p className="text-red-700 font-medium">
-										{proponentAge < 18 
-											? `Proponente menor de idade (${proponentAge} anos)`
-											: `Proponente acima da idade permitida (${proponentAge} anos)`
-										}
-									</p>
-								</div>
-								<p className="text-red-600 text-sm mt-2">
-									O preenchimento de DPS é permitido apenas para proponentes com idade entre 18 e 80 anos.
-								</p>
-							</div>
-						)}
-						
 						<DpsProductForm
 							control={control}
 							formState={formState}

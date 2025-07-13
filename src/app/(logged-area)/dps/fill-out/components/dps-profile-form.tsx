@@ -37,7 +37,21 @@ export const dpsProfileForm = object({
 	socialName: optional(string()),
 	birthdate: pipe(
 		date('Data inválida.'),
-		maxValue(new Date(), 'Idade inválida.')
+		maxValue(new Date(), 'Idade inválida.'),
+		custom(
+			v => {
+				if (!v || !(v instanceof Date)) return false;
+				const today = new Date();
+				const birthDate = new Date(v);
+				const age = today.getFullYear() - birthDate.getFullYear();
+				const monthDiff = today.getMonth() - birthDate.getMonth();
+				const dayDiff = today.getDate() - birthDate.getDate();
+				
+				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				return actualAge >= 18 && actualAge <= 80;
+			},
+			'Idade deve estar entre 18 e 80 anos.'
+		)
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(
