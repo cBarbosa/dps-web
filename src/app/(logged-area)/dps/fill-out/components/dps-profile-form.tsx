@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Control, Controller, FormState, Path } from 'react-hook-form'
 import {
 	custom,
@@ -22,7 +22,7 @@ import {
 	regex,
 } from 'valibot'
 import validateCpf from 'validar-cpf'
-import { RecursivePartial, maskToBrlCurrency } from '@/lib/utils'
+import { RecursivePartial } from '@/lib/utils'
 import { useState } from 'react'
 import { Loader2Icon } from 'lucide-react'
 
@@ -37,7 +37,21 @@ export const dpsProfileForm = object({
 	socialName: optional(string()),
 	birthdate: pipe(
 		date('Data inválida.'),
-		maxValue(new Date(), 'Idade inválida.')
+		maxValue(new Date(), 'Idade inválida.'),
+		custom(
+			v => {
+				if (!v || !(v instanceof Date)) return false;
+				const today = new Date();
+				const birthDate = new Date(v);
+				const age = today.getFullYear() - birthDate.getFullYear();
+				const monthDiff = today.getMonth() - birthDate.getMonth();
+				const dayDiff = today.getDate() - birthDate.getDate();
+				
+				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				return actualAge >= 18 && actualAge <= 80;
+			},
+			'Idade deve estar entre 18 e 80 anos.'
+		)
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(
@@ -91,28 +105,16 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 	formState,
 	getDataByCpf,
 	disabled,
-	participationPercentage,
-	participationValue,
-	onParticipationPercentageBlur,
 	validateCpf,
 	placeholderPercentage,
-	isSingleParticipant,
-	isLastParticipant,
-	setValue,
 }: {
 	data?: Partial<DpsProfileFormType>
 	control: Control<T>
 	formState: FormState<T>
 	getDataByCpf: (cpf: string) => void
 	disabled?: boolean
-	participationPercentage?: string
-	participationValue?: string
-	onParticipationPercentageBlur?: (value: string) => void
 	validateCpf?: (cpf: string) => boolean
 	placeholderPercentage?: string
-	isSingleParticipant?: boolean
-	isLastParticipant?: boolean
-	setValue?: (name: string, value: any) => void
 }) => {
 	const errors = formState.errors?.profile as any
 	const isSubmitting = formState.isSubmitting
@@ -125,18 +127,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 		setHighlightMissing(true);
 	};
 
-	// Modificar a lógica para usar o setValue recebido como prop
-	useEffect(() => {
-		if (isSingleParticipant && setValue) {
-			// Use the setValue prop instead of accessing control directly
-			setValue("profile.participationPercentage", "100,00%");
-			
-			// Call the callback to update participation value if provided
-			if (onParticipationPercentageBlur) {
-				onParticipationPercentageBlur("100,00%");
-			}
-		}
-	}, [isSingleParticipant, setValue, onParticipationPercentageBlur]);
+
 
 	const handleCpfBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
 		const cpf = e.target.value
@@ -469,187 +460,7 @@ const DpsProfileForm = <T extends { profile: DpsProfileFormType }>({
 				/>
 			</ShareLine>
 			
-			<ShareLine>
-				<Controller
-					control={control}
-					name={"profile.participationPercentage" as Path<T>}
-					render={({ field: { onChange, onBlur, value } }) => {
-						// Se for participante único, renderizar versão somente leitura
-						if (isSingleParticipant) {
-							return (
-								<label>
-									<div className="text-gray-500">% Participação</div>
-									<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
-										100,00%
-									</div>
-									<div className="text-xs text-red-500">
-										{errors?.participationPercentage?.message}
-									</div>
-								</label>
-							);
-						}
 
-						// Se for o último participante, renderizar versão somente leitura com valor preenchido
-						if (isLastParticipant) {
-							return (
-								<label>
-									<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
-									<div className="h-12 w-full rounded-lg border border-input bg-blue-50 px-4 flex items-center">
-										{typeof value === 'string' ? value : '0,00%'}
-									</div>
-									<div className="text-xs text-blue-600">
-										Preenchido automaticamente - último participante deve completar 100%
-									</div>
-									<div className="text-xs text-red-500">
-										{errors?.participationPercentage?.message}
-									</div>
-								</label>
-							);
-						}
-						
-						// Caso contrário, renderizar o componente normal
-						return (
-							<label>
-								<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
-								<Input
-									id="participationPercentage"
-									type="text"
-									placeholder="0,00%"
-									className={cn(
-										'w-full px-4 py-6 rounded-lg',
-										errors?.participationPercentage && 'border-red-500 focus-visible:border-red-500',
-										highlightMissing && !value && 'border-orange-400 bg-orange-50'
-									)}
-									disabled={disabled}
-									onChange={e => {
-										// Obtém o valor original do input
-										let inputValue = e.target.value;
-										
-										// Se o usuário está tentando apagar, permita isso
-										// Comparando o tamanho do valor atual com o tamanho do anterior
-										if (inputValue.length < (value as string || '').length) {
-											// O usuário está apagando, simplesmente deixe isso acontecer
-											// Remova apenas o símbolo de porcentagem se presente
-											inputValue = inputValue.replace(/%/g, '');
-											onChange(inputValue);
-											return;
-										}
-										
-										// Para entrada normal, aplique a formatação
-										// Remove tudo exceto dígitos e vírgula
-										let rawValue = inputValue.replace(/[^\d,]/g, '')
-										
-										// Limita a uma única vírgula
-										if (rawValue.split(',').length > 2) {
-											rawValue = rawValue.replace(/,/g, function(match, offset, string) {
-												return offset === string.indexOf(',') ? ',' : '';
-											});
-										}
-										
-										// Limita o número de dígitos antes da vírgula a 3 (para permitir 100)
-										if (rawValue.includes(',')) {
-											const [intPart, decPart] = rawValue.split(',');
-											if (intPart.length > 3) {
-												rawValue = intPart.substring(0, 3) + ',' + decPart;
-											}
-										} else if (rawValue.length > 3) {
-											rawValue = rawValue.substring(0, 3);
-										}
-										
-										// Limita valor máximo a 100 para a parte inteira
-										if (rawValue.includes(',')) {
-											const [intPart, decPart] = rawValue.split(',');
-											const intValue = parseInt(intPart, 10);
-											if (intValue > 100) {
-												rawValue = '100,' + decPart;
-											}
-										} else {
-											const intValue = parseInt(rawValue, 10);
-											if (intValue > 100) {
-												rawValue = '100';
-											}
-										}
-										
-										// Adiciona o símbolo de porcentagem apenas se houver algum valor
-										if (rawValue !== '') {
-											rawValue += rawValue.includes('%') ? '' : '%';
-										}
-										
-										onChange(rawValue);
-									}}
-									onBlur={e => {
-										// Não chamar onBlur() aqui para permitir validação primeiro
-										handleFieldBlur();
-										
-										// Normaliza o formato ao perder o foco
-										const rawValue = e.target.value.replace(/[^\d,]/g, '');
-										
-										// Se o campo estiver vazio, deixar vazio e não forçar valor mínimo
-										if (rawValue === '') {
-											// Manter vazio
-											onBlur(); // Agora sim chama o onBlur original
-											return;
-										}
-										
-										// Formatar o valor mantendo o que o usuário informou
-										let formattedValue;
-										
-										if (rawValue.includes(',')) {
-											// Se tem vírgula, processa como decimal
-											const parts = rawValue.split(',');
-											const intPart = parseInt(parts[0], 10) || 0;
-											// Se a parte decimal existe, usa ela, senão usa '00'
-											const decPart = parts.length > 1 ? parts[1] : '00';
-											
-											// Garante que a parte decimal tenha 2 dígitos
-											const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
-											formattedValue = `${intPart},${paddedDecPart}%`;
-										} else {
-											// Se não tem vírgula, é um número inteiro
-											const intValue = parseInt(rawValue, 10) || 0;
-											formattedValue = `${intValue},00%`;
-										}
-										
-										// Atualizar o valor formatado
-										onChange(formattedValue);
-										
-										// Chamar o callback para validar
-										if (onParticipationPercentageBlur) {
-											// Se a validação retornar mensagem de erro, voltar o foco para o campo
-											onParticipationPercentageBlur(formattedValue);
-											
-											// Se o campo tem erro após a validação, não permitir retirar o foco
-											if (errors?.participationPercentage?.message) {
-												// Manter foco no campo
-												setTimeout(() => {
-													e.target.focus();
-												}, 100);
-											} else {
-												// Se não tem erro, permitir retirar o foco
-												onBlur();
-											}
-										} else {
-											// Se não houver callback de validação, permitir retirar o foco
-											onBlur();
-										}
-									}}
-									value={typeof value === 'string' ? value : ''}
-								/>
-								<div className="text-xs text-red-500">
-									{errors?.participationPercentage?.message}
-								</div>
-							</label>
-						);
-					}}
-				/>
-
-				<div>
-					<div className="text-gray-500">Participação no Financiamento</div>
-					<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
-						{participationValue}
-					</div>
-				</div>
-			</ShareLine>
 		</div>
 	)
 }
