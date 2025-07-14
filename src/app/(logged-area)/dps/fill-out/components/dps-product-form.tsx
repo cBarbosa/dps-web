@@ -127,8 +127,23 @@ const DpsProductForm = ({
 		const dfiNumeric = convertCapitalValue(dfiValue) || 0;
 		const mipNumeric = convertCapitalValue(mipValue) || 0;
 		
-		if (dfiNumeric > mipNumeric) {
-			return 'Capital DFI não pode exceder o Capital MIP';
+		// Valor máximo permitido (10.000.000,00)
+		const maxValue = 10_000_000;
+		
+		// DFI nunca pode ser menor que MIP
+		if (dfiNumeric < mipNumeric) {
+			return 'Capital DFI deve ser maior que o Capital MIP';
+		}
+		
+		// Se MIP está no teto máximo (10.000.000,00), DFI pode ser igual ao MIP
+		if (mipNumeric === maxValue) {
+			// Neste caso, DFI pode ser igual ou maior que MIP (dentro do limite máximo)
+			return undefined;
+		} else {
+			// Para todos os outros casos, DFI deve ser maior que MIP
+			if (dfiNumeric === mipNumeric) {
+				return 'Capital DFI deve ser maior que o Capital MIP';
+			}
 		}
 		
 		return undefined;
@@ -653,6 +668,30 @@ function checkCapitalValue(value: string) {
 		return converted <= 10_000_000
 	}
 	return false
+}
+
+// Função para validar DFI considerando o valor do MIP
+function checkDfiValue(dfiValue: string, mipValue: string) {
+	// Primeiro verifica se o valor está dentro do limite máximo
+	if (!checkCapitalValue(dfiValue)) {
+		return false;
+	}
+	
+	if (!dfiValue || !mipValue) return true;
+	
+	const dfiNumeric = convertCapitalValue(dfiValue) || 0;
+	const mipNumeric = convertCapitalValue(mipValue) || 0;
+	
+	// Valor máximo permitido (10.000.000,00)
+	const maxValue = 10_000_000;
+	
+	// Se MIP está no teto máximo (10.000.000,00), DFI pode ser igual ao MIP
+	if (mipNumeric === maxValue) {
+		return dfiNumeric <= mipNumeric;
+	} else {
+		// Para todos os outros casos, DFI deve ser maior que MIP
+		return dfiNumeric > mipNumeric;
+	}
 }
 
 // Função para criar schema com validação simplificada
