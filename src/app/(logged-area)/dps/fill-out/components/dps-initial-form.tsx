@@ -10,7 +10,7 @@ import {
 import { valibotResolver } from '@hookform/resolvers/valibot'
 import { useSession } from 'next-auth/react'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { InferInput, object, pipe, string, nonEmpty, optional } from 'valibot'
 import { getProponentDataByCpf, postProposal, getAddressByZipcode, getParticipantsByOperation } from '../../actions'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -29,6 +29,10 @@ import DpsAddressForm, {
 	dpsAddressForm,
 	DpsAddressFormType,
 } from './dps-address-form'
+import ShareLine from '@/components/ui/share-line'
+import { Input } from '@/components/ui/input'
+import DatePicker from '@/components/ui/date-picker'
+import SelectComp from '@/components/ui/select-comp'
 import validarCpf from 'validar-cpf'
 import DpsOperationForm, { dpsOperationForm, DpsOperationFormType } from './dps-operation-form'
 import { 
@@ -359,44 +363,13 @@ const DpsInitialForm = ({
 		}
 	}, [proponentAge, trigger, memoizedGetValues]);
 
-	// useEffect para atualizar as opções de prazo baseado na idade
+	// useEffect para atualizar as opções de prazo - agora não filtra por idade
 	useEffect(() => {
 		if(isProductDisabled) return;
-
-		if (proponentAge === null) return
-
-		switch (true) {
-			case proponentAge < 18:
-				setPrazosOptions([])
-				break
-			case proponentAge <= 50:
-				setPrazosOptions(prazosOptionsProp)
-				break
-			case proponentAge <= 55:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 180)
-				)
-				break
-			case proponentAge <= 60:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 150)
-				)
-				break
-			case proponentAge <= 65:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 84)
-				)
-				break
-			case proponentAge <= 80:
-				setPrazosOptions(
-					prazosOptionsProp.filter(prazo => +getDigits(prazo.label) <= 60)
-				)
-				break
-			default:
-				setPrazosOptions([])
-				break
-		}
-	}, [proponentAge, prazosOptionsProp])
+		
+		// Sempre usar todas as opções de prazo disponíveis, sem filtrar por idade
+		setPrazosOptions(prazosOptionsProp);
+	}, [prazosOptionsProp, isProductDisabled]);
 
 	// Confirmação para continuar com menos participantes
 	const handleConfirmSubmit = () => {
@@ -673,16 +646,6 @@ const DpsInitialForm = ({
 		try {
 			// Usar setIsLoading em vez de setIsSubmitting para controlar o estado de envio
 			setIsLoading(true);
-			
-			// Verificar se a idade permite o preenchimento de DPS
-			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
-				const ageMessage = proponentAge < 18 
-					? 'Não é possível contratar DPS para menores de 18 anos.'
-					: 'Não é possível contratar DPS para maiores de 80 anos.';
-				toast.error(ageMessage);
-				setIsLoading(false);
-				return;
-			}
 			
 			// Logging para depuração
 			console.log("Form submission data:", v);
@@ -1738,6 +1701,15 @@ const DpsInitialForm = ({
 		}
 	};
 
+	// Callback para quando o MIP perde o foco
+	const handleMipBlur = (mipValue: string, participationPercentage: string) => {
+		if (mipValue && participationPercentage) {
+			// Calcular o valor de participação
+			const calculatedValue = calculateParticipationValue(participationPercentage);
+			setParticipationValue(calculatedValue);
+		}
+	};
+
 	const saveAndAddCoparticipant = () => {
 		try {
 			// Pre-populate operation data for the coparticipant form
@@ -1938,15 +1910,6 @@ const DpsInitialForm = ({
 	// Componente auxiliar para o botão Salvar com loading
 	const SaveButton = ({ isSubmitting, isLoading }: { isSubmitting: boolean, isLoading: boolean }) => {
 		const handleSaveClick = async () => {
-			// Verificar se a idade permite o preenchimento de DPS
-			if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
-				const ageMessage = proponentAge < 18 
-					? 'Não é possível contratar DPS para menores de 18 anos.'
-					: 'Não é possível contratar DPS para maiores de 80 anos.';
-				toast.error(ageMessage);
-				return;
-			}
-			
 			const isValid = await trigger()
 			if (isValid) {
 				// Usar handleSubmit diretamente em vez de onSubmit
@@ -1954,13 +1917,11 @@ const DpsInitialForm = ({
 			}
 		}
 
-		const isAgeRestricted = proponentAge !== null && (proponentAge < 18 || proponentAge > 80);
-
 		return (
 			<Button 
 				type="button" 
 				className="w-40" 
-				disabled={isSubmitting || isLoading || isAgeRestricted}
+				disabled={isSubmitting || isLoading}
 				onClick={handleSaveClick}
 			>
 				{isSubmitting || isLoading ? (
@@ -1968,7 +1929,7 @@ const DpsInitialForm = ({
 						Salvando
 						<Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
 					</>
-				) : isAgeRestricted ? "Bloqueado" : "Salvar"}
+				) : "Salvar"}
 			</Button>
 		)
 	}
@@ -2212,34 +2173,11 @@ const DpsInitialForm = ({
 							formState={formState}
 							getDataByCpf={getDataByCpf}
 							disabled={isSubmitting || isLoading || isLoadingData}
-							participationPercentage={participationPercentage}
-							participationValue={participationValue}
-							onParticipationPercentageBlur={handleParticipationPercentageBlur}
-							isSingleParticipant={participantsNumber === '1'}
-							setValue={handleSetValueForProfile} // Usar a função wrapper em vez de setValue diretamente
 						/>
 					</div>
 
 					{/* Seção de dados do produto */}
 					<div className="w-full max-w-7xl mx-auto bg-white rounded-3xl p-9 dps-product-section">
-						{/* Alerta de idade restritiva */}
-						{proponentAge !== null && (proponentAge < 18 || proponentAge > 80) && (
-							<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-								<div className="flex items-center">
-									<div className="h-5 w-5 text-red-500 mr-2">⚠️</div>
-									<p className="text-red-700 font-medium">
-										{proponentAge < 18 
-											? `Proponente menor de idade (${proponentAge} anos)`
-											: `Proponente acima da idade permitida (${proponentAge} anos)`
-										}
-									</p>
-								</div>
-								<p className="text-red-600 text-sm mt-2">
-									O preenchimento de DPS é permitido apenas para proponentes com idade entre 18 e 80 anos.
-								</p>
-							</div>
-						)}
-						
 						<DpsProductForm
 							control={control}
 							formState={formState}
@@ -2248,6 +2186,13 @@ const DpsInitialForm = ({
 							tipoImovelOptions={tipoImovelOptions}
 							disabled={isSubmitting || isLoading || isProductDisabled}
 							proponentAge={proponentAge}
+							participationPercentage={participationPercentage}
+							participationValue={participationValue}
+							onParticipationPercentageBlur={handleParticipationPercentageBlur}
+							onMipBlur={handleMipBlur}
+							isSingleParticipant={participantsNumber === '1'}
+							isLastParticipant={false}
+							setValue={handleSetValueForProfile}
 						/>
 					</div>
 
@@ -2463,17 +2408,453 @@ const DpsInitialForm = ({
 							})()}
 						</div>
 
-						<DpsProfileForm
-							control={coparticipantForm.control}
-							formState={coparticipantForm.formState}
-							getDataByCpf={getDataByCpfForCoparticipant}
-							disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
-							participationPercentage=""
-							participationValue={coparticipantParticipationValue}
-							onParticipationPercentageBlur={handleCoparticipantPercentageBlur}
-							validateCpf={validateCpfNotDuplicated}
-							isLastParticipant={isLastParticipant}
-						/>
+						{/* Campos reorganizados para navegação via TAB sequencial */}
+						<div className="flex flex-col gap-6 w-full">
+							<h3 className="text-primary text-lg">Dados do Proponente</h3>
+							
+							{/* Primeira linha: CPF e Data de Nascimento */}
+							<ShareLine>
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.cpf"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const cpfError = profileErrors?.cpf;
+										
+										return (
+											<label>
+												<div className="text-gray-500">CPF <span className="text-red-500">*</span></div>
+												<div className="relative">
+													<Input
+														id="coparticipant-cpf"
+														type="text"
+														placeholder="999.999.999-99"
+														mask="999.999.999-99"
+														tabIndex={1}
+														className={cn(
+															'w-full px-4 py-6 rounded-lg',
+															cpfError && 'border-red-500 focus-visible:border-red-500',
+															isLoadingCoparticipant || fetchingCpfDataCoparticipant ? 'opacity-50 cursor-not-allowed' : ''
+														)}
+														disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+														autoComplete="cpf"
+														onChange={(e) => {
+															const formattedValue = e.target.value;
+															onChange(formattedValue);
+															if (!cpfError?.message) {
+																e.currentTarget.classList.remove('border-red-500');
+																e.currentTarget.classList.remove('focus-visible:border-red-500');
+															}
+														}}
+														onBlur={(e) => {
+															const cpf = e.target.value;
+															if (cpf && cpf.replace(/\D/g, '').length === 11) {
+																getDataByCpfForCoparticipant(cpf);
+															}
+															onBlur();
+														}}
+														value={typeof value === 'string' ? value : ''}
+														ref={ref}
+													/>
+													{(isLoadingCoparticipant || fetchingCpfDataCoparticipant) && (
+														<Loader2Icon className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />
+													)}
+												</div>
+												<div className="text-xs text-red-500">{cpfError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.birthdate"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const birthdateError = profileErrors?.birthdate;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Data de Nascimento <span className="text-red-500">*</span></div>
+												<DatePicker
+													id="coparticipant-birthdate"
+													placeholder="01/01/1999"
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														birthdateError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onChange={onChange}
+													onBlur={onBlur}
+													value={value instanceof Date ? value : undefined}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{birthdateError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+							</ShareLine>
+
+							{/* Segunda linha: Nome e Nome Social */}
+							<ShareLine>
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.name"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const nameError = profileErrors?.name;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Nome do Proponente <span className="text-red-500">*</span></div>
+												<Input
+													id="coparticipant-name"
+													type="text"
+													placeholder="Nome do proponente"
+													tabIndex={3}
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														nameError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													autoComplete="name"
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onChange={onChange}
+													onBlur={onBlur}
+													value={typeof value === 'string' ? value : ''}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{nameError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.socialName"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const socialNameError = profileErrors?.socialName;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Nome social do Proponente</div>
+												<Input
+													id="coparticipant-socialName"
+													type="text"
+													placeholder="Nome social do proponente"
+													tabIndex={4}
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														socialNameError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													autoComplete="socialName"
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onChange={onChange}
+													onBlur={onBlur}
+													value={typeof value === 'string' ? value : ''}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{socialNameError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+							</ShareLine>
+
+							{/* Terceira linha: Atividade Profissional e Email */}
+							<ShareLine>
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.profession"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const professionError = profileErrors?.profession;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Atividade profissional <span className="text-red-500">*</span></div>
+												<Input
+													id="coparticipant-profession"
+													type="text"
+													placeholder="Atividade profissional"
+													tabIndex={5}
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														professionError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													autoComplete="profession"
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onChange={onChange}
+													onBlur={onBlur}
+													value={typeof value === 'string' ? value : ''}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{professionError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.email"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const emailError = profileErrors?.email;
+										
+										return (
+											<label>
+												<div className="text-gray-500">E-mail <span className="text-red-500">*</span></div>
+												<Input
+													id="coparticipant-email"
+													type="text"
+													placeholder="conta@exemplo.com.br"
+													tabIndex={6}
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														emailError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													autoComplete="email"
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onChange={onChange}
+													onBlur={onBlur}
+													value={typeof value === 'string' ? value : ''}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{emailError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+							</ShareLine>
+
+							{/* Quarta linha: Telefone e Sexo */}
+							<ShareLine>
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.phone"
+									render={({ field: { onChange, onBlur, value, ref } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const phoneError = profileErrors?.phone;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Telefone <span className="text-red-500">*</span></div>
+												<Input
+													id="coparticipant-phone"
+													type="text"
+													placeholder="(99) 99999-9999"
+													mask="(99) 99999-99999"
+													tabIndex={7}
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														phoneError && 'border-red-500 focus-visible:border-red-500'
+													)}
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													autoComplete="tel"
+													onChange={onChange}
+													onBlur={onBlur}
+													value={typeof value === 'string' ? value : ''}
+													ref={ref}
+												/>
+												<div className="text-xs text-red-500">{phoneError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.gender"
+									render={({ field: { onChange, onBlur, value } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const genderError = profileErrors?.gender;
+										
+										return (
+											<label>
+												<div className="text-gray-500">Sexo <span className="text-red-500">*</span></div>
+												<SelectComp
+													placeholder="Sexo"
+													options={[
+														{ value: 'M', label: 'Masculino' },
+														{ value: 'F', label: 'Feminino' }
+													]}
+													triggerClassName="p-4 h-12 rounded-lg"
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
+													onValueChange={(val: string) => {
+														onChange(val);
+														setTimeout(() => {
+															onBlur();
+														}, 0);
+													}}
+													defaultValue={typeof value === 'string' ? value : ''}
+												/>
+												<div className="text-xs text-red-500">{genderError?.message}</div>
+											</label>
+										);
+									}}
+								/>
+							</ShareLine>
+						</div>
+
+						{/* Campos de Participação para Coparticipante */}
+						<div className="flex flex-col gap-6 w-full mt-6">
+							<h4 className="text-primary text-lg">Participação na Operação</h4>
+							
+							<ShareLine>
+								<Controller
+									control={coparticipantForm.control}
+									name="profile.participationPercentage"
+									render={({ field: { onChange, onBlur, value } }: any) => {
+										const profileErrors = coparticipantForm.formState.errors?.profile as any;
+										const participationError = profileErrors?.participationPercentage;
+										
+										// Verificar se Capital MIP está preenchido no formulário principal
+										const mipFilled = getValues().product?.mip && getValues().product.mip.trim() !== '';
+										
+										// Se for o último participante, renderizar versão somente leitura com valor preenchido
+										if (isLastParticipant) {
+											return (
+												<label>
+													<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+													<div className="h-12 w-full rounded-lg border border-input bg-blue-50 px-4 flex items-center">
+														{typeof value === 'string' ? value : '0,00%'}
+													</div>
+													<div className="text-xs text-blue-600">
+														Preenchido automaticamente - último participante deve completar 100%
+													</div>
+													<div className="text-xs text-red-500">
+														{participationError?.message}
+													</div>
+												</label>
+											);
+										}
+										
+										// Renderizar o componente normal
+										return (
+											<label>
+												<div className="text-gray-500">% Participação <span className="text-red-500">*</span></div>
+												<Input
+													id="coparticipantParticipationPercentage"
+													type="text"
+													placeholder="0,00%"
+													className={cn(
+														'w-full px-4 py-6 rounded-lg',
+														participationError && 'border-red-500 focus-visible:border-red-500',
+														'border-orange-400 bg-orange-50'
+													)}
+													disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant || !mipFilled}
+													onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+														// Obtém o valor original do input
+														let inputValue = e.target.value;
+														
+														// Se o usuário está tentando apagar, permita isso
+														if (inputValue.length < (value as string || '').length) {
+															inputValue = inputValue.replace(/%/g, '');
+															onChange(inputValue);
+															return;
+														}
+														
+														// Remove tudo exceto dígitos e vírgula
+														let rawValue = inputValue.replace(/[^\d,]/g, '')
+														
+														// Limita a uma única vírgula
+														if (rawValue.split(',').length > 2) {
+															rawValue = rawValue.replace(/,/g, function(match: string, offset: number, string: string) {
+																return offset === string.indexOf(',') ? ',' : '';
+															});
+														}
+														
+														// Limita o número de dígitos antes da vírgula a 3 (para permitir 100)
+														if (rawValue.includes(',')) {
+															const [intPart, decPart] = rawValue.split(',');
+															if (intPart.length > 3) {
+																rawValue = intPart.substring(0, 3) + ',' + decPart;
+															}
+														} else if (rawValue.length > 3) {
+															rawValue = rawValue.substring(0, 3);
+														}
+														
+														// Limita valor máximo a 100 para a parte inteira
+														if (rawValue.includes(',')) {
+															const [intPart, decPart] = rawValue.split(',');
+															const intValue = parseInt(intPart, 10);
+															if (intValue > 100) {
+																rawValue = '100,' + decPart;
+															}
+														} else {
+															const intValue = parseInt(rawValue, 10);
+															if (intValue > 100) {
+																rawValue = '100';
+															}
+														}
+														
+														// Adiciona o símbolo de porcentagem apenas se houver algum valor
+														if (rawValue !== '') {
+															rawValue += rawValue.includes('%') ? '' : '%';
+														}
+														
+														onChange(rawValue);
+													}}
+													onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+														// Normaliza o formato ao perder o foco
+														const rawValue = e.target.value.replace(/[^\d,]/g, '');
+														
+														// Se o campo estiver vazio, deixar vazio
+														if (rawValue === '') {
+															onBlur();
+															return;
+														}
+														
+														// Formatar o valor
+														let formattedValue;
+														
+														if (rawValue.includes(',')) {
+															const parts = rawValue.split(',');
+															const intPart = parseInt(parts[0], 10) || 0;
+															const decPart = parts.length > 1 ? parts[1] : '00';
+															const paddedDecPart = decPart.padEnd(2, '0').substring(0, 2);
+															formattedValue = `${intPart},${paddedDecPart}%`;
+														} else {
+															const intValue = parseInt(rawValue, 10) || 0;
+															formattedValue = `${intValue},00%`;
+														}
+														
+														// Atualizar o valor formatado
+														onChange(formattedValue);
+														
+														// Chamar o callback para validar
+														if (handleCoparticipantPercentageBlur) {
+															handleCoparticipantPercentageBlur(formattedValue);
+														}
+														
+														onBlur();
+													}}
+													value={typeof value === 'string' ? value : ''}
+												/>
+												<div className="text-xs text-red-500">
+													{participationError?.message}
+												</div>
+												{!mipFilled && (
+													<div className="text-xs text-orange-600">
+														Preencha o Capital MIP primeiro para habilitar este campo
+													</div>
+												)}
+											</label>
+										);
+									}}
+								/>
+
+								<div>
+									<div className="text-gray-500">Participação no Financiamento</div>
+									<div className="h-12 w-full rounded-lg border border-input bg-gray-100 px-4 flex items-center">
+										{coparticipantParticipationValue || 'R$ 0,00'}
+									</div>
+								</div>
+							</ShareLine>
+						</div>
 
 						{/* DpsAddressForm removido - co-participantes usam o mesmo endereço da operação
 						<DpsAddressForm
@@ -2488,12 +2869,14 @@ const DpsInitialForm = ({
 							<Button 
 								type="button" 
 								variant="outline" 
+								tabIndex={10}
 								onClick={() => setIsCoparticipantDialogOpen(false)}
 							>
 								Cancelar
 							</Button>
 							<Button 
 								type="button" 
+								tabIndex={11}
 								disabled={isLoadingCoparticipant || fetchingCpfDataCoparticipant}
 								onClick={async () => {
 									// Chamar manualmente a validação e submissão do formulário de coparticipante
