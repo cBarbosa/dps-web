@@ -37,7 +37,6 @@ export const diseaseNames = {
 	'23': 'Encontra-se aposentado por invalidez? Se SIM, especifique no campo abaixo a natureza ou causa da invalidez e o ano em que passou areceber o benefício da Previdência Social.',
 	'24': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
 	'25': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)',
-	telefoneContato: 'Telefone de Contato',
 }
 
 /* export const diseaseNames = {
@@ -87,7 +86,6 @@ const DpsForm = ({
 		: undefined
 
 	let initialStep: 'health' | 'attachments' | 'finished'
-	console.log('>:>>', initialProposalData)
 
 	if (initialProposalData.status.id === 10) initialStep = 'health'
 	else if (initialProposalData.status.id === 5) initialStep = 'attachments'
@@ -160,7 +158,7 @@ const DpsForm = ({
 		setDpsData(prev => ({ ...prev, health: v }))
 
 		const responseSign = await signProposal(token, uid)
-		console.log('post signProposal', responseSign)
+
 		if (!responseSign) console.log(responseSign) //TODO add error alert
 
 		setStep('finished')

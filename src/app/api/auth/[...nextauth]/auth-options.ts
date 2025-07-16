@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
 				}
 
 				const response = await fetch(
-					process.env.NEXT_PUBLIC_API_BASE_URL + 'v1/Auth',
+					process.env.NEXT_PUBLIC_API_BASE_URL + '/v1/Auth',
 					{
 						method: 'POST',
 						headers: {

@@ -123,15 +123,17 @@ export default function ExternalDpsForm({
         ...acc,
         [item.code]: {
           has: item.exists ? 'yes' : '',
-          description: ''
+          description: item.description || ''
         }
       }), {});
     }
     
-    return Object.keys(diseaseNames).reduce((acc, key) => ({
-      ...acc,
-      [key]: { has: '', description: '' }
-    }), {});
+    return Object.keys(diseaseNames)
+      .filter(key => key !== 'telefoneContato') // Exclude telefoneContato
+      .reduce((acc, key) => ({
+        ...acc,
+        [key]: { has: '', description: '' }
+      }), {});
   });
   
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -165,8 +167,7 @@ export default function ExternalDpsForm({
     let hasError = false;
     
     Object.keys(diseaseNames).forEach(key => {
-      // Pular a validação do campo telefoneContato
-      if (key === 'telefoneContato') return;
+      if (key === 'telefoneContato') return; // Skip telefoneContato
       
       if (!formData[key]?.has) {
         newErrors[key] = true;
@@ -192,9 +193,9 @@ export default function ExternalDpsForm({
     setSubmitError(null);
     
     try {
-      // Format data for API
+      // Format data for API - exclude telefoneContato
       const postData = Object.entries(formData)
-        .filter(([key]) => key !== 'telefoneContato') // Excluir o campo telefoneContato
+        .filter(([key]) => key !== 'telefoneContato')
         .map(([key, value]) => ({
           code: key,
           question: diseaseNames[key as keyof typeof diseaseNames],
@@ -207,18 +208,22 @@ export default function ExternalDpsForm({
       const healthResponse = await postHealthDataByUid(initialProposalData.uid, postData);
       
       if (healthResponse?.success) {
+        
         // Sign the proposal
         const signResponse = await signProposal(initialProposalData.uid);
         
         if (signResponse?.success) {
+          console.log('Proposal signed successfully');
           setIsSubmitted(true);
           setTimeout(() => {
             router.push(successRedirect);
           }, 2000);
         } else {
+          console.error('Failed to sign proposal:', signResponse);
           setSubmitError(signResponse?.message || 'Erro ao assinar a proposta. Por favor, tente novamente.');
         }
       } else {
+        console.error('Failed to post health data:', healthResponse);
         setSubmitError(healthResponse?.message || 'Erro ao enviar dados de saúde. Por favor, tente novamente.');
       }
     } catch (error) {
@@ -394,31 +399,42 @@ export default function ExternalDpsForm({
           </div>
           
           <div className="space-y-8 divide-y">
-            {Object.entries(diseaseNames).map(([key, question]) => key === 'telefoneContato' ? null : (
-              <DiseaseField
-                key={key}
-                name={key}
-                label={question}
-                value={formData[key] || { has: '', description: '' }}
-                onChange={(value) => handleRadioChange(key, value)}
-                onDescriptionChange={(value) => handleDescriptionChange(key, value)}
-                error={errors[key] || false}
-                isSubmitting={isSubmitting}
-              />
-            ))}
+            {Object.entries(diseaseNames)
+              .filter(([key]) => key !== 'telefoneContato')
+              .map(([key, question]) => (
+                <DiseaseField
+                  key={key}
+                  name={key}
+                  label={question}
+                  value={formData[key] || { has: '', description: '' }}
+                  onChange={(value) => handleRadioChange(key, value)}
+                  onDescriptionChange={(value) => handleDescriptionChange(key, value)}
+                  error={errors[key] || false}
+                  isSubmitting={isSubmitting}
+                />
+              ))}
           </div>
           
-          <div className="mt-6">
+          <div className="flex justify-start items-center gap-5 mt-6">
             <Button
               type="submit"
               className="w-40"
               disabled={isSubmitting}
+              onClick={() => console.log('Button clicked!')}
             >
               Salvar
+              {isSubmitting && (
+                <Loader2Icon className="w-4 h-4 ml-2 animate-spin" />
+              )}
             </Button>
+            {Object.keys(errors).length > 0 && (
+              <div className="text-red-500">
+                Preencha todos os campos obrigatórios
+              </div>
+            )}
           </div>
         </form>
       </div>
     </div>
   );
-} 
+}
