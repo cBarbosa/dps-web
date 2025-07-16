@@ -106,7 +106,6 @@ const productYelumNovo = {
 	'23': diseaseSchema,
 	'24': diseaseSchema,
 	'25': diseaseSchema,
-	telefoneContato: diseaseSchema,
 };
 
 const healthForm = object(productYelumNovo)
@@ -145,6 +144,7 @@ const DpsHealthForm = ({
 	})
 
 	async function onSubmit(v: HealthForm) {
+		console.log('Form submission started (internal)', v)
 		setSubmittingForm(true)
 
 		const postData = Object.entries(v).map(([key, value], i) => ({
@@ -155,20 +155,28 @@ const DpsHealthForm = ({
 			description: value.description,
 		}))
 
-		const response = await postHealthDataByUid(token, proposalUid, postData)
+		try {
+			const response = await postHealthDataByUid(token, proposalUid, postData)
 
-		if (response) {
-			reset()
-			if (response.success) {
-				onSubmitProp(v)
+			if (response) {
+				if (response.success) {
+					reset()
+					setSubmittingForm(false)
+					onSubmitProp(v)
+				} else {
+					//TODO add error alert
+					console.error('Failed to post health data (internal):', response.message)
+					setSubmittingForm(false)
+				}
 			} else {
-				//TODO add error alert
-				console.error(response.message)
+				// Tratar caso onde response é null/undefined
+				console.error('Nenhuma resposta recebida do servidor')
 				setSubmittingForm(false)
 			}
+		} catch (error) {
+			console.error('Erro ao enviar dados de saúde:', error)
+			setSubmittingForm(false)
 		}
-		onSubmitProp(v)
-		console.log('saudetop', v)
 	}
 
 	return (
@@ -182,31 +190,19 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key =>
-					key === 'telefoneContato' ? null : (
-						<DiseaseField
-							name={key}
-							label={diseaseNames[key]}
-							control={control}
-							watch={watch}
-							errors={errors}
-							isSubmitting={isSubmitting || submittingForm}
-							trigger={trigger}
-							setValue={setValue}
-							key={key}
-						/>
-					)
-				)}
-				<DiseaseField
-					name="telefoneContato"
-					label="Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD + número)."
-					control={control}
-					watch={watch}
-					errors={errors}
-					isSubmitting={isSubmitting || submittingForm}
-					trigger={trigger}
-					setValue={setValue}
-				/>
+				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key => (
+					<DiseaseField
+						name={key}
+						label={diseaseNames[key]}
+						control={control}
+						watch={watch}
+						errors={errors}
+						isSubmitting={isSubmitting || submittingForm}
+						trigger={trigger}
+						setValue={setValue}
+						key={key}
+					/>
+				))}
 			</div>
 
 			<div className="flex justify-start items-center gap-5">
@@ -214,9 +210,10 @@ const DpsHealthForm = ({
 					type="submit"
 					className="w-40"
 					disabled={submittingForm || isSubmitting}
+					onClick={() => console.log('Button clicked (internal)!', { submittingForm, isSubmitting })}
 				>
 					Salvar
-					{isSubmitting && (
+					{(isSubmitting || submittingForm) && (
 						<Loader2Icon className="w-4 h-4 ml-2 animate-spin" />
 					)}
 				</Button>
