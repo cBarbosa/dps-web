@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import DpsProfileForm, {
 	DpsProfileFormType,
 	dpsProfileForm,
+	createDpsProfileFormWithDeadline,
 } from './dps-profile-form'
 import DpsProductForm, {
 	convertCapitalValue,
@@ -642,6 +643,27 @@ const DpsInitialForm = ({
 		}
 	};
 
+	// Função utilitária para validar idade + prazo
+	const validateAgeWithDeadline = (birthdate: Date, deadlineMonths: number, participantType: string): { valid: boolean; message?: string } => {
+		const today = new Date();
+		const age = today.getFullYear() - birthdate.getFullYear();
+		const monthDiff = today.getMonth() - birthdate.getMonth();
+		const dayDiff = today.getDate() - birthdate.getDate();
+		
+		const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+		const prazosInYears = deadlineMonths / 12;
+		const finalAge = actualAge + prazosInYears;
+		
+		if (finalAge > 80) {
+			return {
+				valid: false,
+				message: `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 80 anos ao fim da operação.`
+			};
+		}
+		
+		return { valid: true };
+	};
+
 	async function onSubmit(v: DpsInitialForm) {
 		try {
 			// Usar setIsLoading em vez de setIsSubmitting para controlar o estado de envio
@@ -649,6 +671,32 @@ const DpsInitialForm = ({
 			
 			// Logging para depuração
 			console.log("Form submission data:", v);
+			
+			// VALIDAÇÃO DE IDADE + PRAZO
+			const deadlineMonths = parseInt(v.product.deadline, 10);
+			if (!isNaN(deadlineMonths) && deadlineMonths > 0) {
+				// Validar proponente principal
+				if (v.profile.birthdate) {
+					const proponentValidation = validateAgeWithDeadline(v.profile.birthdate, deadlineMonths, 'proponente principal');
+					if (!proponentValidation.valid) {
+						toast.error(proponentValidation.message || 'Idade final do proponente excede 80 anos.');
+						setIsLoading(false);
+						return;
+					}
+				}
+				
+				// Validar coparticipantes
+				for (const coparticipant of coparticipants) {
+					if (coparticipant.profile.birthdate) {
+						const coparticipantValidation = validateAgeWithDeadline(new Date(coparticipant.profile.birthdate), deadlineMonths, 'coparticipante');
+						if (!coparticipantValidation.valid) {
+							toast.error(`${coparticipantValidation.message} (${coparticipant.name})`);
+							setIsLoading(false);
+							return;
+						}
+					}
+				}
+			}
 			
 			// NOVA VALIDAÇÃO: Não permitir continuidade de operações existentes
 			if (operationDataLoaded && existingMainProponent) {
@@ -1115,15 +1163,21 @@ const DpsInitialForm = ({
 		setIsLoadingData(false)
 	}
 
+	// Schema dinâmico para coparticipante baseado no prazo da operação
+	const coparticipantSchema = useMemo(() => {
+		const currentDeadline = getValues().product?.deadline;
+		const deadlineMonths = currentDeadline ? parseInt(currentDeadline, 10) : null;
+		
+		return object({
+			operation: dpsOperationForm,
+			profile: createDpsProfileFormWithDeadline(deadlineMonths),
+			// address: dpsAddressForm, // Removido - endereço será o mesmo para toda a operação
+		});
+	}, [getValues().product?.deadline]);
+
 	// Form for co-participant registration
 	const coparticipantForm = useForm<DpsCoparticipantForm>({
-		resolver: valibotResolver(
-			object({
-				operation: dpsOperationForm,
-				profile: dpsProfileForm,
-				// address: dpsAddressForm, // Removido - endereço será o mesmo para toda a operação
-			})
-		),
+		resolver: valibotResolver(coparticipantSchema),
 		defaultValues: {
 			operation: {
 				operationNumber: '',

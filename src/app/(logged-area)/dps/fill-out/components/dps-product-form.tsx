@@ -79,7 +79,6 @@ const DpsProductForm = ({
 	isLastParticipant?: boolean
 	setValue?: (name: string, value: any) => void
 }) => {
-	console.log('formState', formState)
 	// Ignoramos erros quando em modo somente leitura
 	const errors = disabled ? {} : formState.errors?.product;
 	const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
@@ -706,6 +705,21 @@ export const createDpsProductFormWithAge = (proponentAge: number | null) => obje
 				return !isNaN(numValue) && numValue >= 1 && numValue <= 420;
 			},
 			'Prazo deve ser entre 1 e 420 meses.'
+		),
+		custom(
+			v => {
+				// Validação da idade final apenas se a idade do proponente estiver disponível
+				if (proponentAge === null) return true;
+				
+				const numValue = parseInt(v as string, 10);
+				if (isNaN(numValue)) return false;
+				
+				const prazosInYears = numValue / 12; // Converter meses para anos
+				const finalAge = proponentAge + prazosInYears;
+				
+				return finalAge <= 80;
+			},
+			'A idade final do proponente não pode exceder 80 anos até o fim do contrato.'
 		)
 	),
 	mip: pipe(
