@@ -63,11 +63,75 @@ export const dpsProfileForm = object({
 	phone: pipe(string(), nonEmpty('Campo obrigatório.')),
 	gender: pipe(string(), nonEmpty('Campo obrigatório.')),
 	participationPercentage: pipe(
-		string(), 
+		string(),
 		nonEmpty('Campo obrigatório.'),
-		regex(/^\d{1,3}(,\d{1,2})?%$/, 'Formato inválido. Use: 0,00%')
+		regex(/^\d{1,2}(,\d{1,2})?%$/, 'Formato inválido. Use o formato: 25,50%')
 	),
 })
+
+// Função para criar schema de perfil para coparticipantes com validação de idade + prazo
+export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) => object({
+	cpf: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(v => validateCpf(v as string), 'CPF inválido.'),
+		minLength(1, 'CPF é obrigatório')
+	),
+	name: pipe(string(), nonEmpty('Campo obrigatório.')),
+	socialName: optional(string()),
+	birthdate: pipe(
+		date('Data inválida.'),
+		maxValue(new Date(), 'Idade inválida.'),
+		custom(
+			v => {
+				if (!v || !(v instanceof Date)) return false;
+				const today = new Date();
+				const birthDate = new Date(v);
+				const age = today.getFullYear() - birthDate.getFullYear();
+				const monthDiff = today.getMonth() - birthDate.getMonth();
+				const dayDiff = today.getDate() - birthDate.getDate();
+				
+				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				return actualAge >= 18 && actualAge <= 80;
+			},
+			'Idade deve estar entre 18 e 80 anos.'
+		),
+		custom(
+			v => {
+				// Validação da idade final apenas se o prazo estiver definido
+				if (deadlineMonths === null || deadlineMonths <= 0) return true;
+				if (!v || !(v instanceof Date)) return false;
+				
+				const today = new Date();
+				const birthDate = new Date(v);
+				const age = today.getFullYear() - birthDate.getFullYear();
+				const monthDiff = today.getMonth() - birthDate.getMonth();
+				const dayDiff = today.getDate() - birthDate.getDate();
+				
+				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				const prazosInYears = deadlineMonths / 12;
+				const finalAge = actualAge + prazosInYears;
+				
+				return finalAge <= 80;
+			},
+			'A idade final do coparticipante não pode exceder 80 anos até o fim do contrato.'
+		)
+	),
+	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
+	email: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		email('Email inválido.'),
+		minLength(1, 'Email é obrigatório')
+	),
+	phone: pipe(string(), nonEmpty('Campo obrigatório.')),
+	gender: pipe(string(), nonEmpty('Campo obrigatório.')),
+	participationPercentage: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		regex(/^\d{1,2}(,\d{1,2})?%$/, 'Formato inválido. Use o formato: 25,50%')
+	),
+});
 
 export type DpsProfileFormType = InferInput<typeof dpsProfileForm>
 
