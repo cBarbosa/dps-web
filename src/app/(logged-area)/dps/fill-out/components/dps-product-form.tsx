@@ -502,16 +502,22 @@ const DpsProductForm = ({
 											rawValue = rawValue.substring(0, 3);
 										}
 										
-										// Limita valor máximo a 100 para a parte inteira
+										// Limita valor máximo baseado no número de participantes
 										if (rawValue.includes(',')) {
 											const [intPart, decPart] = rawValue.split(',');
 											const intValue = parseInt(intPart, 10);
-											if (intValue > 100) {
+											// Para múltiplos participantes, não permitir 100%
+											if (!isSingleParticipant && intValue >= 100) {
+												rawValue = '99,' + decPart;
+											} else if (isSingleParticipant && intValue > 100) {
 												rawValue = '100,' + decPart;
 											}
 										} else {
 											const intValue = parseInt(rawValue, 10);
-											if (intValue > 100) {
+											// Para múltiplos participantes, não permitir 100%
+											if (!isSingleParticipant && intValue >= 100) {
+												rawValue = '99';
+											} else if (isSingleParticipant && intValue > 100) {
 												rawValue = '100';
 											}
 										}
@@ -589,6 +595,11 @@ const DpsProductForm = ({
 								<div className="text-xs text-red-500">
 									{participationError?.message}
 								</div>
+								{/* {!isSingleParticipant && mipFilled && (
+									<div className="text-xs text-blue-600">
+										Para operações com múltiplos participantes, o percentual deve ser inferior a 100% (deixe pelo menos 0,01% para cada participante restante)
+									</div>
+								)} */}
 							</label>
 						);
 					}}

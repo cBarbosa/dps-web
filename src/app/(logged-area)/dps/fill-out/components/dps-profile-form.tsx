@@ -65,7 +65,13 @@ export const dpsProfileForm = object({
 	participationPercentage: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
-		regex(/^\d{1,2}(,\d{1,2})?%$/, 'Formato inválido. Use o formato: 25,50%')
+		custom(
+			v => {
+				const percentageRegex = /^(100(,00)?|[1-9]?\d(,\d{1,2})?)%$/;
+				return percentageRegex.test(v as string);
+			},
+			'Formato inválido. Use o formato: 25,50% (valores de 0,01% até 100,00%)'
+		)
 	),
 })
 
@@ -129,9 +135,100 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) 
 	participationPercentage: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
-		regex(/^\d{1,2}(,\d{1,2})?%$/, 'Formato inválido. Use o formato: 25,50%')
+		custom(
+			v => {
+				const percentageRegex = /^(100(,00)?|[1-9]?\d(,\d{1,2})?)%$/;
+				return percentageRegex.test(v as string);
+			},
+			'Formato inválido. Use o formato: 25,50% (valores de 0,01% até 100,00%)'
+		)
 	),
 });
+
+// Função para criar schema dinâmico baseado no número de participantes
+export const createDpsProfileFormWithParticipants = (participantsNumber?: number) => object({
+	cpf: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(
+			v => {
+				const cpf = (v as string).replace(/\D/g, '')
+				return cpf.length === 11
+			},
+			'CPF deve ter 11 dígitos.'
+		)
+	),
+	name: pipe(string(), nonEmpty('Campo obrigatório.')),
+	socialName: optional(string()),
+	birthdate: pipe(
+		date(),
+		custom(v => {
+			const today = new Date()
+			const age = today.getFullYear() - (v as Date).getFullYear()
+			const monthDiff = today.getMonth() - (v as Date).getMonth()
+			const dayDiff = today.getDate() - (v as Date).getDate()
+
+			// Calcular idade mais precisa
+			const actualAge =
+				monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
+
+			return actualAge >= 18 && actualAge <= 80
+		}, 'A idade deve estar entre 18 e 80 anos.')
+	),
+	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
+	email: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		email('E-mail inválido.')
+	),
+	phone: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(
+			v => {
+				const phone = (v as string).replace(/\D/g, '')
+				return phone.length >= 10 && phone.length <= 11
+			},
+			'Telefone deve ter entre 10 e 11 dígitos.'
+		)
+	),
+	gender: pipe(string(), nonEmpty('Campo obrigatório.')),
+	participationPercentage: pipe(
+		string(),
+		nonEmpty('Campo obrigatório.'),
+		custom(
+			v => {
+				// Permitir apenas valores de 0,01% até 100% (ou 99,99% para múltiplos participantes)
+				const value = v as string;
+				const numericValue = parseFloat(value.replace('%', '').replace(',', '.'));
+				
+				// Verificar se é um número válido
+				if (isNaN(numericValue) || numericValue <= 0) {
+					return false;
+				}
+				
+				// Se há múltiplos participantes (mais de 1), não permitir 100%
+				if (participantsNumber && participantsNumber > 1) {
+					return numericValue < 100;
+				}
+				
+				// Para participante único, permitir até 100%
+				return numericValue <= 100;
+			},
+			participantsNumber && participantsNumber > 1 
+				? 'Para operações com múltiplos participantes, o percentual deve ser inferior a 100% (deixe espaço para outros participantes)'
+				: 'Formato inválido. Use valores de 0,01% até 100,00%'
+		),
+		custom(
+			v => {
+				// Validar formato
+				const percentageRegex = /^([1-9]?\d(,\d{1,2})?|100(,00)?)%$/;
+				return percentageRegex.test(v as string);
+			},
+			'Formato inválido. Use o formato: 25,50%'
+		)
+	),
+})
 
 export type DpsProfileFormType = InferInput<typeof dpsProfileForm>
 
