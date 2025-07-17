@@ -9,7 +9,6 @@ import { BellIcon, MessageSquareTextIcon } from 'lucide-react'
 import { getNotifications, setNotificationRead } from '../actions'
 import { useSession } from 'next-auth/react'
 import DialogAlertComp from '@/components/ui/alert-dialog-comp'
-import { title } from 'process'
 
 type News = { id: number; title: string; date: Date; description?: string }
 

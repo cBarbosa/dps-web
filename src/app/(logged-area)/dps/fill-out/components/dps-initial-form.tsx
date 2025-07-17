@@ -18,6 +18,7 @@ import DpsProfileForm, {
 	DpsProfileFormType,
 	dpsProfileForm,
 	createDpsProfileFormWithDeadline,
+	createDpsProfileFormWithParticipants,
 } from './dps-profile-form'
 import DpsProductForm, {
 	convertCapitalValue,
@@ -126,10 +127,10 @@ const useToast = () => {
 	return { success, error, ToastContainer };
 };
 
-// Função para criar schema dinâmico baseado na idade
-const createDynamicSchema = (proponentAge: number | null) => object({
+// Função para criar schema dinâmico baseado na idade e número de participantes
+const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number) => object({
 	operation: dpsOperationForm,
-	profile: dpsProfileForm,
+	profile: createDpsProfileFormWithParticipants(participantsNumber),
 	product: createDpsProductFormWithAge(proponentAge),
 	address: dpsAddressForm,
 })
@@ -236,6 +237,10 @@ const DpsInitialForm = ({
 		missing: number;
 	} | null>(null);
 
+	// Adicionar estado para o modal de erro de percentual
+	const [isPercentageErrorModalOpen, setIsPercentageErrorModalOpen] = useState(false);
+	const [percentageErrorMessage, setPercentageErrorMessage] = useState<string>('');
+
 	// Adicionar estado para controlar se o produto deve estar desabilitado
 	const [isProductDisabled, setIsProductDisabled] = useState(false);
 
@@ -257,8 +262,8 @@ const DpsInitialForm = ({
 	// Estado para controlar se é o último participante sendo cadastrado
 	const [isLastParticipant, setIsLastParticipant] = useState<boolean>(false);
 
-	// Estado para o schema dinâmico baseado na idade
-	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null));
+	// Estado para o schema dinâmico baseado na idade e número de participantes
+	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null, undefined));
 
 	// Memoizar o resolver para que seja recriado quando o schema mudar
 	const currentResolver = useMemo(() => {
@@ -348,11 +353,12 @@ const DpsInitialForm = ({
 		return calculateAge(watchBirthdate);
 	}, [watchBirthdate]);
 
-	// useEffect para atualizar o schema quando a idade mudar
+	// useEffect para atualizar o schema quando a idade ou número de participantes mudar
 	const memoizedGetValues = useCallback(getValues, []);
 
 	useEffect(() => {
-		const newSchema = createDynamicSchema(proponentAge);
+		const participantsNum = parseInt(participantsNumber, 10) || undefined;
+		const newSchema = createDynamicSchema(proponentAge, participantsNum);
 		setCurrentSchema(newSchema);
 		
 		// Forçar revalidação do campo prazo quando a idade mudar
@@ -362,7 +368,14 @@ const DpsInitialForm = ({
 				trigger('product.deadline');
 			}, 0);
 		}
-	}, [proponentAge, trigger, memoizedGetValues]);
+		
+		// Forçar revalidação do campo percentual quando o número de participantes mudar
+		if (participantsNum && memoizedGetValues().profile.participationPercentage) {
+			setTimeout(() => {
+				trigger('profile.participationPercentage');
+			}, 0);
+		}
+	}, [proponentAge, participantsNumber, trigger, memoizedGetValues]);
 
 	// useEffect para atualizar as opções de prazo - agora não filtra por idade
 	useEffect(() => {
@@ -719,53 +732,70 @@ const DpsInitialForm = ({
 				const percentValue = v.profile.participationPercentage;
 				const validationResult = validateParticipationPercentage(percentValue);
 				
-				if (!validationResult.valid) {
-					// Se a validação falhar, exibir erro e impedir o salvamento
-					setError('profile.participationPercentage', {
-						type: 'manual',
-						message: validationResult.message
-					});
-					toast.error(validationResult.message);
-					setIsLoading(false);
-					return;
-				}
+							if (!validationResult.valid) {
+				// Se a validação falhar, exibir erro e impedir o salvamento
+				setError('profile.participationPercentage', {
+					type: 'manual',
+					message: validationResult.message
+				});
+				setPercentageErrorMessage(validationResult.message);
+				setIsPercentageErrorModalOpen(true);
+				setIsLoading(false);
+				return;
+			}
 			}
 			
-			// Verificar se a seção do produto está desabilitada
-			if (isProductDisabled) {
-				console.log("Product section is disabled, skipping product validation");
-			}
+					// Verificar se a seção do produto está desabilitada
+		if (isProductDisabled) {
+			console.log("Product section is disabled, skipping product validation");
+		}
+		
+		// VALIDAÇÕES OBRIGATÓRIAS PARA TODAS AS OPERAÇÕES
+		const declaredParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
+		const actualParticipants = 1 + coparticipants.length; // +1 pelo proponente principal
+		
+		// Validação 1: Verificar se todos os participantes declarados estão cadastrados
+		if (actualParticipants < declaredParticipants) {
+			const missingParticipants = declaredParticipants - actualParticipants;
+			setIsLoading(false);
+			// Remover toast error e apenas exibir o modal mais informativo
+			showMissingParticipantsModal(declaredParticipants, actualParticipants);
+			return;
+		}
+		
+		// Validação 2: Verificar se não há participantes em excesso
+		if (actualParticipants > declaredParticipants) {
+			setIsLoading(false);
+			toast.error(`Número de participantes cadastrados (${actualParticipants}) excede o número declarado (${declaredParticipants}). Ajuste o número de participantes ou remova co-participantes.`);
+			return;
+		}
+		
+		// Validação 3: OBRIGATÓRIA - A soma dos percentuais deve ser EXATAMENTE 100% para TODAS as operações
+		const totalPercentage = calculateTotalParticipation();
+		const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
+		
+		if (Math.abs(totalPercentageNumber - 100) > 0.01) { // Tolerância de 0,01% para arredondamento
+			setIsLoading(false);
 			
-			// NOVAS VALIDAÇÕES PARA OPERAÇÕES COM MÚLTIPLOS PARTICIPANTES
-			const declaredParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
-			
-			if (declaredParticipants > 1) {
-				// Validação 1: Total de participantes não pode ser maior que o número declarado
-				const actualParticipants = 1 + coparticipants.length; // +1 pelo proponente principal
-				
-				if (actualParticipants > declaredParticipants) {
-					toast.error(`Número de participantes cadastrados (${actualParticipants}) excede o número declarado (${declaredParticipants}). Ajuste o número de participantes ou remova co-participantes.`);
-					setIsLoading(false);
-					return;
-				}
-				
-				// Validação 2: Para operações com múltiplos participantes, todos devem estar cadastrados
-				if (actualParticipants !== declaredParticipants) {
-					setIsLoading(false);
-					showMissingParticipantsModal(declaredParticipants, actualParticipants);
-					return;
-				}
-				
-				// Validação 3: A soma dos percentuais deve ser exatamente 100%
-				const totalPercentage = calculateTotalParticipation();
-				const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
-				
-				if (Math.abs(totalPercentageNumber - 100) > 0.01) { // Permitir pequena diferença por arredondamento
-					toast.error(`A soma dos percentuais de participação deve ser exatamente 100%. Total atual: ${totalPercentage}`);
-					setIsLoading(false);
-					return;
-				}
+			if (totalPercentageNumber < 100) {
+				const missingPercentage = (100 - totalPercentageNumber).toFixed(2).replace('.', ',');
+				toast.error(`Percentual de participação incompleto. Total atual: ${totalPercentage}. Faltam ${missingPercentage}% para completar 100%. Ajuste os percentuais antes de salvar.`);
+			} else {
+				const excessPercentage = (totalPercentageNumber - 100).toFixed(2).replace('.', ',');
+				toast.error(`Percentual de participação excede 100%. Total atual: ${totalPercentage}. Reduza ${excessPercentage}% nos percentuais antes de salvar.`);
 			}
+			return;
+		}
+		
+		// Validação 4: Para participante único, deve ter exatamente 100%
+		if (declaredParticipants === 1) {
+			const mainPercentage = parseFloat(v.profile.participationPercentage?.replace('%', '').replace(',', '.') || '0');
+			if (Math.abs(mainPercentage - 100) > 0.01) {
+				setIsLoading(false);
+				toast.error(`Para operação com participante único, o percentual deve ser exatamente 100%. Percentual atual: ${mainPercentage.toFixed(2).replace('.', ',')}%`);
+				return;
+			}
+		}
 		
 		console.log("Proceeding with form submission");
 		// Prosseguir apenas com NOVO PREENCHIMENTO (sem continuidade de operações existentes)
@@ -845,42 +875,57 @@ const DpsInitialForm = ({
 			const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
 			const currentParticipants = coparticipants.length + 1; // +1 pelo proponente principal
 			
-			// VALIDAÇÕES PARA OPERAÇÕES COM MÚLTIPLOS PARTICIPANTES
-			if (declaredParticipants > 1) {
-				// Validação 1: Capital MIP deve estar preenchido para operações com múltiplos participantes
-				const capitalMipFilled = !!(getValues().product?.mip && getValues().product.mip.trim() !== '');
-				if (!capitalMipFilled) {
-					toast.error('Preencha o Capital MIP para finalizar operações com múltiplos participantes.');
-					setIsLoading(false);
-					return;
-				}
-				
-				// Validação 2: Todos os participantes devem estar cadastrados
-				if (currentParticipants !== declaredParticipants) {
-					setIsLoading(false);
-					showMissingParticipantsModal(declaredParticipants, currentParticipants);
-					return;
-				}
-				
-				// Validação 3: O percentual total deve ser exatamente 100%
-				const totalPercentage = calculateTotalParticipation();
-				const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
-				
-				if (Math.abs(totalPercentageNumber - 100) > 0.01) {
-					toast.error(`Para finalizar, o percentual total de participação deve ser exatamente 100%. Total atual: ${totalPercentage}`);
-					setIsLoading(false);
-					return;
-				}
+			// VALIDAÇÕES OBRIGATÓRIAS ANTES DO SALVAMENTO
+			
+			// Validação 1: Capital MIP deve estar preenchido
+			const capitalMipFilled = !!(getValues().product?.mip && getValues().product.mip.trim() !== '');
+			if (!capitalMipFilled) {
+				toast.error('Preencha o Capital MIP para finalizar a operação.');
+				setIsLoading(false);
+				return;
 			}
 			
-			// Verificar se o percentual total está dentro do limite (não excede 100%)
+			// Validação 2: Verificar se todos os participantes declarados estão cadastrados
+			if (currentParticipants < declaredParticipants) {
+				const missingParticipants = declaredParticipants - currentParticipants;
+				setIsLoading(false);
+				// Remover toast error e apenas exibir o modal mais informativo
+				showMissingParticipantsModal(declaredParticipants, currentParticipants);
+				return;
+			}
+			
+			// Validação 3: Verificar se não há participantes em excesso
+			if (currentParticipants > declaredParticipants) {
+				setIsLoading(false);
+				toast.error(`Número de participantes cadastrados (${currentParticipants}) excede o número declarado (${declaredParticipants}). Ajuste o número de participantes ou remova co-participantes.`);
+				return;
+			}
+			
+			// Validação 4: OBRIGATÓRIA - O percentual total deve ser EXATAMENTE 100% para TODAS as operações
 			const totalPercentage = calculateTotalParticipation();
 			const totalPercentageNumber = parseFloat(totalPercentage.replace('%', '').replace(',', '.'));
 			
-			if (totalPercentageNumber > 100) {
-				toast.error(`O percentual total de participação (${totalPercentage}) excede 100%. Ajuste os percentuais antes de salvar.`);
+			if (Math.abs(totalPercentageNumber - 100) > 0.01) { // Tolerância de 0,01% para arredondamento
 				setIsLoading(false);
+				
+				if (totalPercentageNumber < 100) {
+					const missingPercentage = (100 - totalPercentageNumber).toFixed(2).replace('.', ',');
+					toast.error(`Percentual de participação incompleto. Total atual: ${totalPercentage}. Faltam ${missingPercentage}% para completar 100%. Ajuste os percentuais antes de salvar.`);
+				} else {
+					const excessPercentage = (totalPercentageNumber - 100).toFixed(2).replace('.', ',');
+					toast.error(`Percentual de participação excede 100%. Total atual: ${totalPercentage}. Reduza ${excessPercentage}% nos percentuais antes de salvar.`);
+				}
 				return;
+			}
+			
+			// Validação 5: Para participante único, deve ter exatamente 100%
+			if (declaredParticipants === 1) {
+				const mainPercentage = parseFloat(getValues().profile.participationPercentage?.replace('%', '').replace(',', '.') || '0');
+				if (Math.abs(mainPercentage - 100) > 0.01) {
+					setIsLoading(false);
+					toast.error(`Para operação com participante único, o percentual deve ser exatamente 100%. Percentual atual: ${mainPercentage.toFixed(2).replace('.', ',')}%`);
+					return;
+				}
 			}
 
 		console.log("Manual form submission triggered");
@@ -999,13 +1044,18 @@ const DpsInitialForm = ({
 					  )
 					: undefined;
 
+				// Limpar erros dos campos que serão preenchidos automaticamente
+				console.log('Dados encontrados para o CPF do co-participante. Limpando erros dos campos e preenchendo automaticamente...');
+
 				// Preencher os dados do coparticipante com os resultados obtidos
 				if (proponentDataRaw?.detalhes.nome) {
 					coparticipantForm.setValue('profile.name', proponentDataRaw.detalhes.nome);
+					coparticipantForm.clearErrors('profile.name'); // Limpar erro do campo nome
 				}
 
 				if (proponentDataBirthdate) {
 					coparticipantForm.setValue('profile.birthdate', proponentDataBirthdate);
+					coparticipantForm.clearErrors('profile.birthdate'); // Limpar erro do campo data de nascimento
 				}
 
 				// if (proponentDataRaw?.detalhes.profissao) {
@@ -1013,15 +1063,22 @@ const DpsInitialForm = ({
 				// 		'profile.profession',
 				// 		getProfissionDescription(proponentDataRaw.detalhes.profissao)
 				// 	);
+				// 	coparticipantForm.clearErrors('profile.profession'); // Limpar erro do campo profissão
 				// }
 
 				if (proponentDataRaw?.detalhes.sexo) {
 					coparticipantForm.setValue('profile.gender', proponentDataRaw.detalhes.sexo);
+					coparticipantForm.clearErrors('profile.gender'); // Limpar erro do campo sexo
 				}
 
-				// Atualizar o formulário para refletir as mudanças
-				coparticipantForm.trigger();
-				console.log("Dados do coparticipante preenchidos com sucesso:", proponentDataRaw);
+				// Disparar validação dos campos preenchidos para garantir que não há mais erros
+				setTimeout(() => {
+					if (proponentDataRaw?.detalhes.nome) coparticipantForm.trigger('profile.name');
+					if (proponentDataBirthdate) coparticipantForm.trigger('profile.birthdate');
+					if (proponentDataRaw?.detalhes.sexo) coparticipantForm.trigger('profile.gender');
+				}, 100);
+
+				console.log("Dados do coparticipante preenchidos automaticamente e erros limpos:", proponentDataRaw);
 			} else {
 				console.log("Não foram encontrados dados para o CPF:", cpf);
 			}
@@ -1071,7 +1128,7 @@ const DpsInitialForm = ({
 		}
 		
 		// Limpar qualquer erro existente de CPF se o CPF é válido e único
-		setError('profile.cpf', { type: 'manual', message: undefined });
+		clearErrors('profile.cpf');
 		
 		setAutocompletedByCpf({});
 		setIsLoadingData(true);
@@ -1105,8 +1162,12 @@ const DpsInitialForm = ({
 				phone: undefined,
 			};
 			
+			// Limpar erros dos campos que serão preenchidos automaticamente
+			console.log('Dados encontrados para o CPF. Limpando erros dos campos e preenchendo automaticamente...');
+			
 			if (autocompleteData.name) {
 				setValue('profile.name', autocompleteData.name)
+				clearErrors('profile.name'); // Limpar erro do campo nome
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					name: true,
@@ -1114,6 +1175,7 @@ const DpsInitialForm = ({
 			}
 			if (autocompleteData.birthdate) {
 				setValue('profile.birthdate', autocompleteData.birthdate)
+				clearErrors('profile.birthdate'); // Limpar erro do campo data de nascimento
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					birthdate: true,
@@ -1124,6 +1186,7 @@ const DpsInitialForm = ({
 			// 		'profile.profession',
 			// 		getProfissionDescription(autocompleteData.profession)
 			// 	)
+			// 	clearErrors('profile.profession'); // Limpar erro do campo profissão
 			// 	setAutocompletedByCpf(prev => ({
 			// 		...prev,
 			// 		profession: true,
@@ -1131,6 +1194,7 @@ const DpsInitialForm = ({
 			// }
 			if (autocompleteData.email) {
 				setValue('profile.email', autocompleteData.email)
+				clearErrors('profile.email'); // Limpar erro do campo email
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					email: true,
@@ -1138,6 +1202,7 @@ const DpsInitialForm = ({
 			}
 			if (autocompleteData.phone) {
 				setValue('profile.phone', autocompleteData.phone)
+				clearErrors('profile.phone'); // Limpar erro do campo telefone
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					phone: true,
@@ -1145,6 +1210,7 @@ const DpsInitialForm = ({
 			}
 			if (autocompleteData.socialName) {
 				setValue('profile.socialName', autocompleteData.socialName)
+				clearErrors('profile.socialName'); // Limpar erro do campo nome social
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					socialName: true,
@@ -1152,13 +1218,26 @@ const DpsInitialForm = ({
 			}
 			if (autocompleteData.gender) {
 				setValue('profile.gender', autocompleteData.gender)
+				clearErrors('profile.gender'); // Limpar erro do campo sexo
 				setAutocompletedByCpf(prev => ({
 					...prev,
 					gender: true,
 				}))
 			}
+			
+			// Disparar validação dos campos preenchidos para garantir que não há mais erros
+			setTimeout(() => {
+				if (autocompleteData.name) trigger('profile.name');
+				if (autocompleteData.birthdate) trigger('profile.birthdate');
+				if (autocompleteData.email) trigger('profile.email');
+				if (autocompleteData.phone) trigger('profile.phone');
+				if (autocompleteData.socialName) trigger('profile.socialName');
+				if (autocompleteData.gender) trigger('profile.gender');
+			}, 100);
+			
+			console.log("Dados do proponente preenchidos automaticamente e erros limpos:", proponentDataRaw);
 		} else {
-			console.error('Could not get proponent data by CPF')
+			console.log('Nenhum dado encontrado para o CPF informado')
 		}
 		setIsLoadingData(false)
 	}
@@ -1344,7 +1423,8 @@ const DpsInitialForm = ({
 						type: 'manual',
 						message: validationResult.message
 					});
-					toast.error(validationResult.message);
+					setPercentageErrorMessage(validationResult.message);
+					setIsPercentageErrorModalOpen(true);
 					return;
 				}
 			}
@@ -1514,7 +1594,19 @@ const DpsInitialForm = ({
 			return {
 				valid: false, 
 				message: 'O percentual deve ser maior que zero',
-				availablePercentage: '1,00%'
+				availablePercentage: '0,01%'
+			};
+		}
+		
+		// Obter o número de participantes declarados
+		const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 1;
+		
+		// Se há múltiplos participantes (mais de 1), o participante principal não pode ter 100%
+		if (declaredParticipants > 1 && newPercentage >= 100) {
+			return {
+				valid: false,
+				message: 'Para operações com múltiplos participantes, o proponente principal não pode ter 100% de participação',
+				availablePercentage: '99,00%'
 			};
 		}
 		
@@ -1541,6 +1633,31 @@ const DpsInitialForm = ({
 				message: `O percentual excede o limite. Total: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
 				availablePercentage: (100 - existingTotal).toFixed(2).replace('.', ',') + '%'
 			};
+		}
+		
+		// Para múltiplos participantes, verificar se deixa espaço mínimo para outros
+		if (declaredParticipants > 1) {
+			const remainingParticipants = declaredParticipants - 1 - coparticipants.length; // -1 pelo próprio proponente
+			const minimumPercentageForOthers = remainingParticipants * 0.01; // Mínimo 0,01% por participante
+			const remainingPercentage = 100 - newPercentage;
+			
+			if (remainingPercentage < minimumPercentageForOthers) {
+				return {
+					valid: false,
+					message: `Percentual muito alto. É necessário deixar pelo menos ${minimumPercentageForOthers.toFixed(2).replace('.', ',')}% para os outros ${remainingParticipants} participante(s)`,
+					availablePercentage: (100 - minimumPercentageForOthers).toFixed(2).replace('.', ',') + '%'
+				};
+			}
+			
+			// Validação adicional: calcular percentual máximo permitido considerando participantes existentes
+			const maxAllowedPercentage = 100 - minimumPercentageForOthers;
+			if (newPercentage > maxAllowedPercentage) {
+				return {
+					valid: false,
+					message: `Percentual máximo permitido: ${maxAllowedPercentage.toFixed(2).replace('.', ',')}% (deve sobrar ${minimumPercentageForOthers.toFixed(2).replace('.', ',')}% para ${remainingParticipants} participante(s))`,
+					availablePercentage: maxAllowedPercentage.toFixed(2).replace('.', ',') + '%'
+				};
+			}
 		}
 		
 		return { valid: true, message: '', availablePercentage: '' };
@@ -1629,14 +1746,14 @@ const DpsInitialForm = ({
 		
 		// Se ainda há participantes para cadastrar (participantsLeft > 0), verificar se há espaço para outros
 		if (participantsLeft > 0) {
-			// Verificar se o percentual deixa pelo menos 1% para cada participante restante
-			const minimumPercentageNeeded = participantsLeft * 1; // 1% mínimo por participante
+			// Verificar se o percentual deixa pelo menos 0,01% para cada participante restante
+			const minimumPercentageNeeded = participantsLeft * 0.01; // 0,01% mínimo por participante
 			const remainingPercentage = 100 - totalWithNew;
 			
 			if (remainingPercentage < minimumPercentageNeeded) {
 				return {
 					valid: false,
-					message: `Percentual muito alto. Necessário deixar pelo menos ${minimumPercentageNeeded}% para os outros ${participantsLeft} participante(s)`,
+					message: `Percentual muito alto. Necessário deixar pelo menos ${minimumPercentageNeeded.toFixed(2).replace('.', ',')}% para os outros ${participantsLeft} participante(s)`,
 					availablePercentage: ''  // Não sugerir valor
 				};
 			}
@@ -1677,8 +1794,9 @@ const DpsInitialForm = ({
 					message: coparticipantValidation.message
 				});
 				
-				// Mostrar mensagem de erro no toast para feedback adicional
-				toast.error(coparticipantValidation.message);
+				// Mostrar mensagem de erro no modal para feedback adicional
+				setPercentageErrorMessage(coparticipantValidation.message);
+				setIsPercentageErrorModalOpen(true);
 				
 				// Manter o foco no campo de percentual até que seja corrigido
 				setTimeout(() => {
@@ -1728,8 +1846,9 @@ const DpsInitialForm = ({
 					message: percentValidation.message
 				});
 				
-				// Mostrar mensagem de erro no toast para feedback adicional
-				toast.error(percentValidation.message);
+				// Mostrar mensagem de erro no modal para feedback adicional
+				setPercentageErrorMessage(percentValidation.message);
+				setIsPercentageErrorModalOpen(true);
 				
 				// Manter o foco no campo de percentual até que seja corrigido
 				setTimeout(() => {
@@ -2334,7 +2453,17 @@ const DpsInitialForm = ({
 								<div className="flex gap-8">
 									<div>
 										<span className="font-medium">Total alocado:</span>
-										<span className="ml-2">{calculateTotalParticipation()}</span>
+										<span className={cn(
+											"ml-2 font-bold",
+											(() => {
+												const total = parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.'));
+												if (Math.abs(total - 100) <= 0.01) return "text-green-600";
+												if (total < 100) return "text-orange-600";
+												return "text-red-600";
+											})()
+										)}>
+											{calculateTotalParticipation()}
+										</span>
 									</div>
 									<div>
 										<span className="font-medium">Valor total alocado:</span>
@@ -2343,14 +2472,91 @@ const DpsInitialForm = ({
 								</div>
 							</div>
 							
-							{parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.')) < 100 && (
-								<div className="flex justify-between mt-2 text-green-600">
-									<div>Disponível para novo(s) coparticipante(s):</div>
-									<div>
-										{(100 - parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.'))).toFixed(2).replace('.', ',')}%
-									</div>
-								</div>
-							)}
+							{(() => {
+								const totalPercentageNum = parseFloat(calculateTotalParticipation().replace('%', '').replace(',', '.'));
+								const isExact100 = Math.abs(totalPercentageNum - 100) <= 0.01;
+								
+								// Verificar se o número de participantes também está completo
+								const declaredParticipants = parseInt(getValues().operation.participantsNumber, 10) || 0;
+								const currentParticipants = (coparticipants.length + 1); // +1 pelo proponente principal
+								const allParticipantsRegistered = currentParticipants === declaredParticipants;
+								
+								if (isExact100 && allParticipantsRegistered) {
+									return (
+										<div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+											<div className="flex items-center gap-2 text-green-700">
+												<CheckCircle className="h-5 w-5" />
+												<span className="font-medium">Operação completa - 100% de participação atingido</span>
+											</div>
+										</div>
+									);
+								} else if (isExact100 && !allParticipantsRegistered) {
+									// Caso especial: 100% atingido mas número de participantes incorreto
+									if (currentParticipants < declaredParticipants) {
+										const missingParticipants = declaredParticipants - currentParticipants;
+										return (
+											<div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+												<div className="flex items-center gap-2 text-yellow-700">
+													<XCircle className="h-5 w-5" />
+													<span className="font-medium">
+														100% atingido, mas faltam {missingParticipants} participante(s) para completar a operação
+													</span>
+												</div>
+											</div>
+										);
+									} else {
+										const excessParticipants = currentParticipants - declaredParticipants;
+										return (
+											<div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+												<div className="flex items-center gap-2 text-red-700">
+													<XCircle className="h-5 w-5" />
+													<span className="font-medium">
+														100% atingido, mas há {excessParticipants} participante(s) em excesso
+													</span>
+												</div>
+											</div>
+										);
+									}
+								} else if (totalPercentageNum < 100) {
+									const available = (100 - totalPercentageNum).toFixed(2).replace('.', ',');
+									let message = `Operação incompleta - Disponível para alocação: ${available}%`;
+									
+									// Se todos os participantes estão cadastrados mas o percentual não é 100%
+									if (allParticipantsRegistered) {
+										message = `Todos os ${declaredParticipants} participante(s) cadastrados, mas faltam ${available}% para completar 100%`;
+									}
+									
+									return (
+										<div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+											<div className="flex items-center gap-2 text-orange-700">
+												<XCircle className="h-5 w-5" />
+												<span className="font-medium">
+													{message}
+												</span>
+											</div>
+										</div>
+									);
+								} else {
+									const excess = (totalPercentageNum - 100).toFixed(2).replace('.', ',');
+									let message = `Operação excede 100% - Excesso: ${excess}%`;
+									
+									// Se todos os participantes estão cadastrados mas o percentual excede 100%
+									if (allParticipantsRegistered) {
+										message = `Todos os ${declaredParticipants} participante(s) cadastrados, mas o total excede 100% em ${excess}%`;
+									}
+									
+									return (
+										<div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+											<div className="flex items-center gap-2 text-red-700">
+												<XCircle className="h-5 w-5" />
+												<span className="font-medium">
+													{message}
+												</span>
+											</div>
+										</div>
+									);
+								}
+							})()}
 						</div>
 					)}
 
@@ -2381,6 +2587,30 @@ const DpsInitialForm = ({
 			)}
 
 			{/* Diálogos e modais */}
+			
+			{/* Modal de erro de percentual */}
+			<Dialog
+				open={isPercentageErrorModalOpen}
+				onOpenChange={setIsPercentageErrorModalOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Erro de Percentual</DialogTitle>
+						<DialogDescription>
+							{percentageErrorMessage}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button 
+							type="button"
+							onClick={() => setIsPercentageErrorModalOpen(false)}
+						>
+							Entendi
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			<Dialog
 				open={isCoparticipantDialogOpen}
 				onOpenChange={setIsCoparticipantDialogOpen}
@@ -2831,17 +3061,64 @@ const DpsInitialForm = ({
 															rawValue = rawValue.substring(0, 3);
 														}
 														
-														// Limita valor máximo a 100 para a parte inteira
+														// Calcular percentual máximo permitido para este co-participante
+														let maxAllowed = 100;
+														
+														// Calcular total já alocado
+														let existingTotal = 0;
+														if (existingMainProponent) {
+															const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+															existingTotal += mainPercentage;
+														} else {
+															const mainPercentStr = getValues().profile.participationPercentage || '0,00%';
+															const mainPercent = parseFloat(mainPercentStr.replace('%', '').replace(',', '.')) || 0;
+															existingTotal += mainPercent;
+														}
+														
+														// Incluir percentuais dos outros coparticipantes (exceto o que está sendo editado)
+														coparticipants.forEach(cp => {
+															if (editingCoparticipantId && cp.id === editingCoparticipantId) {
+																return;
+															}
+															const cpPercentage = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+															existingTotal += cpPercentage;
+														});
+														
+														// Calcular participantes restantes
+														const numParticipants = parseInt(getValues().operation.participantsNumber, 10) || 2;
+														const alreadyCadastrated = coparticipants.length + 1; // +1 pelo proponente principal
+														const currentParticipants = editingCoparticipantId ? alreadyCadastrated : alreadyCadastrated + 1;
+														const participantsLeft = numParticipants - currentParticipants;
+														
+														// Se ainda há participantes para cadastrar, deixar espaço mínimo
+														if (participantsLeft > 0) {
+															const minimumForOthers = participantsLeft * 0.01;
+															maxAllowed = Math.min(100, 100 - existingTotal - minimumForOthers);
+														} else {
+															// Se é o último participante, pode usar todo o espaço restante
+															maxAllowed = 100 - existingTotal;
+														}
+														
+														// Garantir que maxAllowed seja pelo menos 0,01
+														maxAllowed = Math.max(0.01, maxAllowed);
+														
+														// Limitar valor máximo baseado no cálculo
 														if (rawValue.includes(',')) {
 															const [intPart, decPart] = rawValue.split(',');
 															const intValue = parseInt(intPart, 10);
-															if (intValue > 100) {
-																rawValue = '100,' + decPart;
+															const decValue = parseInt(decPart.padEnd(2, '0').substring(0, 2), 10) / 100;
+															const totalValue = intValue + decValue;
+															
+															if (totalValue > maxAllowed) {
+																const maxInt = Math.floor(maxAllowed);
+																const maxDec = Math.round((maxAllowed - maxInt) * 100);
+																rawValue = `${maxInt},${maxDec.toString().padStart(2, '0')}`;
 															}
 														} else {
 															const intValue = parseInt(rawValue, 10);
-															if (intValue > 100) {
-																rawValue = '100';
+															if (intValue > maxAllowed) {
+																const maxInt = Math.floor(maxAllowed);
+																rawValue = maxInt.toString();
 															}
 														}
 														
@@ -2896,6 +3173,44 @@ const DpsInitialForm = ({
 														Preencha o Capital MIP primeiro para habilitar este campo
 													</div>
 												)}
+												{mipFilled && !isLastParticipant && (() => {
+													// Calcular o percentual máximo disponível para mostrar ao usuário
+													let existingTotal = 0;
+													if (existingMainProponent) {
+														const mainPercentage = parseFloat(existingMainProponent.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+														existingTotal += mainPercentage;
+													} else {
+														const mainPercentStr = getValues().profile.participationPercentage || '0,00%';
+														const mainPercent = parseFloat(mainPercentStr.replace('%', '').replace(',', '.')) || 0;
+														existingTotal += mainPercent;
+													}
+													
+													coparticipants.forEach(cp => {
+														if (editingCoparticipantId && cp.id === editingCoparticipantId) return;
+														const cpPercentage = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+														existingTotal += cpPercentage;
+													});
+													
+													const numParticipants = parseInt(getValues().operation.participantsNumber, 10) || 2;
+													const alreadyCadastrated = coparticipants.length + 1;
+													const currentParticipants = editingCoparticipantId ? alreadyCadastrated : alreadyCadastrated + 1;
+													const participantsLeft = numParticipants - currentParticipants;
+													
+													let maxAvailable = 100 - existingTotal;
+													if (participantsLeft > 0) {
+														const minimumForOthers = participantsLeft * 0.01;
+														maxAvailable = Math.min(maxAvailable, maxAvailable - minimumForOthers);
+													}
+													
+													if (participantsLeft > 0) {
+														return (
+															<div className="text-xs text-blue-600">
+																Máximo permitido: {maxAvailable.toFixed(2).replace('.', ',')}% (deve sobrar {(participantsLeft * 0.01).toFixed(2).replace('.', ',')}% para {participantsLeft} participante(s) restante(s))
+															</div>
+														);
+													}
+													return null;
+												})()}
 											</label>
 										);
 									}}
@@ -3020,43 +3335,62 @@ const DpsInitialForm = ({
 				open={isMissingParticipantsModalOpen}
 				onOpenChange={setIsMissingParticipantsModalOpen}
 			>
-				<DialogContent className="max-w-md">
+				<DialogContent className="max-w-xl">
 					<DialogHeader>
-						<DialogTitle>Participantes faltando</DialogTitle>
+						<DialogTitle>⚠️ Operação Incompleta - Participantes Faltando</DialogTitle>
 						<DialogDescription>
 							{missingParticipantsData && (
-								<span>
-									Para operações com {missingParticipantsData.declared} participantes, todos devem estar cadastrados. 
-									Atualmente há {missingParticipantsData.current} participante(s). 
-									Adicione {missingParticipantsData.missing} co-participante(s).
-								</span>
+								<div className="space-y-4">
+									<div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+										<p className="font-medium text-red-800 mb-2">
+											Não é possível salvar a operação neste momento.
+										</p>
+										<p className="text-red-700 text-sm">
+											Você precisa cadastrar todos os co-participantes antes de finalizar a operação.
+										</p>
+									</div>
+									
+									<div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+										<h4 className="font-medium text-blue-800 mb-2">Status da Operação:</h4>
+										<div className="text-sm text-blue-700 space-y-1">
+											<p>• <strong>Participantes declarados:</strong> {missingParticipantsData.declared}</p>
+											<p>• <strong>Participantes cadastrados:</strong> {missingParticipantsData.current}</p>
+											<p>• <strong>Co-participantes faltando:</strong> <span className="font-bold text-red-600">{missingParticipantsData.missing}</span></p>
+										</div>
+									</div>
+									
+									<div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+										<h4 className="font-medium text-gray-800 mb-2">O que fazer:</h4>
+										<p className="text-sm text-gray-700">
+											Clique em <strong>&quot;Adicionar Co-participante&quot;</strong> para cadastrar os {missingParticipantsData.missing} participante(s) restante(s) 
+											e garantir que o percentual total de participação seja exatamente 100%.
+										</p>
+									</div>
+								</div>
 							)}
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter>
+					<DialogFooter className="flex gap-3">
 						<Button 
 							type="button"
 							variant="outline" 
 							onClick={closeMissingParticipantsModal}
+							className="flex-1"
 						>
-							Entendi
+							Fechar
 						</Button>
 						<Button 
 							type="button"
 							onClick={() => {
 								closeMissingParticipantsModal();
-								// Scroll para o botão de adicionar co-participante se ele estiver visível
+								// Abrir diretamente o modal de co-participante
 								setTimeout(() => {
-									const addButtons = Array.from(document.querySelectorAll('button')).find(
-										button => button.textContent?.includes('Adicionar Co-participante')
-									);
-									if (addButtons) {
-										addButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
-									}
+									saveAndAddCoparticipant();
 								}, 100);
 							}}
+							className="flex-1 bg-blue-600 hover:bg-blue-700"
 						>
-							Adicionar Co-participante
+							🔗 Adicionar Co-participante
 						</Button>
 					</DialogFooter>
 				</DialogContent>
