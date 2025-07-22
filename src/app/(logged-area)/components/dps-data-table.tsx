@@ -185,14 +185,14 @@ export const columns: ColumnDef<DPS>[] = [
 							<InfoIcon size={20} className="text-foreground" />
 						</Link>
 					</Button>
-					<Button
+					{/* <Button
 						type="button"
 						variant="destructive"
 						size="iconSm"
 						className="rounded-full"
 					>
 						<Trash2Icon size={20} className="text-foreground p-0.5" />
-					</Button>
+					</Button> */}
 				</div>
 			)
 		},
