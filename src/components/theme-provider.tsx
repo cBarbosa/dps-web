@@ -24,18 +24,23 @@ function ThemeProvider({
 	role?: ApiRoles
 }) {
 	const { session } = useSessionAuthorization()
-	const role = session?.data?.role?.toLowerCase() as Lowercase<ApiRoles>
 
-	if (!initialTheme && roleProp) {
-		const roleBasedTheme: Record<string, Theme> = {
-			admin: Theme.Default,
-			oferta: Theme.Bradesco,
+	const mapRoleToTheme = (role?: string): Theme => {
+		if (!role) return Theme.Default
+		switch (role.toLowerCase()) {
+			case 'oferta':
+				return Theme.Bradesco
+			default:
+				return Theme.Default
 		}
-
-		initialTheme = roleBasedTheme[role.toLowerCase()]
 	}
 
-	const [theme, setTheme] = React.useState<Theme>(initialTheme ?? Theme.Default)
+	const roleFromSession = session?.data?.role
+	const effectiveRole = (roleProp ?? roleFromSession) as ApiRoles | undefined
+
+	const resolvedInitialTheme = initialTheme ?? mapRoleToTheme(effectiveRole)
+
+	const [theme, setTheme] = React.useState<Theme>(resolvedInitialTheme)
 
 	const ThemeContextValue = React.useMemo(
 		() => ({
@@ -46,12 +51,8 @@ function ThemeProvider({
 	)
 
 	useEffect(() => {
-		if (role === 'oferta') {
-			setTheme(Theme.Default) //TODO trocar em breve
-		} else {
-			setTheme(Theme.Default)
-		}
-	}, [role])
+		setTheme(mapRoleToTheme(effectiveRole))
+	}, [effectiveRole])
 
 	return (
 		<ThemeContext.Provider value={ThemeContextValue}>
