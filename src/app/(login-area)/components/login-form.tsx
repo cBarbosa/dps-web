@@ -111,6 +111,7 @@ export default function LoginForm() {
 			<div className="flex w-full items-center justify-center grow">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
+					method="post"
 					className="flex flex-col gap-6 w-full max-w-96"
 				>
 					<h2 className="text-2xl font-semibold">Entrar</h2>
@@ -130,7 +131,7 @@ export default function LoginForm() {
 										formState.errors?.email &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
-									autoComplete="email"
+									autoComplete="username"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}
@@ -161,7 +162,7 @@ export default function LoginForm() {
 										formState.errors.password &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
-									autoComplete="password"
+									autoComplete="current-password"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}

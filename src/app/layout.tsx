@@ -19,6 +19,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
 	title: 'Subscrição Inteligente',
 	description: 'Módulo de Subscrição de Riscos',
+	referrer: 'no-referrer',
 }
 
 export default async function RootLayout({
