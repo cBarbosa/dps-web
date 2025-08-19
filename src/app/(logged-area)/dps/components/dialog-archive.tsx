@@ -3,17 +3,26 @@ import React from "react";
 import {
     AlertDialog,
     AlertDialogCancel,
-    AlertDialogContent
+    AlertDialogContent,
+    AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { Root as VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 export const createPdfUrlFromBase64 = (base64Data: string): string | undefined => {
 
-    if (!base64Data || base64Data.length % 4 !== 0)
-      return;
+    if (!base64Data) return
 
     try {
+          // Normaliza base64: remove prefixos e padding/URL-safe
+          const normalized = base64Data
+            .replace(/^data:application\/pdf;base64,/, '')
+            .replace(/\s/g, '')
+            .replace(/-/g, '+')
+            .replace(/_/g, '/')
+          const pad = normalized.length % 4
+          const padded = pad ? normalized + '='.repeat(4 - pad) : normalized
 
-          const binaryData = atob(base64Data);
+          const binaryData = atob(padded);
           const arrayBuffer = new Uint8Array(binaryData.length);
           for (let i = 0; i < binaryData.length; i++) {
             arrayBuffer[i] = binaryData.charCodeAt(i);
@@ -55,6 +64,9 @@ export const DialogShowArchive = ({
     return (
         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <AlertDialogContent className="p-2 m-0 max-w-[90%] w-full h-auto">
+                <VisuallyHidden>
+                    <AlertDialogTitle>Visualização de relatório em PDF</AlertDialogTitle>
+                </VisuallyHidden>
 
                 <div className="flex justify-center items-center w-full h-[80vh]">
                     {!pdfUrl ? (
@@ -66,6 +78,8 @@ export const DialogShowArchive = ({
                             src={`${pdfUrl}#zoom=90`}
                             title="Relatório em PDF"
                             className="w-full max-w-full h-full"
+                            referrerPolicy="no-referrer"
+                            allow="fullscreen"
                         ></iframe>
                     )}
                 </div>
