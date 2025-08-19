@@ -9,7 +9,6 @@ const AppSessionProvider: NextPage<{
 	children: React.ReactNode
 	session: Session | null
 }> = ({ children, session }) => {
-	console.log('>>>>>>>>>>>>>>>>>>>>>>>>', session)
 	return <SessionProvider session={session}>{children}</SessionProvider>
 }
 
