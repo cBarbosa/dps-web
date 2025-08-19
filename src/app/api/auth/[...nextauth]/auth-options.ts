@@ -19,7 +19,15 @@ export const authOptions: NextAuthOptions = {
 					password: string
 				}
 
-				const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '')
+				const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL
+				const isValidBase = !!rawApiBase && /^https?:\/\//i.test(rawApiBase) && rawApiBase !== 'null' && rawApiBase !== 'undefined'
+				const apiBase = isValidBase ? rawApiBase.replace(/\/$/, '') : null
+				if (!apiBase) {
+					if (process.env.DEBUG_AUTH === '1') {
+						console.error('Auth configuration error: invalid NEXT_PUBLIC_API_BASE_URL', { rawApiBase })
+					}
+					throw new Error('Configuração de autenticação inválida')
+				}
 				const url = `${apiBase}/v1/Auth`
 
 				try {
