@@ -70,7 +70,7 @@ export default function middleware(req: NextRequest) {
 	if (isPublicPath(pathname)) {
 		return NextResponse.next()
 	}
-	return authMiddleware(req)
+	return (authMiddleware as unknown as (req: NextRequest) => NextResponse | Promise<NextResponse>)(req)
 }
 
 export const config = {
