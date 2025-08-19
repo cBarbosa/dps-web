@@ -2,8 +2,6 @@ import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
 import AppSessionProvider from '@/components/app-session-provider'
-import { getServerSession } from 'next-auth'
-import { authOptions } from './api/auth/[...nextauth]/auth-options'
 import ThemeProvider from '@/components/theme-provider'
 import getServerSessionAuthorization from '@/hooks/getServerSessionAuthorization'
 
@@ -21,6 +19,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
 	title: 'Subscrição Inteligente',
 	description: 'Módulo de Subscrição de Riscos',
+	referrer: 'no-referrer',
 }
 
 export default async function RootLayout({
