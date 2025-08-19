@@ -76,9 +76,15 @@ export default async function middleware(req: NextRequest) {
 		res = maybeRes ?? NextResponse.next()
 	}
 
-	// CSP dinâmica com nonce por requisição
-	const nonce = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))
-	res.headers.set('x-nonce', nonce)
+	// CSP dinâmica com nonce base64 por requisição
+	function generateBase64Nonce(): string {
+		const bytes = new Uint8Array(16)
+		globalThis.crypto.getRandomValues(bytes)
+		let binary = ''
+		for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+		return btoa(binary)
+	}
+	const nonce = generateBase64Nonce()
 
 	const connectOrigins: string[] = []
 	const raw = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -89,15 +95,22 @@ export default async function middleware(req: NextRequest) {
 	}
 
 	const csp = [
-		"default-src 'self'",
+		"default-src 'self' blob: data:",
 		"base-uri 'self'",
 		"frame-ancestors 'self'",
 		"form-action 'self'",
 		"object-src 'none'",
 		"img-src 'self' data: blob: https:",
 		"font-src 'self' data: https:",
-		// Permite scripts somente com nonce gerado por requisição e 'self'
-		`script-src 'self' 'nonce-${nonce}'`,
+		// Permite scripts com nonce por requisição e ativa strict-dynamic
+		`script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+		// Permite iframes para visualização de PDFs gerados via blob:
+		"frame-src 'self' blob: data:",
+		// Compatibilidade com navegadores que ainda respeitam child-src
+		"child-src 'self' blob: data:",
+		// Opcional: caso haja uso de web workers carregados via blob:
+		"worker-src 'self' blob:",
+		// Permite estilos inline (necessário para Tailwind/Next) e de origens HTTPS
 		"style-src 'self' 'unsafe-inline' https:",
 		`connect-src 'self' ${connectOrigins.join(' ')} https:`,
 	].join('; ')
