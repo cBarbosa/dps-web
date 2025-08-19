@@ -15,7 +15,8 @@ const csp = [
   "object-src 'none'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  // Removido 'unsafe-inline', 'unsafe-eval' e curinga https: para scripts
+  "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https:",
   `connect-src 'self' ${apiOrigin} https:`,
 ].join('; ')
