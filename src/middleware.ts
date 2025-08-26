@@ -76,16 +76,7 @@ export default async function middleware(req: NextRequest) {
 		res = maybeRes ?? NextResponse.next()
 	}
 
-	// CSP dinâmica com nonce base64 por requisição
-	function generateBase64Nonce(): string {
-		const bytes = new Uint8Array(16)
-		globalThis.crypto.getRandomValues(bytes)
-		let binary = ''
-		for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-		return btoa(binary)
-	}
-	const nonce = generateBase64Nonce()
-
+	// CSP
 	const connectOrigins: string[] = []
 	const raw = process.env.NEXT_PUBLIC_API_BASE_URL
 	if (raw && raw !== 'null' && raw !== 'undefined' && /^https?:\/\//i.test(raw)) {
@@ -102,8 +93,8 @@ export default async function middleware(req: NextRequest) {
 		"object-src 'none'",
 		"img-src 'self' data: blob: https:",
 		"font-src 'self' data: https:",
-		// Permite scripts com nonce por requisição e ativa strict-dynamic
-		`script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+		// Política única: sem 'unsafe-eval'; inline necessário para compatibilidade com Next/Radix
+		"script-src 'self' 'unsafe-inline' blob: data:",
 		// Permite iframes para visualização de PDFs gerados via blob:
 		"frame-src 'self' blob: data:",
 		// Compatibilidade com navegadores que ainda respeitam child-src
@@ -112,7 +103,7 @@ export default async function middleware(req: NextRequest) {
 		"worker-src 'self' blob:",
 		// Permite estilos inline (necessário para Tailwind/Next) e de origens HTTPS
 		"style-src 'self' 'unsafe-inline' https:",
-		`connect-src 'self' ${connectOrigins.join(' ')} https:`,
+		`connect-src 'self' ${connectOrigins.join(' ')} https: ws: wss:`,
 	].join('; ')
 
 	res.headers.set('Content-Security-Policy', csp)
