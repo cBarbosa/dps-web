@@ -35,16 +35,18 @@ export default async function getServerSessionAuthorization(
 		  })
 		| null
 
+	const hasValidSession = !!(session && session.user)
+
 	if (!roles || roles.length === 0) {
 		return {
-			granted: !!session,
+			granted: hasValidSession,
 			session,
 		}
 	}
 
 	roles = roles.map(role => role.toLowerCase()) as ApiRoles[]
 
-	if (session) {
+	if (hasValidSession) {
 		const { accessToken, role: roleRaw } = session as
 			| Session & { accessToken: string; role: string }
 

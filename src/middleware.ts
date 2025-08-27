@@ -26,9 +26,11 @@ const authMiddleware = withAuth({
 const PUBLIC_PATHS = [
 	/^\/api\/auth(?:\/|$)/,
 	/^\/login(?:\/|$)/,
+	/^\/logout(?:\/|$)/,
 	/^\/forgot-password(?:\/|$)/,
 	/^\/external(?:\/|$)/,
 	/^\/static\//,
+	/^\/_next\//,
 	/^\/favicon\.ico$/i,
 ]
 
@@ -72,20 +74,24 @@ export default async function middleware(req: NextRequest) {
 		res = NextResponse.next()
 	} else {
 		const maybeRes = await (authMiddleware as unknown as (req: NextRequest) => NextResponse | undefined | Promise<NextResponse | undefined>)(req)
+
+		// Se houve redirect para /login por falta/expiração de sessão,
+		// direciona para /logout preservando callbackUrl para limpar cookies.
+		const location = maybeRes?.headers.get('Location') || ''
+		const isRedirect = (maybeRes?.status ?? 0) >= 300 && (maybeRes?.status ?? 0) < 400
+		const isToLogin = /\/login(?:\?|$)/.test(location)
+
+		if (isRedirect && isToLogin && req.method === 'GET' && !pathname.startsWith('/api')) {
+			const cb = req.nextUrl.pathname + req.nextUrl.search
+			const logoutUrl = new URL(`/logout?callbackUrl=${encodeURIComponent(cb)}`, req.url)
+			return NextResponse.redirect(logoutUrl)
+		}
+
 		// Garante uma resposta mesmo se withAuth não retornar
 		res = maybeRes ?? NextResponse.next()
 	}
 
-	// CSP dinâmica com nonce base64 por requisição
-	function generateBase64Nonce(): string {
-		const bytes = new Uint8Array(16)
-		globalThis.crypto.getRandomValues(bytes)
-		let binary = ''
-		for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-		return btoa(binary)
-	}
-	const nonce = generateBase64Nonce()
-
+	// CSP
 	const connectOrigins: string[] = []
 	const raw = process.env.NEXT_PUBLIC_API_BASE_URL
 	if (raw && raw !== 'null' && raw !== 'undefined' && /^https?:\/\//i.test(raw)) {
@@ -93,6 +99,9 @@ export default async function middleware(req: NextRequest) {
 			connectOrigins.push(new URL(raw).origin)
 		} catch {}
 	}
+
+	// Configuração única para todos os ambientes
+	const scriptSrc = "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data:"
 
 	const csp = [
 		"default-src 'self' blob: data:",
@@ -102,8 +111,7 @@ export default async function middleware(req: NextRequest) {
 		"object-src 'none'",
 		"img-src 'self' data: blob: https:",
 		"font-src 'self' data: https:",
-		// Permite scripts com nonce por requisição e ativa strict-dynamic
-		`script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+		scriptSrc,
 		// Permite iframes para visualização de PDFs gerados via blob:
 		"frame-src 'self' blob: data:",
 		// Compatibilidade com navegadores que ainda respeitam child-src
@@ -112,7 +120,7 @@ export default async function middleware(req: NextRequest) {
 		"worker-src 'self' blob:",
 		// Permite estilos inline (necessário para Tailwind/Next) e de origens HTTPS
 		"style-src 'self' 'unsafe-inline' https:",
-		`connect-src 'self' ${connectOrigins.join(' ')} https:`,
+		`connect-src 'self' ${connectOrigins.join(' ')} https: ws: wss:`,
 	].join('; ')
 
 	res.headers.set('Content-Security-Policy', csp)

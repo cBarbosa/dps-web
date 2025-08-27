@@ -1005,7 +1005,7 @@ const lastSituation: number | undefined =
 					token={token}
 					uid={uid}
 					userRole={role}
-					requireUpload={proposalData.uploadDFI}
+					requireUpload={proposalData.uploadDFI || proposalSituation?.id === 10}
 					dfiStatus={proposalData.dfiStatus?.id}
 					onConfirm={refetchProposalData}
 				/>
