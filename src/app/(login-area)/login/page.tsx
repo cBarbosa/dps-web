@@ -5,8 +5,12 @@ import checkAuth from '@/lib/checkAuth'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function LoginPage() {
-	await checkAuth()
+export default async function LoginPage({
+	searchParams,
+}: {
+	searchParams?: { callbackUrl?: string }
+}) {
+	await checkAuth(searchParams?.callbackUrl)
 	return (
 		<>
 			<div className="w-full flex justify-end text-sm">

@@ -26,9 +26,11 @@ const authMiddleware = withAuth({
 const PUBLIC_PATHS = [
 	/^\/api\/auth(?:\/|$)/,
 	/^\/login(?:\/|$)/,
+	/^\/logout(?:\/|$)/,
 	/^\/forgot-password(?:\/|$)/,
 	/^\/external(?:\/|$)/,
 	/^\/static\//,
+	/^\/_next\//,
 	/^\/favicon\.ico$/i,
 ]
 
@@ -72,6 +74,19 @@ export default async function middleware(req: NextRequest) {
 		res = NextResponse.next()
 	} else {
 		const maybeRes = await (authMiddleware as unknown as (req: NextRequest) => NextResponse | undefined | Promise<NextResponse | undefined>)(req)
+
+		// Se houve redirect para /login por falta/expiração de sessão,
+		// direciona para /logout preservando callbackUrl para limpar cookies.
+		const location = maybeRes?.headers.get('Location') || ''
+		const isRedirect = (maybeRes?.status ?? 0) >= 300 && (maybeRes?.status ?? 0) < 400
+		const isToLogin = /\/login(?:\?|$)/.test(location)
+
+		if (isRedirect && isToLogin && req.method === 'GET' && !pathname.startsWith('/api')) {
+			const cb = req.nextUrl.pathname + req.nextUrl.search
+			const logoutUrl = new URL(`/logout?callbackUrl=${encodeURIComponent(cb)}`, req.url)
+			return NextResponse.redirect(logoutUrl)
+		}
+
 		// Garante uma resposta mesmo se withAuth não retornar
 		res = maybeRes ?? NextResponse.next()
 	}
@@ -85,6 +100,9 @@ export default async function middleware(req: NextRequest) {
 		} catch {}
 	}
 
+	// Configuração única para todos os ambientes
+	const scriptSrc = "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data:"
+
 	const csp = [
 		"default-src 'self' blob: data:",
 		"base-uri 'self'",
@@ -93,8 +111,7 @@ export default async function middleware(req: NextRequest) {
 		"object-src 'none'",
 		"img-src 'self' data: blob: https:",
 		"font-src 'self' data: https:",
-		// Política única: sem 'unsafe-eval'; inline necessário para compatibilidade com Next/Radix
-		"script-src 'self' 'unsafe-inline' blob: data:",
+		scriptSrc,
 		// Permite iframes para visualização de PDFs gerados via blob:
 		"frame-src 'self' blob: data:",
 		// Compatibilidade com navegadores que ainda respeitam child-src
