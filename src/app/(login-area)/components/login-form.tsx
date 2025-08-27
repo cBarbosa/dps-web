@@ -58,11 +58,13 @@ export default function LoginForm() {
 	async function onSubmit(v: LoginSchema) {
 		setIsLoading(true)
 
+		const cbParam = params.get('callbackUrl') || '/dashboard'
+
 		const result = await signIn('credentials', {
 			email: v.email,
 			password: v.password,
 			redirect: false,
-			callbackUrl: '/dashboard',
+			callbackUrl: cbParam,
 		})
 
 		if (result === undefined) {
@@ -77,11 +79,10 @@ export default function LoginForm() {
 		}
 
 		if (result.status === 401) {
-			console.log('NÃO AUTENTICADO')
 			setDialogState({
 				open: true,
 				title: 'Login inválido',
-				message: result.error || 'Email ou senha inválido',
+				message: result.error || 'Email ou senha inválidos.',
 			})
 			setIsLoading(false)
 			return
@@ -99,11 +100,27 @@ export default function LoginForm() {
 			return
 		}
 
-		let redirectPath = params.get('callbackUrl') || '/dashboard'
-		if (redirectPath.startsWith('/logout') || redirectPath === '/') {
+		// Determina destino final
+		let redirectPath = params.get('callbackUrl') || ''
+		if (!redirectPath) {
+			const url = result.url
+			if (url && url !== 'null' && url !== 'undefined') {
+				try {
+					const u = new URL(url, window.location.origin)
+					redirectPath = u.origin === window.location.origin ? (u.pathname + u.search) : '/dashboard'
+				} catch {
+					redirectPath = '/dashboard'
+				}
+			} else {
+				redirectPath = '/dashboard'
+			}
+		}
+
+		if (!redirectPath.startsWith('/') || redirectPath.startsWith('/logout') || redirectPath === '/') {
 			redirectPath = '/dashboard'
 		}
-		router.push('/dashboard')
+
+		router.push(redirectPath)
 	}
 
 	return (
@@ -111,7 +128,6 @@ export default function LoginForm() {
 			<div className="flex w-full items-center justify-center grow">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					method="post"
 					className="flex flex-col gap-6 w-full max-w-96"
 				>
 					<h2 className="text-2xl font-semibold">Entrar</h2>
