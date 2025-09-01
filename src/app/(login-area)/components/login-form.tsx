@@ -58,11 +58,13 @@ export default function LoginForm() {
 	async function onSubmit(v: LoginSchema) {
 		setIsLoading(true)
 
+		const cbParam = params.get('callbackUrl') || '/dashboard'
+
 		const result = await signIn('credentials', {
 			email: v.email,
 			password: v.password,
 			redirect: false,
-			callbackUrl: '/dashboard',
+			callbackUrl: cbParam,
 		})
 
 		if (result === undefined) {
@@ -77,11 +79,10 @@ export default function LoginForm() {
 		}
 
 		if (result.status === 401) {
-			console.log('NÃO AUTENTICADO')
 			setDialogState({
 				open: true,
 				title: 'Login inválido',
-				message: result.error || 'Email ou senha inválido',
+				message: result.error || 'Email ou senha inválidos.',
 			})
 			setIsLoading(false)
 			return
@@ -99,11 +100,27 @@ export default function LoginForm() {
 			return
 		}
 
-		let redirectPath = params.get('callbackUrl') || '/dashboard'
-		if (redirectPath.startsWith('/logout') || redirectPath === '/') {
+		// Determina destino final
+		let redirectPath = params.get('callbackUrl') || ''
+		if (!redirectPath) {
+			const url = result.url
+			if (url && url !== 'null' && url !== 'undefined') {
+				try {
+					const u = new URL(url, window.location.origin)
+					redirectPath = u.origin === window.location.origin ? (u.pathname + u.search) : '/dashboard'
+				} catch {
+					redirectPath = '/dashboard'
+				}
+			} else {
+				redirectPath = '/dashboard'
+			}
+		}
+
+		if (!redirectPath.startsWith('/') || redirectPath.startsWith('/logout') || redirectPath === '/') {
 			redirectPath = '/dashboard'
 		}
-		router.push('/dashboard')
+
+		router.push(redirectPath)
 	}
 
 	return (
@@ -130,7 +147,7 @@ export default function LoginForm() {
 										formState.errors?.email &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
-									autoComplete="email"
+									autoComplete="username"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}
@@ -161,7 +178,7 @@ export default function LoginForm() {
 										formState.errors.password &&
 											'border-red-500 focus-visible:border-red-500'
 									)}
-									autoComplete="password"
+									autoComplete="current-password"
 									disabled={isSubmitting}
 									onChange={onChange}
 									onBlur={onBlur}

@@ -19,42 +19,58 @@ export const authOptions: NextAuthOptions = {
 					password: string
 				}
 
-				const response = await fetch(
-					process.env.NEXT_PUBLIC_API_BASE_URL + '/v1/Auth',
-					{
+				const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL
+				const isValidBase = !!rawApiBase && /^https?:\/\//i.test(rawApiBase) && rawApiBase !== 'null' && rawApiBase !== 'undefined'
+				const apiBase = isValidBase ? rawApiBase.replace(/\/$/, '') : null
+				if (!apiBase) {
+					if (process.env.DEBUG_AUTH === '1') {
+						console.error('Auth configuration error: invalid NEXT_PUBLIC_API_BASE_URL', { rawApiBase })
+					}
+					throw new Error('Configuração de autenticação inválida')
+				}
+				const url = `${apiBase}/v1/Auth`
+
+				try {
+					const response = await fetch(url, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
 						},
-						body: JSON.stringify({
-							UserName: email,
-							Password: password,
-						}),
+						body: JSON.stringify({ UserName: email, Password: password }),
+					})
+
+					if (response.status === 401) {
+						throw new Error('Email ou senha inválido')
 					}
-				)
 
-				if (response.status === 401) {
-					throw new Error('Email ou senha inválido')
+					if (!response.ok) {
+						const text = await response.text()
+						if (process.env.DEBUG_AUTH === '1') {
+							console.error('Auth error', { status: response.status, text })
+						}
+						throw new Error('Ocorreu um erro ao autenticar')
+					}
+
+					const json = await response.json()
+
+					if (json.success) {
+						return {
+							id: 'x',
+							email: json.data.userData.email,
+							name: json.data.userData.name,
+							accessToken: json.data.accessToken,
+							role: json.data.role,
+							expires: json.data.expires,
+						}
+					}
+
+					return null
+				} catch (e) {
+					if (process.env.DEBUG_AUTH === '1') {
+						console.error('Authorize exception', { error: (e as Error).message, endpoint: url, email })
+					}
+					throw e
 				}
-
-				if (!response.ok) {
-					throw new Error('Ocorreu um erro ao autenticar')
-				}
-
-				const json = await response.json()
-
-				if (json.success) {
-					return {
-						id: 'x',
-						email: json.data.userData.email,
-						name: json.data.userData.name,
-						accessToken: json.data.accessToken,
-						role: json.data.role,
-						expires: json.data.expires,
-					};
-				}
-
-				return null;
 			},
 		}),
 	],
