@@ -84,6 +84,7 @@ export default function SideBar() {
 								<RoleBasedRender role={role} allowedRoles={[Role.VENDEDOR_SUP]}>
 									<MenuItem href="/dps/saler-sup-cancel">Exclusão</MenuItem>
 									<MenuItem href="/dps/saler-sup">Reanálise Vendedor</MenuItem>
+									<MenuItem href="/dps/fill-out">Preencher DPS</MenuItem>
 								</RoleBasedRender>
 								<RoleBasedRender
 									role={role}
