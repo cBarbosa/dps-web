@@ -272,6 +272,7 @@ export default function DfiReports({
 		userRole &&
 		requireUpload &&
 		(userRole.toLowerCase() === 'vendedor' ||
+			userRole.toLowerCase() === 'vendedor-sup' ||
 			userRole.toLowerCase() === 'admin')
 
 	return (
