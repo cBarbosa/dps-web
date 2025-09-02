@@ -545,7 +545,7 @@ const lastSituation: number | undefined =
 		proposalData.history?.at(0)?.statusId
 
 	const showFillOutAlert: boolean | undefined =
-		role === 'vendedor' &&
+		(role === 'vendedor' || role === 'vendedor-sup') &&
 		(proposalSituation.id === 5 ||
 			proposalSituation.id === 10 ||
 			proposalData.uploadMIP ||
