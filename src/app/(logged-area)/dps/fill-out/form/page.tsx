@@ -17,7 +17,7 @@ export default async function DpsFormPage({
 }: {
 	searchParams: { cpf: string; lmi: string; produto: string }
 }) {
-	const { session, granted } = await getServerSessionAuthorization(['vendedor'])
+	const { session, granted } = await getServerSessionAuthorization(['vendedor', 'vendedor-sup'])
 	const token = session?.accessToken ?? ''
 
 	if (!granted) {

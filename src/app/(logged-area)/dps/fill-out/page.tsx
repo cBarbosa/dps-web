@@ -26,7 +26,7 @@ export default async function FillOutPage({
 }: {
 	searchParams: { page: string; cpf: string; lmi: string; produto: string }
 }) {
-	const { session, granted } = await getServerSessionAuthorization(['vendedor'])
+	const { session, granted } = await getServerSessionAuthorization(['vendedor', 'vendedor-sup'])
 	const token = (session as any)?.accessToken
 	const role = (session as any)?.role?.toLowerCase() as
 		| Lowercase<ApiRoles>
