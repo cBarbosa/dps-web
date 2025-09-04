@@ -23,7 +23,7 @@ import {
 	array,
 	union,
 } from 'valibot'
-import { DiseaseKeys, diseaseNames } from './dps-form'
+import { DiseaseKeys, diseaseNamesHabitacional } from './dps-form'
 import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { dpsProfileForm, DpsProfileFormType } from './dps-profile-form'
@@ -191,7 +191,7 @@ const DpsAttachmentsForm = ({
 							return !pickedDiseases.toSpliced(i, 1).flat().includes(disease)
 						})
 						.map(disease => ({
-							label: diseaseNames[disease],
+							label: diseaseNamesHabitacional[disease],
 							value: disease,
 						}))
 
@@ -322,7 +322,7 @@ function AttachmentField({
 			documentName: fileValue.name,
 			description:
 				'Laudo para as doenças: ' +
-				diseaseList.map(disease => diseaseNames[disease]).join(', '),
+				diseaseList.map(disease => diseaseNamesHabitacional[disease]).join(', '),
 			stringBase64: fileBase64.split(',')[1],
 		}
 

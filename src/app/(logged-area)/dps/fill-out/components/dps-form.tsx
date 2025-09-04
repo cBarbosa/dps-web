@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import DpsHealthForm, { HealthForm } from './dps-health-form'
+import DpsHealthForm, { HealthForm, HealthFormHdiHomeEquity } from './dps-health-form'
 import { UserIcon } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import DpsAttachmentsForm, { AttachmentsForm } from './dps-attachments-form'
@@ -11,7 +11,37 @@ import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
 import { ProposalByUid, signProposal } from '../../actions'
 
-export const diseaseNames = {
+
+export const diseaseNamesHomeEquity = {
+	'1': 'Acidente Vascular Cerebral',
+	'2': 'AIDS',
+	'3': 'Alzheimer',
+	'4': 'Arteriais Crônicas',
+	'5': 'Chagas',
+	'6': 'Cirrose Hepática e Varizes de Estômago',
+	'7': 'Diabetes com complicações',
+	'8': 'Enfisema Pulmonar e Asma',
+	'9': 'Esclerose Múltipla',
+	'10': 'Espondilose Anquilosante',
+	'11': 'Hipertensão, Infarto do Miocárdio ou outras doenças cardiocirculatórias',
+	'12': 'Insuficiência Coronariana',
+	'13': 'L.E.R.',
+	'14': 'Lúpus',
+	'15': 'Neurológicas ou Psiquiátricas - (vertigem, desmaio, convulsão, dificuldade de fala, doenças ou alterações mentais ou de nervos)',
+	'16': 'Parkinson',
+	'17': 'Renal Crônica (com ou sem hemodiálise)',
+	'18': 'Sequelas de Acidente Vascular Celebral',
+	'19': 'Shistosomose',
+	'20': 'Tireóide ou outras Doenças Endócrinas com complicações',
+	'21': 'Tumores malignos e Câncer',
+	'22': 'Tem deficiência de órgãos, membros ou sentidos? Se SIM, especificar abaixo qual é o grau de deficiência e redução.',
+	'23': 'Nos últimos cinco anos, submeteu-se a tratamento cirúrgico, cateterismo ou hospitalizou-se por período superior a dez dias; realizou ourealiza exames de controle de qualquer natureza por uma ou mais vezes ao ano pela mesma doença? Se sim, especificar.',
+	'24': 'Encontra-se aposentado por invalidez? Se SIM, especifique no campo abaixo a natureza ou causa da invalidez e o ano em que passou areceber o benefício da Previdência Social.',
+	'25': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
+	'26': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)',
+};
+
+export const diseaseNamesHabitacional = {
 	'1': 'Acidente Vascular Cerebral',
 	'2': 'AIDS',
 	'3': 'Alzheimer',
@@ -37,7 +67,7 @@ export const diseaseNames = {
 	'23': 'Encontra-se aposentado por invalidez? Se SIM, especifique no campo abaixo a natureza ou causa da invalidez e o ano em que passou areceber o benefício da Previdência Social.',
 	'24': 'Pratica de forma amadora ou profissional, esporte(s) radical(is) ou perigoso(s)? Se SIM, informar qual(is) e sua periodicidade?',
 	'25': 'Está de acordo para entrarmos em contato telefônico referente ao seu estado de saúde, se necessário? Se sim, preencher com o número de telefone (DDD+número)',
-}
+};
 
 /* export const diseaseNames = {
 	'1': 'Sofre ou sofreu nos últimos cinco anos de doença que o tenha levado ao médico entre duas ou mais vezes no decorrer deste período eutilizado medicação para o controle dessa doença? Se sim, especificar e detalhar.',
@@ -49,7 +79,7 @@ export const diseaseNames = {
 	telefoneContato: 'Telefone de Contato',
 }; */
 
-export type DiseaseKeys = keyof typeof diseaseNames
+export type DiseaseKeys = keyof typeof diseaseNamesHabitacional;
 
 const DpsForm = ({
 	initialProposalData,
@@ -71,8 +101,10 @@ const DpsForm = ({
 	const params = useParams<{ uid: string }>()
 	const uid = params.uid
 
+	console.log('initialProposalData', initialProposalData)
+
 	const initialHealthData = initialHealthDataProp
-		? Object.keys(diseaseNames).reduce((acc, curr, i) => {
+		? Object.keys(initialProposalData.product.name === 'Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional).reduce((acc, curr, i) => {
 				if (initialHealthDataProp[i])
 					return {
 						...acc,
@@ -98,7 +130,7 @@ const DpsForm = ({
 	const [dpsData, setDpsData] = useState<{
 		uid?: string
 		initial: DpsInitialForm
-		health: HealthForm | null | undefined
+		health: HealthForm | HealthFormHdiHomeEquity | null | undefined
 		attachments: AttachmentsForm | null | undefined
 	}>({
 		uid: initialProposalData.uid,
@@ -154,15 +186,21 @@ const DpsForm = ({
 				)
 		: []
 
-	async function handleHealthSubmit(v: HealthForm) {
-		setDpsData(prev => ({ ...prev, health: v }))
+		// Omit<HealthForm, '26'>
+		async function handleHealthSubmit(v: HealthForm | HealthFormHdiHomeEquity) {
+			try {
+				setDpsData(prev => ({ ...prev, health: v }))
+				const responseSign = await signProposal(token, uid)
 
-		const responseSign = await signProposal(token, uid)
-
-		if (!responseSign) console.log(responseSign) //TODO add error alert
-
-		setStep('finished')
-	}
+				if (responseSign?.success) {
+					setStep('finished')
+				} else {
+					console.error('Erro ao assinar proposta:', responseSign?.message)
+				}
+			} catch (error) {
+				console.error('Erro ao submeter formulário:', error)
+			}
+		}
 	function handleAttachmentsSubmit(v: AttachmentsForm) {
 		setDpsData(prev => ({ ...prev, attachments: v }))
 		setStep('finished')
@@ -180,6 +218,7 @@ const DpsForm = ({
 					<DpsHealthForm
 						initialHealthData={dpsData.health}
 						proposalUid={initialProposalData.uid}
+						productName={initialProposalData.product.name}
 						autocomplete={initialHealthDataProp?.[0].updated !== undefined}
 						onSubmit={handleHealthSubmit}
 					/>
