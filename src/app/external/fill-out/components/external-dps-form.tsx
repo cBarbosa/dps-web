@@ -127,15 +127,15 @@ export default function ExternalDpsForm({
         }
       }), {});
     }
-    
-    return Object.keys(diseaseNamesHabitacional)
+
+    return Object.keys(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
       .filter(key => key !== 'telefoneContato') // Exclude telefoneContato
       .reduce((acc, key) => ({
         ...acc,
         [key]: { has: '', description: '' }
       }), {});
   });
-  
+
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   
   const handleRadioChange = (questionId: string, value: string) => {
@@ -166,7 +166,7 @@ export default function ExternalDpsForm({
     const newErrors: Record<string, boolean> = {};
     let hasError = false;
     
-    Object.keys(diseaseNamesHabitacional).forEach(key => {
+    Object.keys(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional).forEach(key => {
       if (key === 'telefoneContato') return; // Skip telefoneContato
       
       if (!formData[key]?.has) {
@@ -198,7 +198,7 @@ export default function ExternalDpsForm({
         .filter(([key]) => key !== 'telefoneContato')
         .map(([key, value]) => ({
           code: key,
-          question: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
+          question: initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity] : diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
           exists: value.has === 'yes',
           created: new Date().toISOString(),
           description: value.description
@@ -392,14 +392,14 @@ export default function ExternalDpsForm({
       </div>
       <div className="p-9 mt-8 w-full max-w-7xl mx-auto bg-white rounded-3xl">
         <h3 className="text-primary text-lg mb-6">Formulário Declaração Pessoal de Saúde</h3>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-8 w-full">
           <div>
             Preencha o formulário abaixo para declarar sua saúde.
           </div>
-          
+
           <div className="space-y-8 divide-y">
-            {Object.entries(diseaseNamesHabitacional)
+            {Object.entries(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
               .filter(([key]) => key !== 'telefoneContato')
               .map(([key, question]) => (
                 <DiseaseField
