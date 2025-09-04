@@ -3,6 +3,15 @@
 
 const nextConfig = {
   poweredByHeader: false,
+  serverRuntimeConfig: {
+    // Configuração do tamanho máximo do corpo da requisição
+    maxBodySize: '10mb',
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb'
+    }
+  },
   images: {
     remotePatterns: [
       // Ajuste os domínios de imagem permitidos conforme o backend/CDN
