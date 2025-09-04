@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { UserIcon, Loader2Icon, CheckIcon, AlertCircleIcon } from 'lucide-react'
-import { diseaseNames } from '@/app/(logged-area)/dps/fill-out/components/dps-form'
+import { diseaseNamesHabitacional, diseaseNamesHomeEquity } from '@/app/(logged-area)/dps/fill-out/components/dps-form'
 import { cn } from '@/lib/utils'
 
 interface ExternalDpsFormProps {
@@ -128,7 +128,7 @@ export default function ExternalDpsForm({
       }), {});
     }
     
-    return Object.keys(diseaseNames)
+    return Object.keys(diseaseNamesHabitacional)
       .filter(key => key !== 'telefoneContato') // Exclude telefoneContato
       .reduce((acc, key) => ({
         ...acc,
@@ -166,7 +166,7 @@ export default function ExternalDpsForm({
     const newErrors: Record<string, boolean> = {};
     let hasError = false;
     
-    Object.keys(diseaseNames).forEach(key => {
+    Object.keys(diseaseNamesHabitacional).forEach(key => {
       if (key === 'telefoneContato') return; // Skip telefoneContato
       
       if (!formData[key]?.has) {
@@ -198,7 +198,7 @@ export default function ExternalDpsForm({
         .filter(([key]) => key !== 'telefoneContato')
         .map(([key, value]) => ({
           code: key,
-          question: diseaseNames[key as keyof typeof diseaseNames],
+          question: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
           exists: value.has === 'yes',
           created: new Date().toISOString(),
           description: value.description
@@ -399,7 +399,7 @@ export default function ExternalDpsForm({
           </div>
           
           <div className="space-y-8 divide-y">
-            {Object.entries(diseaseNames)
+            {Object.entries(diseaseNamesHabitacional)
               .filter(([key]) => key !== 'telefoneContato')
               .map(([key, question]) => (
                 <DiseaseField
