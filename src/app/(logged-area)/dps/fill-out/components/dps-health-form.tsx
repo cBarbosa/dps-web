@@ -24,10 +24,13 @@ import {
 	string,
 	optional,
 } from 'valibot'
-import { diseaseNames } from './dps-form'
 import { postHealthDataByUid } from '../../actions'
 import { useSession } from 'next-auth/react'
 import { Loader2Icon } from 'lucide-react'
+import {
+	diseaseNamesHomeEquity,
+	diseaseNamesHabitacional
+} from './dps-form';
 
 const diseaseSchema = variant(
 	'has',
@@ -105,23 +108,56 @@ const productYelumNovo = {
 	'22': diseaseSchema,
 	'23': diseaseSchema,
 	'24': diseaseSchema,
+	'25': diseaseSchema
+};
+
+const productHdiHomeEquity = {
+	'1': diseaseSchema,
+	'2': diseaseSchema,
+	'3': diseaseSchema,
+	'4': diseaseSchema,
+	'5': diseaseSchema,
+	'6': diseaseSchema,
+	'7': diseaseSchema,
+	'8': diseaseSchema,
+	'9': diseaseSchema,
+	'10': diseaseSchema,
+	'11': diseaseSchema,
+	'12': diseaseSchema,
+	'13': diseaseSchema,
+	'14': diseaseSchema,
+	'15': diseaseSchema,
+	'16': diseaseSchema,
+	'17': diseaseSchema,
+	'18': diseaseSchema,
+	'19': diseaseSchema,
+	'20': diseaseSchema,
+	'21': diseaseSchema,
+	'22': diseaseSchema,
+	'23': diseaseSchema,
+	'24': diseaseSchema,
 	'25': diseaseSchema,
+	'26': diseaseSchema
 };
 
 const healthForm = object(productYelumNovo)
+const healthFormHomeEquity = object(productHdiHomeEquity)
 
 export type HealthForm = InferInput<typeof healthForm>
+export type HealthFormHdiHomeEquity = InferInput<typeof healthFormHomeEquity>
 
 const DpsHealthForm = ({
 	onSubmit: onSubmitProp,
 	proposalUid,
+	productName,
 	initialHealthData,
 	autocomplete = false,
 }: {
-	onSubmit: (v: HealthForm) => void
+	onSubmit: (v: HealthForm | HealthFormHdiHomeEquity) => void
 	proposalUid: string
+	productName: string
 	autocomplete?: boolean
-	initialHealthData?: HealthForm | null
+	initialHealthData?: HealthForm | HealthFormHdiHomeEquity | null
 }) => {
 	const session = useSession()
 	const token = (session.data as any)?.accessToken
@@ -143,13 +179,15 @@ const DpsHealthForm = ({
 		disabled: submittingForm,
 	})
 
-	async function onSubmit(v: HealthForm) {
+	async function onSubmit(v: HealthForm | HealthFormHdiHomeEquity) {
 		console.log('Form submission started (internal)', v)
 		setSubmittingForm(true)
 
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
-			question: diseaseNames[key as keyof typeof diseaseNames],
+			question: productName === 'HDI Home Equity'
+				? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
+				: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
 			exists: value.has === 'yes',
 			created: new Date().toISOString(),
 			description: value.description,
@@ -184,16 +222,18 @@ const DpsHealthForm = ({
 			onSubmit={handleSubmit(onSubmit)}
 			className="flex flex-col gap-6 w-full"
 		>
-			<h3 className="text-primary text-lg">Formulário Saúde Top+</h3>
+			<h3 className="text-primary text-lg">Formulário Saúde {productName}</h3>
 			<div>
 				Sofreu nos últimos cinco anos ou sofre atualmente de uma das doenças
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-				{(Object.keys(healthForm.entries) as (keyof HealthForm)[]).map(key => (
+			{(Object.keys(productName === 'HDI Home Equity' ? healthForm.entries : healthForm.entries).slice(0, 25) as (keyof HealthForm)[]).map(key => (
 					<DiseaseField
 						name={key}
-						label={diseaseNames[key]}
+						label={productName === 'HDI Home Equity'
+							? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
+							: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional]}
 						control={control}
 						watch={watch}
 						errors={errors}
