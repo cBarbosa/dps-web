@@ -173,8 +173,8 @@ const DpsHealthForm = ({
 		reset,
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
-	} = useForm<HealthForm>({
-		resolver: valibotResolver(healthForm),
+	} = useForm<HealthForm | HealthFormHdiHomeEquity>({
+		resolver: valibotResolver(productName === 'HDI Home Equity' ? healthFormHomeEquity : healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
 		disabled: submittingForm,
 	})
@@ -192,6 +192,8 @@ const DpsHealthForm = ({
 			created: new Date().toISOString(),
 			description: value.description,
 		}))
+
+		console.log('postData', postData)
 
 		try {
 			const response = await postHealthDataByUid(token, proposalUid, postData)
@@ -228,7 +230,7 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-			{(Object.keys(productName === 'HDI Home Equity' ? healthForm.entries : healthForm.entries).slice(0, 25) as (keyof HealthForm)[]).map(key => (
+			{(Object.keys(productName === 'HDI Home Equity' ? healthFormHomeEquity.entries : healthForm.entries) as (keyof HealthForm)[] | (keyof HealthFormHdiHomeEquity)[]).map(key => (
 					<DiseaseField
 						name={key}
 						label={productName === 'HDI Home Equity'
@@ -281,14 +283,14 @@ function DiseaseField({
 	trigger,
 	setValue,
 }: {
-	name: keyof HealthForm
+	name: keyof HealthForm | keyof HealthFormHdiHomeEquity
 	label: string
-	control: Control<HealthForm>
+	control: Control<HealthForm> | Control<HealthFormHdiHomeEquity>
 	watch: any
-	errors: FormState<HealthForm>['errors']
+	errors: FormState<HealthForm>['errors'] | FormState<HealthFormHdiHomeEquity>['errors']
 	isSubmitting: boolean
-	trigger: UseFormTrigger<HealthForm>
-	setValue: UseFormSetValue<HealthForm>
+	trigger: UseFormTrigger<HealthForm> | UseFormTrigger<HealthFormHdiHomeEquity>
+	setValue: UseFormSetValue<HealthForm> | UseFormSetValue<HealthFormHdiHomeEquity>
 }) {
 	const has = watch(`${name}.has`)
 
@@ -297,7 +299,7 @@ function DiseaseField({
 	// }, [trigger, name])
 
 	const handleDescriptionChange = useCallback(() => {
-		trigger(`${name}.description`)
+		trigger(`${name}.description` as any)
 	}, [trigger, name])
 
 	const hasInputRef = useRef<HTMLElement | null>(null)
@@ -313,14 +315,14 @@ function DiseaseField({
 	}
 
 	useEffect(() => {
-		handleValidShake(!!errors[name]?.has)
+		handleValidShake(!!(errors as any)[name]?.has)
 	}, [errors, name])
 
 	return (
 		<ShareLine className="py-4 px-4 hover:bg-gray-50">
 			<div>
 				<div className="text-gray-500">{label}</div>
-				<Controller
+				<Controller<any>
 					control={control}
 					defaultValue={''}
 					name={`${name}.description`}
@@ -331,7 +333,7 @@ function DiseaseField({
 								placeholder="Descreva"
 								className={cn(
 									'w-full p-4 h-12 mt-3 rounded-lg',
-									errors?.[name]?.description &&
+									(errors as any)?.[name]?.description &&
 										'border-red-500 focus-visible:border-red-500'
 								)}
 								disabled={isSubmitting || has !== 'yes'}
@@ -344,14 +346,14 @@ function DiseaseField({
 								ref={ref}
 							/>
 							<div className="text-xs text-red-500">
-								{errors?.[name]?.description?.message}
+								{(errors as any)?.[name]?.description?.message}
 							</div>
 						</>
 					)}
 				/>
 			</div>
 
-			<Controller
+			<Controller<any>
 				control={control}
 				defaultValue={undefined}
 				name={`${name}.has`}
@@ -359,7 +361,7 @@ function DiseaseField({
 					function handleChange(v: 'yes' | 'no') {
 						onChange(v)
 						requestAnimationFrame(() => {
-							trigger(`${name}.description`)
+							trigger(`${name}.description` as any)
 						})
 					}
 
@@ -373,21 +375,21 @@ function DiseaseField({
 								ref(r)
 							}}
 						>
-							<div className={errors?.[name]?.has && 'text-red-500'}>
+							<div className={(errors as any)?.[name]?.has && 'text-red-500'}>
 								<RadioGroupItem
 									value="yes"
 									id={`${name}-yes`}
-									className={errors?.[name]?.has && 'border-red-500'}
+									className={(errors as any)?.[name]?.has && 'border-red-500'}
 								/>
 								<label htmlFor={`${name}-yes`} className="pl-2 cursor-pointer">
 									Sim
 								</label>
 							</div>
-							<div className={errors?.[name]?.has && 'text-red-500'}>
+							<div className={(errors as any)?.[name]?.has && 'text-red-500'}>
 								<RadioGroupItem
 									value="no"
 									id={`${name}-no`}
-									className={errors?.[name]?.has && 'border-red-500'}
+									className={(errors as any)?.[name]?.has && 'border-red-500'}
 								/>
 								<label htmlFor={`${name}-no`} className="pl-2 cursor-pointer">
 									Não
