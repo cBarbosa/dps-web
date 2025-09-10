@@ -104,7 +104,7 @@ const DpsForm = ({
 	console.log('initialProposalData', initialProposalData)
 
 	const initialHealthData = initialHealthDataProp
-		? Object.keys(initialProposalData.product.name === 'Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional).reduce((acc, curr, i) => {
+		? Object.keys(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional).reduce((acc, curr, i) => {
 				if (initialHealthDataProp[i])
 					return {
 						...acc,
