@@ -3,1270 +3,588 @@
 import axios from '../../../lib/axios'
 import { redirect } from 'next/navigation'
 
-export async function getProposals(
-	token: string,
-	cpf = '',
-	operation?: string,
-	dfiStatus?: number,
-	produto?: string,
-	status?: number,
-	orderBy?: string,
-	page = 1,
-	size = 10
-) {
-	try {
-		const response = await axios.get('v1/Proposal/all', {
-			params: {
-				page: page,
-				size: size,
-				document: cpf ?? ``,
-				contractNumber: operation ?? ``,
-				dfiStatus: dfiStatus ?? ``,
-				status: status ?? ``,
-				productUid: produto ?? ``,
-				orderBy: orderBy ?? ``
-			},
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data as {
-				totalItems: number
-				page: number
-				size: number
-				items: {
-					uid: string
-					code: string
-					riskStatus?: string
-					customer: {
-						uid: string
-						document: string
-						name: string
-						email: string
-						birthdate: string
-					}
-					product: {
-						uid: string
-						name: string
-					}
-					type: {
-						id: number
-						description: string
-					}
-					status: {
-						id: number
-						description: string
-					}
-					dfiStatus: {
-						id: number
-						description: string
-					}
-					// lmi: {
-					// 	code: number
-					// 	description: string
-					// }
-					createdAt: string
-				}[]
-			}
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function postProposal(
-	token: string,
-	data: {
-		document: string
-		name: string
-		socialName?: string
-		gender: string
-		cellphone?: string
-		email: string
-		contractNumber?: string
-		birthDate: string
-		productId: string
-		profession: string
-		typeId: number
-		deadlineId?: number
-		deadlineMonths?: number
-		propertyTypeId: number
-		capitalMip: number
-		capitalDfi: number
-		address?: any
-		participantsNumber?: string
-		totalValue?: number
-		totalParticipants?: number
-		operationValue?: number
-		percentageParticipation?: number
-		financingParticipation?: number
-		participantType?: string
-	}
-) {
-	try {
-		const response = await axios.post('v1/Proposal', data, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getLmiOptions(token: string): Promise<{
-	success: boolean
-	message: string
-	data: { id: number; description: string }[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Domain/group/ValoresLMI', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getTipoImovelOptions(token: string): Promise<{
-	success: boolean
-	message: string
-	data: { id: number; description: string }[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Domain/group/TipoImovel', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getPrazosOptions(token: string): Promise<{
-	success: boolean
-	message: string
-	data: { id: number; description: string }[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Domain/group/Prazos', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getProposalSituations(token: string): Promise<{
-	success: boolean
-	message: string
-	data: { id: number; description: string }[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Domain/group/SituacaoProposta', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getProposalTypes(token: string): Promise<{
-	success: boolean
-	message: string
-	data: { id: number; description: string }[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Domain/group/TipoProposta', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getProductList(token: string): Promise<{
-	success: boolean
-	message: string
-	data: {
-		uid: string
-		name: string
-		status: string
-	}[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Product/all', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
 export type ProposalByUid = {
 	uid: string;
 	code: string;
-	contractNumber?: string; // Opcional, pois é opcional em ProposalByUidA
+  contractNumber?: string;
 	capitalMIP: number;
 	capitalDFI: number;
-	uploadMIP?: boolean; // Opcional, pois é opcional em ProposalByUidA
-	uploadDFI?: boolean; // Opcional, pois é opcional em ProposalByUidA
-	uploadReturnMIP?: boolean; // Opcional, pois existe apenas em ProposalByUidE
+  uploadMIP?: boolean;
+  uploadDFI?: boolean;
+  uploadReturnMIP?: boolean;
 	customer: {
 	  uid: string;
 	  document: string;
 	  name: string;
-	  socialName?: string; // Opcional, pois é opcional em ProposalByUidA
+    socialName?: string;
 	  email: string;
 	  cellphone: string;
-	  profession?: string; // Opcional, pois existe apenas em ProposalByUidE
+    profession?: string;
 	  gender: string;
 	  birthdate: string;
 	};
 	product: {
 	  uid: string;
 	  name: string;
-	  description?: string; // Opcional, pois existe apenas em ProposalByUidE
+    description?: string;
 	};
 	type: {
 	  id: number;
 	  description: string;
 	};
-	statusId?: number; // Opcional, pois existe apenas em ProposalByUidE
+  statusId?: number;
 	status: {
 	  id: number;
 	  description: string;
 	};
-	dfiStatus?: { // Opcional, pois existe apenas em ProposalByUidA
+  dfiStatus?: {
 	  id: number;
 	  description: string;
 	};
-	propertyTypeId?: number; // Opcional, pois é opcional em ProposalByUidA
-	deadLineId?: number; // Opcional, pois é opcional em ProposalByUidA
-	deadlineMonths?: number; // Opcional, pois é opcional em ProposalByUidA
+  propertyTypeId?: number;
+  deadLineId?: number;
+  deadlineMonths?: number;
 	deadLine?: {
 	  id: number;
 	  description: string;
-	}; // Opcional, pois é opcional em ProposalByUidA
+  };
 	created: string;
-	addressZipcode?: string; // Opcional, pois é opcional em ProposalByUidA
-	addressStreet?: string; // Opcional, pois é opcional em ProposalByUidA
-	addressNumber?: string; // Opcional, pois é opcional em ProposalByUidA
-	addressComplement?: string; // Opcional, pois é opcional em ProposalByUidA
-	addressNeighborhood?: string; // Opcional, pois existe apenas em ProposalByUidA
-	addressCity?: string; // Opcional, pois é opcional em ProposalByUidA
-	addressState?: string; // Opcional, pois é opcional em ProposalByUidA
+  addressZipcode?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressComplement?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressState?: string;
 	history: {
 	  description: string;
 	  statusId: number;
 	  created: string;
 	}[];
-	riskStatus?: string; // Opcional, pois existe apenas em ProposalByUidA
-	closed?: string; // Opcional, pois existe apenas em ProposalByUidA
-	refused?: string; // Opcional, pois existe apenas em ProposalByUidA
-  };
+  riskStatus?: string;
+  closed?: string;
+  refused?: string;
+};
+
+export type PagedResponse<T> = {
+  totalItems: number
+  items: T[]
+}
+
+export async function getProposals(
+  token: string,
+  cpf?: string,
+  operation?: string,
+  dfiStatus?: number,
+  product?: string,
+  status?: number,
+  orderBy: 'asc' | 'desc' = 'desc',
+  page: number = 1,
+  size: number = 10
+): Promise<PagedResponse<any> | null> {
+  try {
+    const params: Record<string, any> = { orderBy, page, size }
+    if (cpf != null && cpf !== '') params.cpf = cpf
+    if (operation != null && operation !== '') params.operation = operation
+    if (typeof dfiStatus === 'number') params.dfiStatus = dfiStatus
+    if (product != null && product !== '') params.product = product
+    if (typeof status === 'number') params.status = status
+
+    const response = await axios.get('v1/Proposal/all', {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
 export async function getProposalByUid(
-	token: string,
-	uid: string
+  token: string,
+  uid: string
 ): Promise<{
-	success: boolean
-	message: string
-	data: ProposalByUid
+  success: boolean
+  message: string
+  data: ProposalByUid
 } | null> {
-	try {
-		const response = await axios.get(`v1/Proposal/${uid}`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
+  try {
+    const response = await axios.get(`v1/Proposal/${uid}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
 }
 
-export async function getHealthDataByUid(
-	token: string,
-	uid: string
-): Promise<{
-	message: string
-	success: boolean
-	data: {
-		code: string
-		question: string
-		exists: boolean
-		created: string
-		updated: string
-		description?: string
-	}[]
-} | null> {
-	try {
-		const response = await axios.get('v1/Proposal/' + uid + '/questions', {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function postHealthDataByUid(
-	token: string,
-	uid: string,
-	data: {
-		code: string
-		question: string
-		exists: boolean
-		created: string
-	}[]
-) {
-	try {
-		const response = await axios.post(`v1/Proposal/${uid}/questions`, data, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function postAttachmentFile(
-	token: string,
-	uid: string,
-	data: {
-		documentName: string
-		description: string
-		stringBase64: string
-	}
-) {
-	try {
-		if (data.stringBase64.startsWith('data:'))
-			data.stringBase64 = data.stringBase64.split(',')[1]
-
-		const response = await axios.post(`v1/Proposal/${uid}/document`, data, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data as {
-				message: string
-				success: boolean
-				data: number
-			}
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function signProposal(token: string, uid: string) {
-	try {
-		const response = await axios.post(`v1/Proposal/${uid}/sign`, null, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function postStatus(
-	token: string,
-	uid: string,
-	statusId: number,
-	description: string,
-	type: 'MIP' | 'DFI'
-) {
-	const requestData = {
-		statusId,
-		Description: description,
-		type,
-	}
-	try {
-		const response = await axios.post(
-			`v1/Proposal/${uid}/status`,
-			requestData,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		)
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
+export async function getProposalSignByUid(
+  token: string,
+  uid: string
+): Promise<{ success: boolean; message: string; data: string } | null> {
+  try {
+    const response = await axios.get(`v1/Proposal/${uid}/sign`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
 }
 
 export async function getProposalDocumentsByUid(
-	token: string,
-	uid: string,
-	type?: 'MIP' | 'DFI'
-): Promise<
-	Promise<{
-		message: string
-		success: boolean
-		data: {
-			uid: string
-			documentName: string
-			documentUrl: string
-			description: string
-			created: Date | string
-			updated?: Date | string
-		}[]
-	} | null>
-> {
-	try {
-		const response = await axios.get(
-			`v1/Proposal/${uid}/document${type ? `?type=${type}` : ''}`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		)
+  token: string,
+  uid: string,
+  type: 'MIP' | 'DFI'
+): Promise<{
+  success: boolean
+  message: string
+  data: Array<{
+    uid: string
+    documentName: string
+    documentUrl: string
+    description: string
+    created: string
+    updated?: string
+  }>
+} | null> {
+  try {
+    const response = await axios.get(`v1/Proposal/${uid}/document`, {
+      params: { type },
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
+export async function getProposalArchiveByUid(
+  token: string,
+  uid: string,
+  documentUid: string
+): Promise<{ success: boolean; message: string; data: string } | null> {
+  try {
+    const response = await axios.get(`v1/Proposal/${uid}/document/${documentUid}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
 }
 
 export async function postProposalDocumentsByUid(
-	token: string,
-	uid: string,
-	data: {
-		documentName: string
-		description: string
-		stringBase64: string
-		type: 'MIP' | 'DFI'
-	}
-) {
-	try {
-		if (data.stringBase64.startsWith('data:'))
-			data.stringBase64 = data.stringBase64.split(',')[1]
-
-		const response = await axios.post(
-			`v1/Proposal/${uid}/document${data.type ? `?type=${data.type}` : ''}`,
-			data,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		)
-
-		if (response.data) {
-			return response.data as {
-				message: string
-				success: boolean
-				data: number
-			}
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export const getProposalArchiveByUid = async (
-	token: string,
-	uid: string,
-	documentUid: string
-): Promise<
-	Promise<{
-		message: string
-		success: boolean
-		data: string
-	} | null>
-> => {
-	try {
-		const response = await axios.get(
-			`v1/Proposal/${uid}/document/${documentUid}`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		)
-
-		if (response?.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.error(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export const getProposalSignByUid = async (
-	token: string,
-	uid: string
-): Promise<
-	Promise<{
-		message: string
-		success: boolean
-		data: string
-	} | null>
-> => {
-	try {
-		const response = await axios.get(`v1/Proposal/${uid}/pdf-sign`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-
-		if (response?.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.error(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null
-}
-
-export async function getProponentDataByCpf(cpf: string): Promise<{
-	detalhes: {
-		antecedenteCriminal: string
-		nascimento?: string
-		riscoAposentadoPorDoenca: string
-		aposentado: string
-		situacaoCadastral: string
-		obitoOnline: string
-		profissao: string
-		nome: string
-		profissaoRisco: string
-		renda: string
-		idade: string
-		riscoAposentadoPorAcidente: string
-		cpf: string
-		sexo: string
-		mandadoPrisao: string
-		nomeMae: string
-		aposentadoMotivo: string
-	}
-	mortePorQualquerCausa: {
-		score: string
-		indicadorDecisao: string
-	}
-	morteNatural: {
-		score: string
-		indicadorDecisao: string
-	}
-	mortePorAcidente: {
-		score: string
-		indicadorDecisao: string
-	}
-	acidente: {
-		score: string
-		indicadorDecisao: string
-	}
-	doencasCronicas: {
-		score: string
-		indicadorDecisao: string
-	}
-} | null> {
-	// | {
-	// 		codigo: string
-	// 		mensagem: string
-	// 		parametros: unknown[]
-	// 		validacoes: [
-	// 			{
-	// 				propriedade: string
-	// 				mensagem: string
-	// 				argumentos: unknown[]
-	// 			}
-	// 		]
-	// 		stacktrace: string
-	// 		referencia: string
-	//   }
-	cpf = cpf.replace(/[^\d]/g, '')
-	if (cpf.length !== 11) return null
-
-	try {
-		const response = await axios.get(
-			'https://apitechtrail.com.br/api/score/pf/' + cpf,
-			{
-				headers: {
-					Authorization:
-						'Basic MjJlYWU3ZDQtZjI3Mi00NDJlLTkyZDAtYWZlMjMyMDg4YmFkOjYwYWU0NmE2OGI2ZWY4NTAxYjQ4NWVkMzQ3ZGMzZjI4OGFhYTIyOGYxMWUxZGQyNzMxZDAzY2IyOTI5ZTM3NmY=',
-				},
-			}
-		)
-
-		if (!response.data.codigo) {
-			return response.data
-		} else {
-			throw new Error(
-				'Unsuccessful request. Message: "' +
-					response.data.mensagem +
-					'".\n\n Parametros: ' +
-					response.data?.parametros?.join(', ')
-			)
-		}
-	} catch (err) {
-		console.error(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-
-		return null
-	}
-}
-
-export async function getAddressByZipcode(
-	zipcode: string,
+  token: string,
+  uid: string,
+  data: {
+    documentName: string
+    description: string
+    stringBase64: string
+    type: 'MIP' | 'DFI'
+    forceUpload?: boolean
+  }
 ): Promise<{
-		logradouro: string
-		complemento: string
-		unidade: string
-		bairro: string
-		localidade: string
-		uf: string
-		estado: string
-		regiao: string
-		ibge: string
-		gia: string
-		ddd: string
-		siafi: string
-	} | null
-> {
-	try {
-		const response = await axios.get(
-			`https://viacep.com.br/ws/${zipcode}/json`
-		)
-
-		if (response.data) {
-			return response.data
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null;
-};
+  success: boolean
+  message: string
+  needsConfirmation?: boolean
+  compressedFile?: Uint8Array
+  originalData?: any
+} | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/document`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
 export async function deleteArchive(
-	token: string,
-	archiveUid: string
-) {
+  token: string,
+  archiveUid: string
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.delete(`v1/Proposal/document/${archiveUid}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-	try {
-		const response = await axios.delete(
-			`v1/Proposal/${archiveUid}/document`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				}
-			}
-		);
-
-		if (response.data) {
-			return response.data;
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-	}
-
-	return null;
-};
-
-export async function getReopenedProposals(
-	token: string,
-	status?: number,
-	page = 1,
-	size = 10
-) {
-
-	try {
-		const response = await axios.get('v1/Proposal/reopen', {
-			params: {
-				page: page,
-				size: size,
-				status: status ?? ''
-			},
-			headers: {
-				Authorization: `Bearer ${token}`,
-			}
-		})
-
-		if (response.data) {
-			return response.data as {
-				totalItems: number
-				page: number
-				size: number
-				items: {
-					uid: string
-					code: string
-					riskStatus?: string
-					customer: {
-						uid: string
-						document: string
-						name: string
-						email: string
-						birthdate: string
-					}
-					product: {
-						uid: string
-						name: string
-					}
-					type: {
-						id: number
-						description: string
-					}
-					status: {
-						id: number
-						description: string
-					}
-					dfiStatus: {
-						id: number
-						description: string
-					}
-					createdAt: string
-				}[];
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
-
-	return null;
-};
+export async function postStatus(
+  token: string,
+  uid: string,
+  status: number,
+  description: string,
+  type: 'MIP' | 'DFI'
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.post(
+      `v1/Proposal/${uid}/status`,
+      { status, description, type },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
 export async function putProposalAnalysis(
-	token: string,
-	uid: string,
-	data: {
-		Action: string
-		IsApproved: boolean
-	}
-) {
-	try {
-
-		const response = await axios.put(
-			`v1/Proposal/${uid}/analysis`,
-			data,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				}
-			}
-		);
-
-		if (response.data) {
-			return response.data as {
-				message: string
-				success: boolean
-				data: number
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
-
-	return null;
-};
-
-export async function getReviewProposals(
-	token: string,
-	status?: number,
-	page = 1,
-	size = 10
-) {
-
-	try {
-		const response = await axios.get('v1/Proposal/review', {
-			params: {
-				page: page,
-				size: size,
-				status: status ?? ''
-			},
-			headers: {
-				Authorization: `Bearer ${token}`,
-			}
-		})
-
-		if (response.data) {
-			return response.data as {
-				totalItems: number
-				page: number
-				size: number
-				items: {
-					uid: string
-					code: string
-					riskStatus?: string
-					customer: {
-						uid: string
-						document: string
-						name: string
-						email: string
-						birthdate: string
-					}
-					product: {
-						uid: string
-						name: string
-					}
-					type: {
-						id: number
-						description: string
-					}
-					status: {
-						id: number
-						description: string
-					}
-					dfiStatus: {
-						id: number
-						description: string
-					}
-					createdAt: string
-				}[];
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
-
-	return null;
-};
+  token: string,
+  uid: string,
+  body: { Action: 'REOPEN' | 'APPROVE' | 'REFUSE'; IsApproved: boolean }
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.put(`v1/Proposal/${uid}/analysis`, body, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
 export async function putProposalReview(
-	token: string,
-	uid: string,
-	data: {
-		Action: string
-		IsApproved: boolean
-	}
-) {
-	try {
-
-		const response = await axios.put(
-			`v1/Proposal/${uid}/review`,
-			data,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				}
-			}
-		);
-
-		if (response.data) {
-			return response.data as {
-				message: string
-				success: boolean
-				data: number
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
-
-	return null;
-};
-
-export async function getParticipantsByOperation(
-	token: string,
-	operationNumber: string
-) {
-	try {
-		const response = await axios.get(`v1/Proposal/participants/${operationNumber}`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		});
-
-		if (response.data) {
-			return response.data as {
-				message: string;
-				success: boolean;
-				data: Array<{
-					uid: string;
-					contractNumber: string;
-					operationValue: number;
-					totalParticipants: number;
-					percentageParticipation: number;
-					financingParticipation: number;
-					participantType: "P" | "C";
-					productId: number;
-					deadlineId?: number;
-					deadlineMonths?: number;
-					propertyTypeId: number;
-					capitalMIP: number;
-					capitalDFI: number;
-					customer: {
-						name: string;
-						document: string;
-					};
-					product: {
-						uid: string;
-						name: string;
-						description: string;
-					};
-				}>
-			}
-		} else {
-			throw new Error('Unsuccessful request')
-		}
-	} catch (err) {
-		console.log(err)
-
-		if ((err as any)?.status === 401) {
-			redirect('/logout')
-		}
-		return {
-			message: "Erro ao buscar participantes",
-			success: false,
-			data: []
-		}
-	}
+  token: string,
+  uid: string,
+  body: { Action: 'APPROVE' | 'REFUSE'; IsApproved: boolean }
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.put(`v1/Proposal/${uid}/review`, body, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
 }
 
 export async function putProposalCancel(
-	token: string,
-	uid: string,
-	data: {
-		Action: string
-		IsApproved: boolean
-	}
-) {
-	try {
-		const response = await axios.put(
-			`v1/Proposal/${uid}/cancel`,
-			data,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-				}
-			}
-		);
+  token: string,
+  uid: string,
+  body: { Action: 'CANCEL'; IsApproved: boolean }
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.put(`v1/Proposal/${uid}/cancel`, body, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-		if (response.data) {
-			return response.data as {
-				message: string
-				success: boolean
-				data: number
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
+export async function getLmiOptions(
+  token: string
+): Promise<{ success: boolean; message: string; data: Array<{ id: number; description: string }> } | null> {
+  try {
+    const response = await axios.get('v1/options/lmi', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
+export async function getPrazosOptions(
+  token: string
+): Promise<{ success: boolean; message: string; data: Array<{ id: number; description: string }> } | null> {
+  try {
+    const response = await axios.get('v1/options/prazos', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-	return null;
-};
+export async function getTipoImovelOptions(
+  token: string
+): Promise<{ success: boolean; message: string; data: Array<{ id: number; description: string }> } | null> {
+  try {
+    const response = await axios.get('v1/options/property-type', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function getProductList(
+  token: string
+): Promise<{ success: boolean; message: string; data: Array<{ uid: string; name: string; description?: string }> } | null> {
+  try {
+    const response = await axios.get('v1/product', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function getProponentDataByCpf(
+  cpf: string
+): Promise<{ message: string; success: boolean; detalhes: { cpf?: string; nome?: string; nascimento?: string; sexo?: string; profissao?: string } } | null> {
+  try {
+    const response = await axios.get(`v1/proponent/${cpf}`)
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+  }
+  return null
+}
+
+export async function postProposal(
+  token: string,
+  data: any
+): Promise<{ success: boolean; message: string; data?: any } | null> {
+  try {
+    const response = await axios.post('v1/Proposal', data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function getAddressByZipcode(
+  zipcode: string
+): Promise<{ success: boolean; message: string; data?: { zipcode: string; street?: string; neighborhood?: string; city?: string; state?: string; logradouro?: string; bairro?: string; localidade?: string; uf?: string } } | null> {
+  try {
+    const response = await axios.get(`v1/address/${zipcode}`)
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+  }
+  return null
+}
+
+export async function getParticipantsByOperation(
+  token: string,
+  operation: string
+): Promise<{ success: boolean; message: string; data?: Array<any> } | null> {
+  try {
+    const response = await axios.get(`v1/Proposal/${operation}/participants`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function getReopenedProposals(
+  token: string,
+  cpf?: string,
+  page: number = 1,
+  size: number = 10
+): Promise<PagedResponse<any> | null> {
+  try {
+    const params: Record<string, any> = { page, size }
+    if (cpf && cpf !== '') params.cpf = cpf
+    const response = await axios.get('v1/Proposal/reopened', {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
 export async function getCanceledProposals(
-	token: string,
-	status?: number,
-	page = 1,
-	size = 10
-) {
+  token: string,
+  cpf?: string,
+  page: number = 1,
+  size: number = 10
+): Promise<PagedResponse<any> | null> {
+  try {
+    const params: Record<string, any> = { page, size }
+    if (cpf && cpf !== '') params.cpf = cpf
+    const response = await axios.get('v1/Proposal/canceled', {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-	try {
-		const response = await axios.get('v1/Proposal/cancel', {
-			params: {
-				page: page,
-				size: size,
-				status: status ?? ''
-			},
-			headers: {
-				Authorization: `Bearer ${token}`,
-			}
-		})
+export async function getReviewProposals(
+  token: string,
+  cpf?: string,
+  page: number = 1,
+  size: number = 10
+): Promise<PagedResponse<any> | null> {
+  try {
+    const params: Record<string, any> = { page, size }
+    if (cpf && cpf !== '') params.cpf = cpf
+    const response = await axios.get('v1/Proposal/review', {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-		if (response.data) {
-			return response.data as {
-				totalItems: number
-				page: number
-				size: number
-				items: {
-					uid: string
-					code: string
-					riskStatus?: string
-					customer: {
-						uid: string
-						document: string
-						name: string
-						email: string
-						birthdate: string
-					}
-					product: {
-						uid: string
-						name: string
-					}
-					type: {
-						id: number
-						description: string
-					}
-					status: {
-						id: number
-						description: string
-					}
-					dfiStatus: {
-						id: number
-						description: string
-					}
-					createdAt: string
-				}[];
-			}
-		} else {
-			throw new Error('Unsuccessful request');
-		}
-	} catch (err) {
-		console.log(err);
+export async function getHealthDataByUid(
+  token: string,
+  uid: string
+): Promise<{
+  message: string
+  success: boolean
+  data: {
+    code: string
+    question: string
+    exists: boolean
+    created: string
+    updated?: string
+    description?: string
+  }[]
+} | null> {
+  try {
+    const response = await axios.get(`v1/Proposal/${uid}/dps/questions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-		if ((err as any)?.status === 401) {
-			redirect('/logout');
-		}
-	}
+export async function postHealthDataByUid(
+  token: string,
+  uid: string,
+  data: {
+    code: string
+    question: string
+    exists: boolean
+    created: string
+    description?: string
+  }[]
+): Promise<{ message: string; success: boolean } | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/dps/questions`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
 
-	return null;
-};
+export async function signProposal(
+  token: string,
+  uid: string
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/dps/sign`, null, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function postAttachmentFile(
+  token: string,
+  uid: string,
+  data: { documentName: string; description: string; stringBase64: string }
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/dps/attachment`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
