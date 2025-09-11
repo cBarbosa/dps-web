@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import DialogAlertComp from '@/components/ui/alert-dialog-comp';
 import { postProposalDocumentsByUid } from '../actions';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 interface UploadDocumentFormProps {
   token: string;
