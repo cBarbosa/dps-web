@@ -108,34 +108,103 @@ export default function MedReports({
 			})
 			setIsFinishing(true)
 
-			const response = await postStatus(
-				token,
-				uid,
-				4,
-				'Aguardando análise DPS',
-				'MIP'
-			)
-
-			if (response) {
-				if (response.success) {
-					onConfirmProp?.()
-					reloadReports()
-				} else {
+			try {
+				console.log('Iniciando conclusão de envio de laudos e complementos médicos')
+				console.log('Dados da proposta:', { 
+					uid, 
+					dpsStatus, 
+					dataLength: data?.length,
+					userRole,
+					requireUpload,
+					showUploadReport: userRole && requireUpload && (userRole.toLowerCase() === 'vendedor' || userRole.toLowerCase() === 'admin')
+				})
+				
+				// Validações antes de tentar atualizar o status
+				if (!data || data.length === 0) {
+					console.error('Nenhum documento encontrado para enviar')
 					setAlertDialog({
 						open: true,
-						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir envio de laudos e complementos.',
+						title: 'Erro de Validação',
+						body: 'É necessário ter pelo menos um documento carregado para concluir o envio.',
+					})
+					return
+				}
+
+				if (!token) {
+					console.error('Token de autenticação não encontrado')
+					setAlertDialog({
+						open: true,
+						title: 'Erro de Autenticação',
+						body: 'Sessão expirada. Faça login novamente.',
+					})
+					return
+				}
+
+				if (!uid) {
+					console.error('UID da proposta não encontrado')
+					setAlertDialog({
+						open: true,
+						title: 'Erro de Dados',
+						body: 'Identificador da proposta não encontrado.',
+					})
+					return
+				}
+				
+				const response = await postStatus(
+					token,
+					uid,
+					4,
+					'Aguardando análise DPS',
+					'MIP'
+				)
+
+				console.log('Resposta do postStatus:', response)
+
+				if (response) {
+					if (response.success) {
+						console.log('Status atualizado com sucesso')
+						onConfirmProp?.()
+						reloadReports()
+					} else {
+						console.error('Erro na resposta:', response.message)
+						
+						// Tratamento específico para diferentes tipos de erro
+						let errorTitle = 'Erro ao Concluir Envio'
+						let errorBody = response.message || 'Ocorreu um erro ao concluir envio de laudos e complementos.'
+						
+						if (response.message?.includes('não pode ser atualizada')) {
+							errorTitle = 'Proposta Não Pode Ser Atualizada'
+							errorBody = 'A proposta não pode ser atualizada no momento. Verifique se:\n\n' +
+								'• Todos os documentos obrigatórios foram carregados\n' +
+								'• A proposta não está em um status que permite esta operação\n' +
+								'• Você tem permissão para realizar esta ação\n\n' +
+								'Detalhes: ' + response.message
+						}
+						
+						setAlertDialog({
+							open: true,
+							title: errorTitle,
+							body: errorBody,
+						})
+					}
+				} else {
+					console.error('Resposta nula do postStatus')
+					setAlertDialog({
+						open: true,
+						title: 'Erro de Conexão',
+						body: 'Não foi possível conectar com o servidor. Verifique sua conexão e tente novamente.',
 					})
 				}
-			} else {
+			} catch (error) {
+				console.error('Erro ao concluir envio:', error)
 				setAlertDialog({
 					open: true,
-					title: 'Erro',
-					body: 'Ocorreu um erro ao concluir envio de laudos e complementos (sem resposta).',
+					title: 'Erro Inesperado',
+					body: 'Ocorreu um erro inesperado ao concluir envio de laudos e complementos.',
 				})
+			} finally {
+				setIsFinishing(false)
 			}
-
-			setIsFinishing(false)
 		}
 	}
 
@@ -173,36 +242,51 @@ export default function MedReports({
 			})
 			setIsFinishing(true)
 
-			const newStatus = isApproved ? 6 : 37
+			try {
+				const newStatus = isApproved ? 6 : 37
+				console.log(`Iniciando ${isApproved ? 'aprovação' : 'reprovação'} de MIP com status:`, newStatus)
 
-			const response = await postStatus(
-				token,
-				uid,
-				newStatus,
-				'Análise de MIP concluída',
-				'MIP'
-			)
+				const response = await postStatus(
+					token,
+					uid,
+					newStatus,
+					'Análise de MIP concluída',
+					'MIP'
+				)
 
-			if (response) {
-				if (response.success) {
-					onConfirmProp?.()
-					reloadReports()
+				console.log('Resposta do postStatus (review):', response)
+
+				if (response) {
+					if (response.success) {
+						console.log('Análise de MIP concluída com sucesso')
+						onConfirmProp?.()
+						reloadReports()
+					} else {
+						console.error('Erro na resposta (review):', response.message)
+						setAlertDialog({
+							open: true,
+							title: 'Erro na Análise',
+							body: response.message || 'Ocorreu um erro ao concluir análise de MIP',
+						})
+					}
 				} else {
+					console.error('Resposta nula do postStatus (review)')
 					setAlertDialog({
 						open: true,
-						title: 'Erro',
-						body: 'Ocorreu um erro ao concluir análise de MIP',
+						title: 'Erro de Conexão',
+						body: 'Não foi possível conectar com o servidor. Verifique sua conexão e tente novamente.',
 					})
 				}
-			} else {
+			} catch (error) {
+				console.error('Erro ao concluir análise de MIP:', error)
 				setAlertDialog({
 					open: true,
-					title: 'Erro',
-					body: 'Ocorreu um erro ao concluir análise de MIP (sem resposta)',
+					title: 'Erro Inesperado',
+					body: 'Ocorreu um erro inesperado ao concluir análise de MIP.',
 				})
+			} finally {
+				setIsFinishing(false)
 			}
-
-			setIsFinishing(false)
 		}
 	}
 

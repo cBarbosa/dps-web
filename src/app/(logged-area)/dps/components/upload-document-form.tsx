@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import DialogAlertComp from '@/components/ui/alert-dialog-comp';
-import { postProposalDocumentsByUid } from '../actions';
+import { postProposalDocumentLinkByUid } from '../actions';
+import { getSasUrl, sanitizeBlobName } from '@/lib/azure-upload'
+import { BlockBlobClient } from '@azure/storage-blob'
 import { toast } from 'react-hot-toast';
 
 interface UploadDocumentFormProps {
@@ -33,62 +35,41 @@ export function UploadDocumentForm({ token, uid }: UploadDocumentFormProps) {
     try {
       setIsUploading(true);
 
-      const result = await postProposalDocumentsByUid(token, uid, {
-        documentName: formData.get('documentName') as string,
-        description: formData.get('description') as string,
-        stringBase64: formData.get('file') as string,
-        type: formData.get('type') as 'MIP' | 'DFI'
-      });
+      const documentName = (formData.get('documentName') as string) || 'documento'
+      const description = (formData.get('description') as string) || ''
+      const type = formData.get('type') as 'MIP' | 'DFI'
 
-      if (!result) {
-        toast.error('Falha no envio do arquivo.');
-        return;
+      let blobUrl = ''
+      const safeName = sanitizeBlobName(documentName)
+      const blobName = `waiting/${uid}/${safeName}`
+      const { uploadUrl, blobUrl: finalBlobUrl } = await getSasUrl(blobName, 'smart-dps')
+
+      if (typeof window === 'undefined') throw new Error('Upload inválido no servidor')
+
+      const inputEl = (document.querySelector('input[type="file"]') as HTMLInputElement | null)
+      const file = inputEl?.files?.[0]
+      if (!file) {
+        toast.error('Selecione um arquivo para enviar')
+        return
       }
 
-      if (result.needsConfirmation) {
-        // Armazena os dados para uso após confirmação
-        setPendingUpload({
-          compressedFile: result.compressedFile,
-          originalData: result.originalData
-        });
+      const client = new BlockBlobClient(uploadUrl)
+      await client.uploadData(file, {
+        blobHTTPHeaders: { blobContentType: file.type || 'application/octet-stream' },
+      })
+      blobUrl = finalBlobUrl
 
-        // Mostra diálogo de confirmação
-        const confirmed = await showConfirmDialog({
-          title: 'Arquivo Grande',
-          message: result.message,
-          confirmText: 'Sim, continuar'
-        });
+      const res = await postProposalDocumentLinkByUid(token, uid, {
+        documentName: file.name || documentName,
+        description,
+        documentUrl: blobUrl,
+        type,
+      })
 
-        if (confirmed && pendingUpload) {
-          const toBase64 = (bytes: Uint8Array) => {
-            let binary = ''
-            for (let i = 0; i < bytes.length; i++) {
-              binary += String.fromCharCode(bytes[i])
-            }
-            return btoa(binary)
-          }
-
-          // Chama novamente com flag de forceUpload
-          const uploadResult = await postProposalDocumentsByUid(token, uid, {
-            ...pendingUpload.originalData!,
-            stringBase64: toBase64(pendingUpload.compressedFile!),
-            forceUpload: true
-          });
-
-          if (uploadResult) {
-            if (uploadResult.success) {
-              toast.success(uploadResult.message);
-            } else {
-              toast.error(uploadResult.message);
-            }
-          } else {
-            toast.error('Falha ao confirmar envio do arquivo.');
-          }
-        }
-      } else if (result.success) {
-        toast.success(result.message);
+      if (res && res.success) {
+        toast.success(res.message)
       } else {
-        toast.error(result.message);
+        toast.error(res?.message || 'Falha ao registrar documento')
       }
     } catch (error) {
       toast.error('Erro ao processar upload: ' + (error as Error).message);

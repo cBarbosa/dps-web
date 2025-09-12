@@ -21,7 +21,14 @@ export default async function Page({
     ]);
     const token = (session as any)?.accessToken;
 
+    console.log('Saler-sup page - Verificação de permissão:', {
+        granted,
+        role: (session as any)?.role,
+        hasToken: !!token
+    });
+
     if (!granted) {
+        console.log('Saler-sup page - Redirecionando para dashboard - permissão negada');
         redirect('/dashboard');
     }
 
@@ -33,9 +40,13 @@ export default async function Page({
             currentPage
     );
 
-    if (!dataRaw) return redirect('/dashboard');
+    console.log('Saler-sup page - Dados recebidos:', {
+        hasData: !!dataRaw,
+        itemsCount: dataRaw?.items?.length || 0
+    });
 
-    const data: DPS[] = dataRaw.items?.map((item: any) => {
+    // Se não há dados, criar array vazio em vez de redirecionar
+    const data: DPS[] = dataRaw?.items?.map((item: any) => {
             return {
                 uid: item.uid,
                 codigo: item.contractNumber ?? `-`,
@@ -46,7 +57,7 @@ export default async function Page({
                 dfiStatus: item.dfiStatus,
                 riskStatus: item.riskStatus
             }
-        });
+        }) || [];
 
     async function filterResults(formData: FormData) {
         'use server'
