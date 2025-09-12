@@ -224,16 +224,54 @@ export async function deleteArchive(
   archiveUid: string
 ): Promise<{ success: boolean; message: string } | null> {
   try {
-    const response = await axios.delete(`v1/Proposal/document/${archiveUid}`, {
+    const url = `v1/Proposal/${archiveUid}/document`
+    console.log('Fazendo requisição DELETE para:', url)
+    console.log('Headers:', { Authorization: `Bearer ${token ? 'presente' : 'ausente'}` })
+    console.log('Parâmetros:', { archiveUid })
+    
+    const response = await axios.delete(url, {
       headers: { Authorization: `Bearer ${token}` },
     })
+    
+    console.log('Resposta da API:', response.data)
+    console.log('Status da resposta:', response.status)
+    
     if (response.data) return response.data
     throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+  } catch (err: any) {
+    console.error('Erro detalhado ao deletar arquivo:', {
+      message: err.message,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      url: err.config?.url,
+      method: err.config?.method
+    })
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+    }
+    
+    // Retornar erro mais específico
+    if (err?.response?.data?.message) {
+      return {
+        success: false,
+        message: err.response.data.message
+      }
+    }
+    
+    if (err?.response?.status) {
+      return {
+        success: false,
+        message: `Erro ${err.response.status}: ${err.response.statusText || 'Erro na requisição'}`
+      }
+    }
+    
+    return {
+      success: false,
+      message: err?.message || 'Erro desconhecido ao deletar arquivo'
+    }
   }
-  return null
 }
 
 export async function postStatus(
@@ -244,18 +282,56 @@ export async function postStatus(
   type: 'MIP' | 'DFI'
 ): Promise<{ success: boolean; message: string } | null> {
   try {
+    console.log('Fazendo requisição POST para postStatus:', {
+      url: `v1/Proposal/${uid}/status`,
+      data: { statusId: status, description, type },
+      token: token ? 'presente' : 'ausente'
+    })
+    
     const response = await axios.post(
       `v1/Proposal/${uid}/status`,
-      { status, description, type },
+      { statusId: status, description, type },
       { headers: { Authorization: `Bearer ${token}` } }
     )
+    
+    console.log('Resposta do postStatus:', response.data)
+    
     if (response.data) return response.data
     throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+  } catch (err: any) {
+    console.error('Erro detalhado no postStatus:', {
+      message: err.message,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      url: err.config?.url,
+      method: err.config?.method
+    })
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+    }
+    
+    // Retornar erro mais específico
+    if (err?.response?.data?.message) {
+      return {
+        success: false,
+        message: err.response.data.message
+      }
+    }
+    
+    if (err?.response?.status) {
+      return {
+        success: false,
+        message: `Erro ${err.response.status}: ${err.response.statusText || 'Erro na requisição'}`
+      }
+    }
+    
+    return {
+      success: false,
+      message: err?.message || 'Erro desconhecido ao atualizar status'
+    }
   }
-  return null
 }
 
 export async function putProposalAnalysis(
@@ -445,15 +521,35 @@ export async function getReopenedProposals(
   try {
     const params: Record<string, any> = { page, size }
     if (cpf && cpf !== '') params.cpf = cpf
+    
+    console.log('Fazendo requisição para getReopenedProposals:', {
+      url: 'v1/Proposal/reopened',
+      params,
+      token: token ? 'presente' : 'ausente'
+    })
+    
     const response = await axios.get('v1/Proposal/reopened', {
       params,
       headers: { Authorization: `Bearer ${token}` },
     })
+    
+    console.log('Resposta do getReopenedProposals:', response.data)
+    
     if (response.data) return response.data
     throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+  } catch (err: any) {
+    console.error('Erro detalhado no getReopenedProposals:', {
+      message: err.message,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      url: err.config?.url,
+      method: err.config?.method
+    })
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+    }
   }
   return null
 }
@@ -467,15 +563,35 @@ export async function getCanceledProposals(
   try {
     const params: Record<string, any> = { page, size }
     if (cpf && cpf !== '') params.cpf = cpf
+    
+    console.log('Fazendo requisição para getCanceledProposals:', {
+      url: 'v1/Proposal/canceled',
+      params,
+      token: token ? 'presente' : 'ausente'
+    })
+    
     const response = await axios.get('v1/Proposal/canceled', {
       params,
       headers: { Authorization: `Bearer ${token}` },
     })
+    
+    console.log('Resposta do getCanceledProposals:', response.data)
+    
     if (response.data) return response.data
     throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+  } catch (err: any) {
+    console.error('Erro detalhado no getCanceledProposals:', {
+      message: err.message,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      url: err.config?.url,
+      method: err.config?.method
+    })
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+    }
   }
   return null
 }
@@ -578,6 +694,24 @@ export async function postAttachmentFile(
 ): Promise<{ success: boolean; message: string } | null> {
   try {
     const response = await axios.post(`v1/Proposal/${uid}/dps/attachment`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
+export async function postProposalDocumentLinkByUid(
+  token: string,
+  uid: string,
+  data: { documentName: string; description: string; documentUrl: string; type: 'MIP' | 'DFI' }
+): Promise<{ success: boolean; message: string } | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/document-link`, data, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data

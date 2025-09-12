@@ -72,6 +72,12 @@ const FileInput = React.forwardRef<
 			''
 		)
 
+		const sizeLabel = React.useMemo(() => {
+			if (!sizeLimit) return ''
+			const mb = sizeLimit / (1024 * 1024)
+			return `(Máx. ${mb.toFixed(mb % 1 === 0 ? 0 : 1)}MB)`
+		}, [sizeLimit])
+
 		return (
 			<Label
 				className={cn(
@@ -100,7 +106,7 @@ const FileInput = React.forwardRef<
 									alertFileSize ? 'text-red-500' : ''
 								)}
 							>
-								{sizeLimit ? '(Máx. ' + sizeLimit / 1000 + 'Kb)' : ''}
+								{sizeLimit ? sizeLabel : ''}
 							</div>
 						) : null}
 					</div>

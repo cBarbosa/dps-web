@@ -30,9 +30,13 @@ export default async function Page({
             currentPage
     );
 
-    if (!dataRaw) return redirect('/dashboard');
+    console.log('Subscription-sup page - Dados recebidos:', {
+        hasData: !!dataRaw,
+        itemsCount: dataRaw?.items?.length || 0
+    });
 
-    const data: DPS[] = dataRaw.items?.map((item: any) => {
+    // Se não há dados, criar array vazio em vez de redirecionar
+    const data: DPS[] = dataRaw?.items?.map((item: any) => {
             return {
                 uid: item.uid,
                 codigo: item.contractNumber ?? `-`,
@@ -43,7 +47,7 @@ export default async function Page({
                 dfiStatus: item.dfiStatus,
                 riskStatus: item.riskStatus
             }
-        });
+        }) || [];
 
     async function filterResults(formData: FormData) {
         'use server'

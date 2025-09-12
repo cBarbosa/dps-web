@@ -10,11 +10,13 @@ import { Label } from '@/components/ui/label'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { InfoIcon, PlusIcon } from 'lucide-react'
-import { postProposalDocumentsByUid } from '../actions'
-import { getBase64 } from '@/lib/utils'
+import { postProposalDocumentLinkByUid, postProposalDocumentsByUid } from '../actions'
 import FileInput from '@/components/ui/file-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getSasUrl, sanitizeBlobName } from '@/lib/azure-upload'
+import { BlockBlobClient } from '@azure/storage-blob'
+import { getBase64 } from '@/lib/utils'
 
 const UploadReport = ({
 	token,
@@ -45,41 +47,63 @@ const UploadReport = ({
 	async function handleSubmit() {
 		if (message === '' || (typeProp === 'DFI' && !file)) return
 
-		setIsLoading(true)
+		try {
+			setIsLoading(true)
 
-		const fileBase64 = file ? ((await getBase64(file)) as string) : ''
+			let documentUrl = ''
+			let documentName = ''
 
-		const postFileData = {
-			documentName: file?.name ?? '',
-			description: (typeProp === 'DFI' ? 'DFI: ' : 'MIP: ') + message,
-			stringBase64: fileBase64.split(',')[1] ?? '',
-			type: typeProp,
-		}
-
-		const resAttachment = await postProposalDocumentsByUid(
-			token,
-			proposalUid,
-			postFileData
-		)
-
-		if (resAttachment) {
-			if (resAttachment.success) {
-				setIsLoading(false)
-				setIsOpen(false)
-				setFile(undefined)
-				setMessage('')
-				setError(undefined)
-				onSubmitProp?.()
-			} else {
-				setIsLoading(false)
-				setError(resAttachment.message)
-				console.error(resAttachment.message)
+			if (file) {
+				const FOUR_MB = 4 * 1024 * 1024
+				if (file.size <= FOUR_MB) {
+					// Fluxo antigo (<=4MB): envia base64 para API
+					const fileBase64 = (await getBase64(file)) as string
+					const postFileData = {
+						documentName: file?.name ?? '',
+						description: (typeProp === 'DFI' ? 'DFI: ' : 'MIP: ') + message,
+						stringBase64: fileBase64.split(',')[1] ?? '',
+						type: typeProp,
+					}
+					const resAttachment = await postProposalDocumentsByUid(
+						token,
+						proposalUid,
+						postFileData
+					)
+					if (!resAttachment || !resAttachment.success) throw new Error(resAttachment?.message || 'Falha no upload')
+				} else {
+					// Fluxo novo (>4MB): upload direto via SDK + document-link
+					const safeName = sanitizeBlobName(file.name)
+					const blobName = `waiting/${proposalUid}/${safeName}`
+					const { uploadUrl, blobUrl } = await getSasUrl(blobName, 'smart-dps')
+					const client = new BlockBlobClient(uploadUrl)
+					await client.uploadData(file, {
+						blobHTTPHeaders: { blobContentType: file.type || 'application/octet-stream' },
+					})
+					documentUrl = blobUrl
+					documentName = file.name
+				}
 			}
-		} else {
+
+			// Se foi via SDK, registra o link
+			if (documentUrl) {
+				const res = await postProposalDocumentLinkByUid(token, proposalUid, {
+					documentName: documentName || 'documento',
+					description: (typeProp === 'DFI' ? 'DFI: ' : 'MIP: ') + message,
+					documentUrl,
+					type: typeProp,
+				})
+				if (!res || !res.success) throw new Error(res?.message || 'Falha ao registrar documento')
+			}
+
+			setIsOpen(false)
+			setFile(undefined)
+			setMessage('')
+			setError(undefined)
+			onSubmitProp?.()
+		} catch (e: any) {
+			setError(e?.message || 'Erro ao enviar arquivo')
+		} finally {
 			setIsLoading(false)
-			let errorMessage = ''
-			if (!resAttachment) errorMessage += 'Upload falhou\n'
-			setError(errorMessage)
 		}
 	}
 
@@ -134,14 +158,14 @@ const UploadReport = ({
 						disabled={isLoading}
 						onChange={handleSelectFile as any}
 						value={file}
-						sizeLimit={100000000}
+						sizeLimit={10 * 1024 * 1024}
 						// afterChange={handleAttachmentAfterChange}
 					/>
 					{error && <p className="text-sm text-red-500">{error}</p>}
 					<Alert variant="info" disposable className={`mt-4`}>
 						<InfoIcon size={20} className="text-primary-dark/60" />
 						<AlertDescription>
-							Inserir apenas arquivos com a extensão PDF e tamanho limite 10Mb.
+							Inserir apenas arquivos com a extensão PDF e tamanho limite 10MB.
 						</AlertDescription>
 					</Alert>
 				</div>
