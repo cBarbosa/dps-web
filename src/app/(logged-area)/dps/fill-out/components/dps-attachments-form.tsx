@@ -27,10 +27,12 @@ import { DiseaseKeys, diseaseNamesHabitacional } from './dps-form'
 import { MultiSelect } from 'react-multi-select-component'
 import { useSession } from 'next-auth/react'
 import { dpsProfileForm, DpsProfileFormType } from './dps-profile-form'
-import { postAttachmentFile, signProposal } from '../../actions'
+import { postAttachmentFile, postProposalDocumentLinkByUid, signProposal } from '../../actions'
+import { getSasUrl, sanitizeBlobName, uploadFileToAzure } from '@/lib/azure-upload'
 import useAlertDialog from '@/hooks/use-alert-dialog'
 import { CheckCircleIcon, CheckIcon, InfoIcon, LoaderIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { BlockBlobClient } from '@azure/storage-blob'
 
 const attachmentsForm = union([
 	object({
@@ -252,6 +254,8 @@ const DpsAttachmentsForm = ({
 
 DpsAttachmentsForm.displayName = 'DpsAttachmentsForm'
 
+export default DpsAttachmentsForm
+
 function AttachmentField({
 	token,
 	proposalUid,
@@ -309,65 +313,88 @@ function AttachmentField({
 
 		if (!fileValue || !diseaseList) return
 
-		const fileBase64 = (await getBase64(fileValue)) as string
-
-		if (!fileBase64) return
-
 		setUploadStatus('uploading')
 		setIsLoading(true)
 
 		console.log('uploading')
 
-		const postData = {
-			documentName: fileValue.name,
-			description:
-				'Laudo para as doenças: ' +
-				diseaseList.map(disease => diseaseNamesHabitacional[disease]).join(', '),
-			stringBase64: fileBase64.split(',')[1],
-		}
+		try {
+			const FOUR_MB = 4 * 1024 * 1024
+			let response: { success: boolean; message: string } | null = null
 
-		console.log('submitting', postData)
-
-		const response = await postAttachmentFile(token, proposalUid, postData)
-		// const response = await Promise.resolve({ success: false, message: 'erro' })
-		// const response = await Promise.reject(new Error('erro'))
-
-		// // await 1 second to simulate upload time
-		// await new Promise(resolve => setTimeout(resolve, 1000))
-
-		console.log('post upload', response)
-
-		if (response) {
-			// reset()
-			if (response.success) {
-				setUploadStatus('uploaded')
-				setUploadedFilename(fileValue.name)
-				checkPickedDiseases()
-				// onSubmitProp(v)
+			if (fileValue.size <= FOUR_MB) {
+				// Fluxo antigo (<=4MB): envia base64
+				const fileBase64 = (await getBase64(fileValue)) as string
+				if (!fileBase64) return
+				const postData = {
+					documentName: fileValue.name,
+					description:
+						'Laudo para as doenças: ' +
+						diseaseList.map(disease => diseaseNamesHabitacional[disease]).join(', '),
+					stringBase64: fileBase64.split(',')[1],
+				}
+				console.log('submitting base64', postData)
+				response = await postAttachmentFile(token, proposalUid, postData)
 			} else {
-				console.error(response.message)
+				// Fluxo novo (>4MB): upload direto SDK + document-link
+				const safeName = sanitizeBlobName(fileValue.name)
+				const blobName = `Development/dps/${proposalUid}/${safeName}`
+				const { uploadUrl, blobUrl } = await getSasUrl(blobName, 'smart-dps')
+				const client = new BlockBlobClient(uploadUrl)
+				await client.uploadData(fileValue, {
+					blobHTTPHeaders: { blobContentType: fileValue.type || 'application/octet-stream' },
+				})
+				response = await postProposalDocumentLinkByUid(token, proposalUid, {
+					documentName: fileValue.name,
+					description:
+						'Laudo para as doenças: ' +
+						diseaseList.map(disease => diseaseNamesHabitacional[disease]).join(', '),
+					documentUrl: blobUrl,
+					type: 'DFI',
+				})
+			}
+
+			console.log('post upload', response)
+
+			if (response) {
+				if (response.success) {
+					setUploadStatus('uploaded')
+					setUploadedFilename(fileValue.name)
+					checkPickedDiseases()
+				} else {
+					console.error(response.message)
+					alertDialog.setContent(
+						{
+							title: 'Erro ao enviar anexo',
+							description: 'Tente novamente.',
+						},
+						true
+					)
+					setUploadStatus('none')
+				}
+			} else {
 				alertDialog.setContent(
 					{
-						title: 'Erro ao enviar anexo',
-						description: 'Tente novamente.',
+						title: 'Ocorreu um problema',
+						description: 'Arquivo não foi enviado.',
 					},
 					true
 				)
 				setUploadStatus('none')
 			}
-		} else {
+		} catch (e: any) {
+			console.error(e?.message)
 			alertDialog.setContent(
 				{
-					title: 'Ocorreu um problema',
-					description: 'Arquivo não foi enviado.',
+					title: 'Erro ao enviar anexo',
+					description: e?.message || 'Falha no upload',
 				},
 				true
 			)
 			setUploadStatus('none')
+		} finally {
+			setIsLoading(false)
 		}
-		setIsLoading(false)
-		// onSubmitProp(v)
-		// console.log('saudetop', v)
 	}
 
 	if (uploadStatus === 'uploaded')
@@ -447,43 +474,36 @@ function AttachmentField({
 							<Alert variant="info" disposable className={`mt-4`}>
 								<InfoIcon size={20} className="text-primary-dark/60" />
 								<AlertDescription>
-									Inserrir apenas arquivos com a extensão PDF e tamanho limite
-									10Mb.
+									Inserir apenas arquivos com a extensão PDF e tamanho limite 10MB.
 								</AlertDescription>
 							</Alert>
 						</div>
 					)}
 				/>
+			</div>
+
+			<div className="flex justify-start gap-5">
 				<Button
 					className="h-12 mt-3.5"
 					onClick={uploadFile}
-					disabled={isSubmitting || uploadStatus !== 'none'}
+					disabled={isSubmitting || uploadStatus !== 'none' || !selected.length}
 				>
-					{uploadStatus === 'none' ? (
-						'Fazer upload'
-					) : uploadStatus === 'uploading' ? (
+					{uploadStatus === 'uploading' ? (
 						<>
-							<LoaderIcon className="animate-spin mr-1" />
+							<LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
 							Enviando...
 						</>
 					) : (
-						'Enviado'
+						<>
+							<CheckIcon className="mr-2 h-4 w-4" />
+							Fazer upload
+						</>
 					)}
 				</Button>
-				{alertDialog.dialogComp}
 			</div>
 		</div>
 	)
 }
-
-const customValueRenderer = (
-	selected: { label: string; value: DiseaseKeys }[],
-	options: { label: string; value: DiseaseKeys }[]
-) => {
-	return selected.length ? selected.map(({ label }) => label).join(', ') : ''
-}
-
-export default DpsAttachmentsForm
 
 function UploadCompleted({
 	diseaseList,
@@ -493,20 +513,24 @@ function UploadCompleted({
 	fileName: string
 }) {
 	return (
-		<div className="py-1 px-1">
-			<div className="flex items-center justify-start gap-5 border p-3 rounded-xl hover:bg-gray-50">
-				<div className="basis-0 grow-0">
-					<CheckCircleIcon className="text-green-600" size={32} />
-				</div>
-				<div className="basis-auto grow">
-					<p className="text-gray-800 text-base">
-						{diseaseList.length > 0
-							? `Doenças: ${diseaseList.join(', ')}`
-							: 'Nenhuma doença selecionada'}
-					</p>
-					<p className="text-slate-400 text-sm">Arquivo: {fileName}</p>
+		<div className="py-4 px-4 border border-green-200 bg-green-50 rounded-lg">
+			<div className="flex items-center gap-2">
+				<CheckCircleIcon className="h-5 w-5 text-green-600" />
+				<div>
+					<div className="font-medium text-green-800">
+						Arquivo enviado: {fileName}
+					</div>
+					<div className="text-sm text-green-600">
+						Doenças: {diseaseList.join(', ')}
+					</div>
 				</div>
 			</div>
 		</div>
 	)
+}
+
+function customValueRenderer(selected: { label: string; value: DiseaseKeys }[]) {
+	if (selected.length === 0) return 'Selecione as doenças'
+	if (selected.length === 1) return selected[0].label
+	return `${selected.length} doenças selecionadas`
 }

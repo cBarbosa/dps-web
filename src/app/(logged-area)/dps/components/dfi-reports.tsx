@@ -212,6 +212,58 @@ export default function DfiReports({
 
 	const reportDeleteArchive = useCallback(
 		async function (archiveUid: string) {
+			const handleDeleteFile = async () => {
+				console.log('Iniciando exclusão do arquivo:', archiveUid);
+				
+				setAlertDialog({
+					open: false
+				});
+
+				setIsFinishing(true);
+
+				try {
+					console.log('Chamando deleteArchive com:', { token: token ? 'presente' : 'ausente', archiveUid });
+					
+					const response = await deleteArchive(
+						token,
+						archiveUid
+					);
+
+					console.log('Resposta do deleteArchive:', response);
+
+					if (response) {
+						if (response.success) {
+							console.log('Arquivo deletado com sucesso');
+							onConfirmProp?.();
+							reloadReports();
+						} else {
+							console.error('Erro na resposta:', response.message);
+							setAlertDialog({
+								open: true,
+								title: 'Erro ao Deletar Arquivo',
+								body: response.message || 'Erro ao deletar arquivo',
+							});
+						}
+					} else {
+						console.error('Resposta nula do deleteArchive');
+						setAlertDialog({
+							open: true,
+							title: 'Erro de Conexão',
+							body: 'Não foi possível conectar com o servidor. Verifique sua conexão e tente novamente.',
+						});
+					}
+				} catch (error) {
+					console.error('Erro ao deletar arquivo:', error);
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Ocorreu um erro inesperado ao deletar o arquivo.',
+					});
+				} finally {
+					setIsFinishing(false);
+				}
+			};
+
 			setAlertDialog({
 				open: true,
 				title: `Confirmação de deleção de arquivo`,
@@ -225,38 +277,6 @@ export default function DfiReports({
 					</>,
 				onConfirm: handleDeleteFile,
 			});
-
-			async function handleDeleteFile() {
-				setAlertDialog({
-					open: false
-				});
-
-				const response = await deleteArchive(
-					token,
-					archiveUid
-				);
-
-				if (response) {
-					if (response.success) {
-						onConfirmProp?.();
-						reloadReports();
-					} else {
-						setAlertDialog({
-							open: true,
-							title: 'Erro',
-							body: response.message,
-						});
-					}
-				} else {
-					setAlertDialog({
-						open: true,
-						title: 'Erro',
-						body: 'Ocorreu um erro ao deletar um arquivo.',
-					})
-				}
-
-				setIsFinishing(false);
-			}
 		},
 		[reloadReports, token, onConfirmProp]
 	);
@@ -377,6 +397,7 @@ export default function DfiReports({
 													variant="destructive"
 													size="iconSm"
 													className="rounded-full text-zinc-200"
+													disabled={isFinishing}
 													onClick={() => reportDeleteArchive(document.uid)}
 												>
 													<Trash2Icon
