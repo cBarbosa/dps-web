@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.28.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.2",
@@ -36,6 +37,7 @@
     "lucide-react": "^0.447.0",
     "next": "14.2.14",
     "next-auth": "^4.24.8",
+    "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18",
@@ -45,6 +47,7 @@
     "react-multi-select-component": "^4.3.4",
     "recharts": "^2.14.1",
     "redaxios": "^0.5.1",
+    "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7",
     "valibot": "^1.0.0-beta.0",
