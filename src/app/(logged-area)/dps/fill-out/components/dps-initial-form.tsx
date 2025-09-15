@@ -1299,18 +1299,18 @@ const DpsInitialForm = ({
 			// Chamada real para a API de CEP usando a função getAddressByZipcode
 			const addressResponse = await getAddressByZipcode(cleanCep);
 			
-			if (!addressResponse || !addressResponse.data) {
+			if (!addressResponse) {
 				toast.error('CEP não encontrado. Verifique o CEP informado.');
 				return;
 			}
 			
 			// Preencher os campos com os dados retornados pela API
-			const addressData = addressResponse.data;
-			setterFunction('street', (addressData.logradouro ?? addressData.street) as any);
-			setterFunction('city', (addressData.localidade ?? addressData.city) as any);
-			setterFunction('state', (addressData.uf ?? addressData.state) as any);
-			setterFunction('district', (addressData.bairro ?? addressData.neighborhood) as any);
-			
+			const addressData = addressResponse;
+			setterFunction('street', (addressData.logradouro) as any);
+			setterFunction('city', (addressData.localidade) as any);
+			setterFunction('state', (addressData.uf) as any);
+			setterFunction('district', (addressData.bairro) as any);
+
 			toast.success('Endereço carregado com sucesso!');
 		} catch (error) {
 			console.error('Erro ao buscar endereço:', error);
