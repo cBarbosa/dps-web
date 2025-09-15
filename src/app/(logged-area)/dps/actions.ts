@@ -90,7 +90,7 @@ export async function getProposals(
     if (operation != null && operation !== '') params.contractNumber = operation
     if (typeof dfiStatus === 'number') params.dfiStatus = dfiStatus
     if (product != null && product !== '') params.productUid = product
-    if (typeof status === 'number') params.statusId = status
+    if (typeof status === 'number') params.status = status
 
     // Log para debug quando há filtros
     if (cpf || operation) {
