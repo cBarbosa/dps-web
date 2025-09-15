@@ -84,11 +84,18 @@ export async function getProposals(
 ): Promise<PagedResponse<any> | null> {
   try {
     const params: Record<string, any> = { orderBy, page, size }
-    if (cpf != null && cpf !== '') params.cpf = cpf
-    if (operation != null && operation !== '') params.operation = operation
+    
+    // Usar os nomes corretos dos parâmetros conforme backend
+    if (cpf != null && cpf !== '') params.document = cpf
+    if (operation != null && operation !== '') params.contractNumber = operation
     if (typeof dfiStatus === 'number') params.dfiStatus = dfiStatus
-    if (product != null && product !== '') params.product = product
-    if (typeof status === 'number') params.status = status
+    if (product != null && product !== '') params.productUid = product
+    if (typeof status === 'number') params.statusId = status
+
+    // Log para debug quando há filtros
+    if (cpf || operation) {
+      console.log('getProposals - Parâmetros corretos:', { document: cpf, contractNumber: operation })
+    }
 
     const response = await axios.get('v1/Proposal/all', {
       params,
@@ -129,7 +136,7 @@ export async function getProposalSignByUid(
   uid: string
 ): Promise<{ success: boolean; message: string; data: string } | null> {
   try {
-    const response = await axios.get(`v1/Proposal/${uid}/sign`, {
+    const response = await axios.get(`v1/Proposal/${uid}/pdf-sign`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data
@@ -520,7 +527,7 @@ export async function getReopenedProposals(
 ): Promise<PagedResponse<any> | null> {
   try {
     const params: Record<string, any> = { page, size }
-    if (cpf && cpf !== '') params.cpf = cpf
+    if (cpf && cpf !== '') params.document = cpf
     
     console.log('Fazendo requisição para getReopenedProposals:', {
       url: 'v1/Proposal/reopened',
@@ -562,7 +569,7 @@ export async function getCanceledProposals(
 ): Promise<PagedResponse<any> | null> {
   try {
     const params: Record<string, any> = { page, size }
-    if (cpf && cpf !== '') params.cpf = cpf
+    if (cpf && cpf !== '') params.document = cpf
     
     console.log('Fazendo requisição para getCanceledProposals:', {
       url: 'v1/Proposal/canceled',
@@ -604,7 +611,7 @@ export async function getReviewProposals(
 ): Promise<PagedResponse<any> | null> {
   try {
     const params: Record<string, any> = { page, size }
-    if (cpf && cpf !== '') params.cpf = cpf
+    if (cpf && cpf !== '') params.document = cpf
     const response = await axios.get('v1/Proposal/review', {
       params,
       headers: { Authorization: `Bearer ${token}` },
