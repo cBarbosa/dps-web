@@ -415,7 +415,7 @@ export async function getPrazosOptions(
   token: string
 ): Promise<{ success: boolean; message: string; data: Array<{ id: number; description: string }> } | null> {
   try {
-    const response = await axios.get('v1/options/prazos', {
+    const response = await axios.get('v1/Domain/group/Prazos', {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data
@@ -431,7 +431,7 @@ export async function getTipoImovelOptions(
   token: string
 ): Promise<{ success: boolean; message: string; data: Array<{ id: number; description: string }> } | null> {
   try {
-    const response = await axios.get('v1/options/property-type', {
+    const response = await axios.get('v1/Domain/group/TipoImovel', {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data
@@ -447,7 +447,7 @@ export async function getProductList(
   token: string
 ): Promise<{ success: boolean; message: string; data: Array<{ uid: string; name: string; description?: string }> } | null> {
   try {
-    const response = await axios.get('v1/product', {
+    const response = await axios.get('v1/product/all', {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data
@@ -459,17 +459,94 @@ export async function getProductList(
   return null
 }
 
-export async function getProponentDataByCpf(
-  cpf: string
-): Promise<{ message: string; success: boolean; detalhes: { cpf?: string; nome?: string; nascimento?: string; sexo?: string; profissao?: string } } | null> {
-  try {
-    const response = await axios.get(`v1/proponent/${cpf}`)
-    if (response.data) return response.data
-    throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-  }
-  return null
+export async function getProponentDataByCpf(cpf: string): Promise<{
+	detalhes: {
+		antecedenteCriminal: string
+		nascimento?: string
+		riscoAposentadoPorDoenca: string
+		aposentado: string
+		situacaoCadastral: string
+		obitoOnline: string
+		profissao: string
+		nome: string
+		profissaoRisco: string
+		renda: string
+		idade: string
+		riscoAposentadoPorAcidente: string
+		cpf: string
+		sexo: string
+		mandadoPrisao: string
+		nomeMae: string
+		aposentadoMotivo: string
+	}
+	mortePorQualquerCausa: {
+		score: string
+		indicadorDecisao: string
+	}
+	morteNatural: {
+		score: string
+		indicadorDecisao: string
+	}
+	mortePorAcidente: {
+		score: string
+		indicadorDecisao: string
+	}
+	acidente: {
+		score: string
+		indicadorDecisao: string
+	}
+	doencasCronicas: {
+		score: string
+		indicadorDecisao: string
+	}
+} | null> {
+	// | {
+	// 		codigo: string
+	// 		mensagem: string
+	// 		parametros: unknown[]
+	// 		validacoes: [
+	// 			{
+	// 				propriedade: string
+	// 				mensagem: string
+	// 				argumentos: unknown[]
+	// 			}
+	// 		]
+	// 		stacktrace: string
+	// 		referencia: string
+	//   }
+	cpf = cpf.replace(/[^\d]/g, '')
+	if (cpf.length !== 11) return null
+
+	try {
+		const response = await axios.get(
+			'https://apitechtrail.com.br/api/score/pf/' + cpf,
+			{
+				headers: {
+					Authorization:
+						'Basic MjJlYWU3ZDQtZjI3Mi00NDJlLTkyZDAtYWZlMjMyMDg4YmFkOjYwYWU0NmE2OGI2ZWY4NTAxYjQ4NWVkMzQ3ZGMzZjI4OGFhYTIyOGYxMWUxZGQyNzMxZDAzY2IyOTI5ZTM3NmY=',
+				},
+			}
+		)
+
+		if (!response.data.codigo) {
+			return response.data
+		} else {
+			throw new Error(
+				'Unsuccessful request. Message: "' +
+					response.data.mensagem +
+					'".\n\n Parametros: ' +
+					response.data?.parametros?.join(', ')
+			)
+		}
+	} catch (err) {
+		console.error(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+
+		return null
+	}
 }
 
 export async function postProposal(
@@ -490,24 +567,49 @@ export async function postProposal(
 }
 
 export async function getAddressByZipcode(
-  zipcode: string
-): Promise<{ success: boolean; message: string; data?: { zipcode: string; street?: string; neighborhood?: string; city?: string; state?: string; logradouro?: string; bairro?: string; localidade?: string; uf?: string } } | null> {
-  try {
-    const response = await axios.get(`v1/address/${zipcode}`)
-    if (response.data) return response.data
-    throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-  }
-  return null
-}
+	zipcode: string,
+): Promise<{
+		logradouro: string
+		complemento: string
+		unidade: string
+		bairro: string
+		localidade: string
+		uf: string
+		estado: string
+		regiao: string
+		ibge: string
+		gia: string
+		ddd: string
+		siafi: string
+	} | null
+> {
+	try {
+		const response = await axios.get(
+			`https://viacep.com.br/ws/${zipcode}/json`
+		)
+
+		if (response.data) {
+			return response.data
+		} else {
+			throw new Error('Unsuccessful request')
+		}
+	} catch (err) {
+		console.log(err)
+
+		if ((err as any)?.status === 401) {
+			redirect('/logout')
+		}
+	}
+
+	return null;
+};
 
 export async function getParticipantsByOperation(
   token: string,
   operation: string
 ): Promise<{ success: boolean; message: string; data?: Array<any> } | null> {
   try {
-    const response = await axios.get(`v1/Proposal/${operation}/participants`, {
+    const response = await axios.get(`v1/Proposal/participants/${operation}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.data) return response.data
