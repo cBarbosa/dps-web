@@ -54,9 +54,9 @@ const UploadReport = ({
 			let documentName = ''
 
 			if (file) {
-				const FOUR_MB = 4 * 1024 * 1024
-				if (file.size <= FOUR_MB) {
-					// Fluxo antigo (<=4MB): envia base64 para API
+			const THREE_MB = 3 * 1024 * 1024
+			if (file.size <= THREE_MB) {
+				// Fluxo antigo (<=3MB): envia base64 para API
 					const fileBase64 = (await getBase64(file)) as string
 					const postFileData = {
 						documentName: file?.name ?? '',
@@ -71,7 +71,7 @@ const UploadReport = ({
 					)
 					if (!resAttachment || !resAttachment.success) throw new Error(resAttachment?.message || 'Falha no upload')
 				} else {
-					// Fluxo novo (>4MB): upload direto via SDK + document-link
+					// Fluxo novo (>3MB): upload direto via SDK + document-link
 					const safeName = sanitizeBlobName(file.name)
 					const blobName = `waiting/${proposalUid}/${safeName}`
 					const { uploadUrl, blobUrl } = await getSasUrl(blobName, 'smart-dps')
