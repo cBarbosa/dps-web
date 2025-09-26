@@ -319,11 +319,11 @@ function AttachmentField({
 		console.log('uploading')
 
 		try {
-			const FOUR_MB = 4 * 1024 * 1024
-			let response: { success: boolean; message: string } | null = null
+		const THREE_MB = 3 * 1024 * 1024
+		let response: { success: boolean; message: string } | null = null
 
-			if (fileValue.size <= FOUR_MB) {
-				// Fluxo antigo (<=4MB): envia base64
+		if (fileValue.size <= THREE_MB) {
+			// Fluxo antigo (<=3MB): envia base64
 				const fileBase64 = (await getBase64(fileValue)) as string
 				if (!fileBase64) return
 				const postData = {
@@ -336,7 +336,7 @@ function AttachmentField({
 				console.log('submitting base64', postData)
 				response = await postAttachmentFile(token, proposalUid, postData)
 			} else {
-				// Fluxo novo (>4MB): upload direto SDK + document-link
+				// Fluxo novo (>3MB): upload direto SDK + document-link
 				const safeName = sanitizeBlobName(fileValue.name)
 				const blobName = `Development/dps/${proposalUid}/${safeName}`
 				const { uploadUrl, blobUrl } = await getSasUrl(blobName, 'smart-dps')
