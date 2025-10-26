@@ -11,6 +11,7 @@ import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import useAlertDialog from '@/hooks/use-alert-dialog'
+import { getMaxAgeByProduct, getFinalAgeErrorMessage } from '@/constants'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -108,8 +109,11 @@ const DpsProductForm = ({
 	
 	// Verificar e mostrar alerta quando idade estiver fora do intervalo
 	useEffect(() => {
-		if (proponentAge !== null && (proponentAge < 18 || proponentAge > 80)) {
-			alertDialog.toggle(true);
+		if (proponentAge !== null) {
+			const maxAge = 80; // Default para compatibilidade
+			if (proponentAge < 18 || proponentAge > maxAge) {
+				alertDialog.toggle(true);
+			}
 		}
 	}, [proponentAge, alertDialog]);
 
@@ -705,7 +709,7 @@ function checkDfiValue(dfiValue: string, mipValue: string) {
 }
 
 // Função para criar schema com validação simplificada
-export const createDpsProductFormWithAge = (proponentAge: number | null) => object({
+export const createDpsProductFormWithAge = (proponentAge: number | null, productName?: string) => object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
 	deadline: pipe(
 		string(), 
@@ -728,9 +732,10 @@ export const createDpsProductFormWithAge = (proponentAge: number | null) => obje
 				const prazosInYears = numValue / 12; // Converter meses para anos
 				const finalAge = proponentAge + prazosInYears;
 				
-				return finalAge <= 80;
+				const maxAge = productName ? getMaxAgeByProduct(productName) : 80;
+				return finalAge <= maxAge;
 			},
-			'A idade final do proponente não pode exceder 80 anos até o fim do contrato.'
+			productName ? getFinalAgeErrorMessage(productName, 'proponente') : getFinalAgeErrorMessage('Habitacional', 'proponente')
 		)
 	),
 	mip: pipe(

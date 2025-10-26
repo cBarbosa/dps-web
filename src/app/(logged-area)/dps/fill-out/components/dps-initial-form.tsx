@@ -54,6 +54,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage } from '@/constants'
 
 // Simple toast implementation
 const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
@@ -127,11 +128,11 @@ const useToast = () => {
 	return { success, error, ToastContainer };
 };
 
-// Função para criar schema dinâmico baseado na idade e número de participantes
-const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number) => object({
+// Função para criar schema dinâmico baseado na idade, número de participantes e produto
+const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number, productName?: string) => object({
 	operation: dpsOperationForm,
-	profile: createDpsProfileFormWithParticipants(participantsNumber),
-	product: createDpsProductFormWithAge(proponentAge),
+	profile: createDpsProfileFormWithParticipants(participantsNumber, productName),
+	product: createDpsProductFormWithAge(proponentAge, productName),
 	address: dpsAddressForm,
 })
 
@@ -347,6 +348,13 @@ const DpsInitialForm = ({
 	
 	// Watchs para calcular a idade com base na data de nascimento
 	const watchBirthdate = watch('profile.birthdate')
+	const watchProduct = watch('product.product')
+	
+	// Função auxiliar para obter nome do produto baseado no UID
+	const getProductName = useCallback((productUid: string) => {
+		const product = productOptions.find(p => p.value === productUid);
+		return product?.label || '';
+	}, [productOptions]);
 	
 	// Calcular idade do proponente
 	const proponentAge = useMemo(() => {
@@ -358,10 +366,11 @@ const DpsInitialForm = ({
 
 	useEffect(() => {
 		const participantsNum = parseInt(participantsNumber, 10) || undefined;
-		const newSchema = createDynamicSchema(proponentAge, participantsNum);
+		const currentProductName = getProductName(watchProduct);
+		const newSchema = createDynamicSchema(proponentAge, participantsNum, currentProductName);
 		setCurrentSchema(newSchema);
 		
-		// Forçar revalidação do campo prazo quando a idade mudar
+		// Forçar revalidação do campo prazo quando a idade ou produto mudar
 		if (proponentAge !== null && memoizedGetValues().product.deadline) {
 			// Usar setTimeout para garantir que o schema seja atualizado primeiro
 			setTimeout(() => {
@@ -375,7 +384,7 @@ const DpsInitialForm = ({
 				trigger('profile.participationPercentage');
 			}, 0);
 		}
-	}, [proponentAge, participantsNumber, trigger, memoizedGetValues]);
+	}, [proponentAge, participantsNumber, watchProduct, trigger, memoizedGetValues, getProductName]);
 
 	// useEffect para atualizar as opções de prazo - agora não filtra por idade
 	useEffect(() => {
@@ -657,7 +666,7 @@ const DpsInitialForm = ({
 	};
 
 	// Função utilitária para validar idade + prazo
-	const validateAgeWithDeadline = (birthdate: Date, deadlineMonths: number, participantType: string): { valid: boolean; message?: string } => {
+	const validateAgeWithDeadline = (birthdate: Date, deadlineMonths: number, participantType: string, productName?: string): { valid: boolean; message?: string } => {
 		const today = new Date();
 		const age = today.getFullYear() - birthdate.getFullYear();
 		const monthDiff = today.getMonth() - birthdate.getMonth();
@@ -667,10 +676,12 @@ const DpsInitialForm = ({
 		const prazosInYears = deadlineMonths / 12;
 		const finalAge = actualAge + prazosInYears;
 		
-		if (finalAge > 80) {
+		const maxAge = productName ? getMaxAgeByProduct(productName) : 80;
+		
+		if (finalAge > maxAge) {
 			return {
 				valid: false,
-				message: `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 80 anos ao fim da operação.`
+				message: productName ? getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge) : `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder ${maxAge} anos ao fim da operação.`
 			};
 		}
 		
@@ -685,14 +696,17 @@ const DpsInitialForm = ({
 			// Logging para depuração
 			console.log("Form submission data:", v);
 			
+			// Obter nome do produto selecionado
+			const currentProductName = getProductName(v.product.product);
+			
 			// VALIDAÇÃO DE IDADE + PRAZO
 			const deadlineMonths = parseInt(v.product.deadline, 10);
 			if (!isNaN(deadlineMonths) && deadlineMonths > 0) {
 				// Validar proponente principal
 				if (v.profile.birthdate) {
-					const proponentValidation = validateAgeWithDeadline(v.profile.birthdate, deadlineMonths, 'proponente principal');
+					const proponentValidation = validateAgeWithDeadline(v.profile.birthdate, deadlineMonths, 'proponente principal', currentProductName);
 					if (!proponentValidation.valid) {
-						toast.error(proponentValidation.message || 'Idade final do proponente excede 80 anos.');
+						toast.error(proponentValidation.message || 'Idade final do proponente excede o limite permitido.');
 						setIsLoading(false);
 						return;
 					}
@@ -701,7 +715,7 @@ const DpsInitialForm = ({
 				// Validar coparticipantes
 				for (const coparticipant of coparticipants) {
 					if (coparticipant.profile.birthdate) {
-						const coparticipantValidation = validateAgeWithDeadline(new Date(coparticipant.profile.birthdate), deadlineMonths, 'coparticipante');
+						const coparticipantValidation = validateAgeWithDeadline(new Date(coparticipant.profile.birthdate), deadlineMonths, 'coparticipante', currentProductName);
 						if (!coparticipantValidation.valid) {
 							toast.error(`${coparticipantValidation.message} (${coparticipant.name})`);
 							setIsLoading(false);

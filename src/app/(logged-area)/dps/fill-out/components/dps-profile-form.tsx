@@ -25,6 +25,7 @@ import validateCpf from 'validar-cpf'
 import { RecursivePartial } from '@/lib/utils'
 import { useState } from 'react'
 import { Loader2Icon } from 'lucide-react'
+import { DPS_AGE_LIMITS, getMaxAgeByProduct, getAgeErrorMessage, getFinalAgeErrorMessage } from '@/constants'
 
 export const dpsProfileForm = object({
 	cpf: pipe(
@@ -76,7 +77,7 @@ export const dpsProfileForm = object({
 })
 
 // Função para criar schema de perfil para coparticipantes com validação de idade + prazo
-export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) => object({
+export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, productName?: string) => object({
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -98,9 +99,10 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) 
 				const dayDiff = today.getDate() - birthDate.getDate();
 				
 				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-				return actualAge >= 18 && actualAge <= 80;
+				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
+				return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge;
 			},
-			'Idade deve estar entre 18 e 80 anos.'
+			productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional')
 		),
 		custom(
 			v => {
@@ -118,9 +120,10 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) 
 				const prazosInYears = deadlineMonths / 12;
 				const finalAge = actualAge + prazosInYears;
 				
-				return finalAge <= 80;
+				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
+				return finalAge <= maxAge;
 			},
-			'A idade final do coparticipante não pode exceder 80 anos até o fim do contrato.'
+			productName ? getFinalAgeErrorMessage(productName, 'coparticipante') : getFinalAgeErrorMessage('Habitacional', 'coparticipante')
 		)
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -146,7 +149,7 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null) 
 });
 
 // Função para criar schema dinâmico baseado no número de participantes
-export const createDpsProfileFormWithParticipants = (participantsNumber?: number) => object({
+export const createDpsProfileFormWithParticipants = (participantsNumber?: number, productName?: string) => object({
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -172,8 +175,9 @@ export const createDpsProfileFormWithParticipants = (participantsNumber?: number
 			const actualAge =
 				monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
 
-			return actualAge >= 18 && actualAge <= 80
-		}, 'A idade deve estar entre 18 e 80 anos.')
+			const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
+			return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge
+		}, productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional'))
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(
