@@ -5,6 +5,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
+import { isHomeEquityProduct } from '@/constants'
 
 import {
 	Control,
@@ -174,7 +175,7 @@ const DpsHealthForm = ({
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm | HealthFormHdiHomeEquity>({
-		resolver: valibotResolver(productName === 'HDI Home Equity' ? healthFormHomeEquity : healthForm),
+		resolver: valibotResolver(isHomeEquityProduct(productName) ? healthFormHomeEquity : healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
 		disabled: submittingForm,
 	})
@@ -185,7 +186,7 @@ const DpsHealthForm = ({
 
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
-			question: productName === 'HDI Home Equity'
+			question: isHomeEquityProduct(productName)
 				? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
 				: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
 			exists: value.has === 'yes',
@@ -230,10 +231,10 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-			{(Object.keys(productName === 'HDI Home Equity' ? healthFormHomeEquity.entries : healthForm.entries) as (keyof HealthForm)[] | (keyof HealthFormHdiHomeEquity)[]).map(key => (
+			{(Object.keys(isHomeEquityProduct(productName) ? healthFormHomeEquity.entries : healthForm.entries) as (keyof HealthForm)[] | (keyof HealthFormHdiHomeEquity)[]).map(key => (
 					<DiseaseField
 						name={key}
-						label={productName === 'HDI Home Equity'
+						label={isHomeEquityProduct(productName)
 							? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
 							: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional]}
 						control={control}
