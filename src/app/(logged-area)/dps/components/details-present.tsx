@@ -180,13 +180,65 @@ const DetailsPresent = ({
 	)
 
 	const handleViewArchive = React.useCallback(async () => {
-		setIsModalOpen(opt => true)
+		setIsModalOpen(true)
+		setPdfUrl(undefined) // Limpa URL anterior
 
-		const response = await getProposalSignByUid(token, uid)
+		try {
+			const response = await getProposalSignByUid(token, uid)
 
-		if (!response) return
+			if (!response) {
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: 'Não foi possível carregar o arquivo DPS. Tente novamente mais tarde.',
+				})
+				setIsModalOpen(false)
+				return
+			}
 
-		setPdfUrl(createPdfUrlFromBase64(response.data))
+			// Verifica se success é false (independente do valor de data)
+			if (response.success === false) {
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: response.message || 'Erro ao carregar o arquivo DPS.',
+				})
+				setIsModalOpen(false)
+				return
+			}
+
+			// Verifica se data é null, undefined ou string vazia
+			if (!response.data || response.data === null || response.data.trim() === '') {
+				setAlertDialog({
+					open: true,
+					title: 'Arquivo não encontrado',
+					body: 'O arquivo DPS não foi encontrado ou ainda não foi gerado.',
+				})
+				setIsModalOpen(false)
+				return
+			}
+
+			const pdfUrl = createPdfUrlFromBase64(response.data)
+			if (!pdfUrl) {
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: 'Erro ao processar o arquivo PDF. O arquivo pode estar corrompido.',
+				})
+				setIsModalOpen(false)
+				return
+			}
+
+			setPdfUrl(pdfUrl)
+		} catch (error) {
+			console.error('Erro ao visualizar DPS:', error)
+			setAlertDialog({
+				open: true,
+				title: 'Erro',
+				body: 'Ocorreu um erro inesperado ao carregar o arquivo DPS.',
+			})
+			setIsModalOpen(false)
+		}
 	}, [token, uid])
 
 	const handleCopyLink = React.useCallback(() => {

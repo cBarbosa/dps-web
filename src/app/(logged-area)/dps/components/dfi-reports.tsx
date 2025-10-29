@@ -79,13 +79,65 @@ export default function DfiReports({
 
 	const handleViewArchive = useCallback(
 		async (documentUid: string) => {
-			setIsModalOpen(opt => true)
+			setIsModalOpen(true)
+			setPdfUrl(undefined) // Limpa URL anterior
 
-			const response = await getProposalArchiveByUid(token, uid, documentUid)
+			try {
+				const response = await getProposalArchiveByUid(token, uid, documentUid)
 
-			if (!response) return
+				if (!response) {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Não foi possível carregar o arquivo. Tente novamente mais tarde.',
+					})
+					setIsModalOpen(false)
+					return
+				}
 
-			setPdfUrl(createPdfUrlFromBase64(response.data))
+				// Verifica se success é false (independente do valor de data)
+				if (response.success === false) {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: response.message || 'Erro ao carregar o arquivo.',
+					})
+					setIsModalOpen(false)
+					return
+				}
+
+				// Verifica se data é null, undefined ou string vazia
+				if (!response.data || response.data === null || response.data.trim() === '') {
+					setAlertDialog({
+						open: true,
+						title: 'Arquivo não encontrado',
+						body: 'O arquivo não foi encontrado ou ainda não foi processado.',
+					})
+					setIsModalOpen(false)
+					return
+				}
+
+				const pdfUrl = createPdfUrlFromBase64(response.data)
+				if (!pdfUrl) {
+					setAlertDialog({
+						open: true,
+						title: 'Erro',
+						body: 'Erro ao processar o arquivo PDF. O arquivo pode estar corrompido.',
+					})
+					setIsModalOpen(false)
+					return
+				}
+
+				setPdfUrl(pdfUrl)
+			} catch (error) {
+				console.error('Erro ao visualizar arquivo:', error)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: 'Ocorreu um erro inesperado ao carregar o arquivo.',
+				})
+				setIsModalOpen(false)
+			}
 		},
 		[token, uid]
 	)

@@ -140,18 +140,65 @@ export async function getProposalByUid(
 export async function getProposalSignByUid(
   token: string,
   uid: string
-): Promise<{ success: boolean; message: string; data: string } | null> {
+): Promise<{ success: boolean; message: string; data: string | null } | null> {
   try {
     const response = await axios.get(`v1/Proposal/${uid}/pdf-sign`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (response.data) return response.data
-    throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+    
+    if (response.data) {
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.data.success === false) {
+        return {
+          success: false,
+          message: response.data.message || 'Erro ao obter arquivo PDF',
+          data: response.data.data || null // Preserva o valor null se presente
+        }
+      }
+      
+      // Verifica se success é true mas data é null
+      if (response.data.success === true && (response.data.data === null || response.data.data === undefined)) {
+        return {
+          success: false,
+          message: 'Arquivo PDF não disponível',
+          data: null
+        }
+      }
+      
+      return response.data
+    }
+    
+    throw new Error('Resposta vazia do servidor')
+  } catch (err: any) {
+    console.error('Erro ao obter PDF da proposta:', err)
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+      return null
+    }
+    
+    if (err?.response?.status === 404) {
+      return {
+        success: false,
+        message: 'Arquivo PDF não encontrado',
+        data: null
+      }
+    }
+    
+    if (err?.response?.status) {
+      return {
+        success: false,
+        message: `Erro ${err.response.status}: ${err.response.statusText || 'Erro na requisição'}`,
+        data: null
+      }
+    }
+    
+    return {
+      success: false,
+      message: err?.message || 'Erro desconhecido ao obter arquivo PDF',
+      data: null
+    }
   }
-  return null
 }
 
 export async function getProposalDocumentsByUid(
@@ -188,18 +235,65 @@ export async function getProposalArchiveByUid(
   token: string,
   uid: string,
   documentUid: string
-): Promise<{ success: boolean; message: string; data: string } | null> {
+): Promise<{ success: boolean; message: string; data: string | null } | null> {
   try {
     const response = await axios.get(`v1/Proposal/${uid}/document/${documentUid}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (response.data) return response.data
-    throw new Error('Unsuccessful request')
-  } catch (err) {
-    console.log(err)
-    if ((err as any)?.status === 401) redirect('/logout')
+    
+    if (response.data) {
+      // Verifica se a resposta tem a estrutura esperada
+      if (response.data.success === false) {
+        return {
+          success: false,
+          message: response.data.message || 'Erro ao obter arquivo',
+          data: response.data.data || null // Preserva o valor null se presente
+        }
+      }
+      
+      // Verifica se success é true mas data é null
+      if (response.data.success === true && (response.data.data === null || response.data.data === undefined)) {
+        return {
+          success: false,
+          message: 'Arquivo não disponível',
+          data: null
+        }
+      }
+      
+      return response.data
+    }
+    
+    throw new Error('Resposta vazia do servidor')
+  } catch (err: any) {
+    console.error('Erro ao obter arquivo da proposta:', err)
+    
+    if (err?.response?.status === 401) {
+      redirect('/logout')
+      return null
+    }
+    
+    if (err?.response?.status === 404) {
+      return {
+        success: false,
+        message: 'Arquivo não encontrado',
+        data: null
+      }
+    }
+    
+    if (err?.response?.status) {
+      return {
+        success: false,
+        message: `Erro ${err.response.status}: ${err.response.statusText || 'Erro na requisição'}`,
+        data: null
+      }
+    }
+    
+    return {
+      success: false,
+      message: err?.message || 'Erro desconhecido ao obter arquivo',
+      data: null
+    }
   }
-  return null
 }
 
 export async function postProposalDocumentsByUid(
