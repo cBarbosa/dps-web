@@ -79,6 +79,27 @@ export const statusDescriptionDict: Record<number, string> = {
 	56: 'Processo excluído'
 }
 
+// Função auxiliar para determinar a variante do badge baseada no código do status
+// Usa a mesma lógica do componente StatusBadge da tabela
+function getStatusBadgeVariant(statusCode: number | undefined): 'success' | 'warn' | 'destructive' | 'outline' {
+	if (!statusCode) return 'warn';
+	
+	switch (statusCode) {
+		case 3:
+			return 'outline';
+		case 5:
+		case 6:
+		case 35:
+			return 'success';
+		case 24:
+		case 36:
+		case 37:
+			return 'destructive';
+		default:
+			return 'warn';
+	}
+}
+
 const DetailsPresent = ({
 	proposalData: proposalDataProp,
 	token,
@@ -794,7 +815,7 @@ const lastSituation: number | undefined =
 					<h5 className="text-xl my-4">Produto: {proposalData.product.name}</h5>
 
 					<div className="flex gap-6 justify-between items-center">
-						<div className="mt-4 flex gap-5 text-muted-foreground">
+						<div className="flex gap-5 text-muted-foreground">
 							{proposalData.deadLine && (
 								<DetailDataCard
 									label="Prazo"
@@ -958,6 +979,37 @@ const lastSituation: number | undefined =
 							)}
 						</div>
 					</div>
+
+					{/* Informação de quem criou o processo e data de criação */}
+					{((proposalData.createdByUser?.name || proposalData.createdBy) || proposalData.created) && (
+						<div className="">
+							<div className="flex gap-6 text-muted-foreground justify-start">
+								{(proposalData.createdByUser?.name || proposalData.createdBy) && (
+									<div className="min-w-[200px]">
+										<DetailDataCard
+											label="Criado por"
+											value={proposalData.createdByUser?.name || proposalData.createdBy || 'N/A'}
+										>
+											<UserRoundIcon />
+										</DetailDataCard>
+									</div>
+								)}
+								{proposalData.created && (
+									<DetailDataCard
+										label="Data de criação"
+										value={new Date(proposalData.created).toLocaleDateString('pt-BR', {
+											day: '2-digit',
+											month: '2-digit',
+											year: 'numeric',
+											timeZone: 'America/Sao_Paulo'
+										})}
+									>
+										<CalendarIcon />
+									</DetailDataCard>
+								)}
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -1167,7 +1219,14 @@ const lastSituation: number | undefined =
 								<h4 className="basis-1 grow text-lg text-primary text-left">Participações</h4>
 							</AccordionTrigger>
 							<AccordionContent>
-								{participants.map((participant, index) => {
+								{[...participants]
+									.sort((a, b) => {
+										// Coloca o participante atual (uid) sempre primeiro
+										if (a.uid === uid) return -1;
+										if (b.uid === uid) return 1;
+										return 0;
+									})
+									.map((participant, index) => {
 									const participantStatus = participant.status?.id;
 									const showFillOutLink = participantStatus === 10;
 									const showSignLink = participantStatus === 20 && participant.signatureUrl;
@@ -1185,11 +1244,7 @@ const lastSituation: number | undefined =
 														</span>
 														{participant.status && (
 															<Badge
-																variant={
-																	participantStatus === 21 ? 'success' :
-																	participantStatus === 22 ? 'destructive' :
-																	'warn'
-																}
+																variant={getStatusBadgeVariant(participantStatus)}
 																shape="pill"
 																className="text-xs"
 															>
@@ -1198,11 +1253,7 @@ const lastSituation: number | undefined =
 														)}
 														{participant.dfiStatus && (
 															<Badge
-																variant={
-																	participant.dfiStatus.description === 'Laudo DFI aprovado' ? 'success' :
-																	participant.dfiStatus.description === 'Laudo DFI reprovado' ? 'destructive' :
-																	'warn'
-																}
+																variant={getStatusBadgeVariant(participant.dfiStatus?.id)}
 																shape="pill"
 																className="text-xs"
 															>
