@@ -982,7 +982,7 @@ const lastSituation: number | undefined =
 
 					{/* Informação de quem criou o processo e data de criação */}
 					{((proposalData.createdByUser?.name || proposalData.createdBy) || proposalData.created) && (
-						<div className="">
+						<div className="pt-4">
 							<div className="flex gap-6 text-muted-foreground justify-start">
 								{(proposalData.createdByUser?.name || proposalData.createdBy) && (
 									<div className="min-w-[200px]">
