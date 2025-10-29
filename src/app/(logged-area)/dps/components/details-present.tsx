@@ -104,6 +104,15 @@ const DetailsPresent = ({
 		propertyTypeId: number;
 		capitalMIP: number;
 		capitalDFI: number;
+		signatureUrl?: string;
+		status?: {
+			id: number;
+			description: string;
+		};
+		dfiStatus?: {
+			id: number;
+			description: string;
+		};
 		customer: {
 			name: string;
 			document: string;
@@ -205,6 +214,100 @@ const DetailsPresent = ({
 					title: 'Link copiado',
 					body: (
 						<p>O link para este participante foi copiado para a área de transferência.</p>
+					),
+				})
+			})
+			.catch(err => {
+				console.error('Erro ao copiar link:', err)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: (
+						<p>Não foi possível copiar o link. Por favor, tente novamente.</p>
+					),
+				})
+			})
+	}, []);
+
+	const handleCopyParticipantFillOutLink = React.useCallback((participantUid: string) => {
+		const baseUrl = window.location.origin;
+		const url = `${baseUrl}/external/fill-out/form/${participantUid}`;
+
+		navigator.clipboard.writeText(url)
+			.then(() => {
+				setAlertDialog({
+					open: true,
+					title: 'Link copiado',
+					body: (
+						<p>O link para preenchimento da DPS foi copiado para a área de transferência.</p>
+					),
+				})
+			})
+			.catch(err => {
+				console.error('Erro ao copiar link:', err)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: (
+						<p>Não foi possível copiar o link. Por favor, tente novamente.</p>
+					),
+				})
+			})
+	}, []);
+
+	const handleCopyParticipantSignLink = React.useCallback((signatureUrl: string) => {
+		if (!signatureUrl) {
+			setAlertDialog({
+				open: true,
+				title: 'Erro',
+				body: (
+					<p>Link de assinatura não disponível para este participante.</p>
+				),
+			})
+			return
+		}
+
+		navigator.clipboard.writeText(signatureUrl)
+			.then(() => {
+				setAlertDialog({
+					open: true,
+					title: 'Link copiado',
+					body: (
+						<p>O link para assinatura da DPS foi copiado para a área de transferência.</p>
+					),
+				})
+			})
+			.catch(err => {
+				console.error('Erro ao copiar link:', err)
+				setAlertDialog({
+					open: true,
+					title: 'Erro',
+					body: (
+						<p>Não foi possível copiar o link. Por favor, tente novamente.</p>
+					),
+				})
+			})
+	}, []);
+
+	const handleCopySignLink = React.useCallback((signatureUrl: string) => {
+		if (!signatureUrl) {
+			setAlertDialog({
+				open: true,
+				title: 'Erro',
+				body: (
+					<p>Link de assinatura não disponível.</p>
+				),
+			})
+			return
+		}
+
+		navigator.clipboard.writeText(signatureUrl)
+			.then(() => {
+				setAlertDialog({
+					open: true,
+					title: 'Link copiado',
+					body: (
+						<p>O link para assinatura da DPS foi copiado para a área de transferência.</p>
 					),
 				})
 			})
@@ -578,6 +681,13 @@ const lastSituation: number | undefined =
 		proposalData.closed === undefined
 
 	const showCopyLink =  proposalSituation.id === 10 && !proposalData?.riskStatus;
+	
+	const showSignLink = proposalSituation.id === 3 && 
+		proposalData?.signatureUrl && 
+		typeof proposalData.signatureUrl === 'string' &&
+		proposalData.signatureUrl.trim().length > 0 && 
+		!proposalData?.riskStatus;
+
 	const showCancelButton = (proposalSituation.id === 10 || proposalSituation.id === 20) && !proposalData?.riskStatus;
 	const showConfirmCancelButton = role === 'vendedor-sup' && proposalData?.riskStatus === 'CANCELED' && !proposalData.closed;
 
@@ -752,6 +862,28 @@ const lastSituation: number | undefined =
 							>
 								Visualizar DPS
 							</Button>
+							{showSignLink && (
+								<Button
+									variant="outline"
+									onClick={() => {
+										if (proposalData.signatureUrl) {
+											handleCopySignLink(proposalData.signatureUrl)
+										} else {
+											console.error('signatureUrl não disponível:', proposalData)
+										}
+									}}
+								>
+									<CopyIcon className="mr-2" size={18} />
+									Copiar Link Assinatura
+								</Button>
+							)}
+							{/* Debug: mostrar botão sempre para testar */}
+							{proposalSituation.id === 20 && (
+								<div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+									Debug: showSignLink={String(showSignLink)}, 
+									signatureUrl={proposalData?.signatureUrl ? 'presente' : 'ausente'}
+								</div>
+							)}
 							{showCopyLink && (
 								<Button
 									variant="outline"
@@ -1027,7 +1159,7 @@ const lastSituation: number | undefined =
 				onNewInteraction={refetchProposalData}
 			/>
 
-			{participants && participants.length > 1 && (
+			{participants && participants.length > 0 && (
 				<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 					<Accordion type="single" collapsible>
 						<AccordionItem value="item-1" className="border-none">
@@ -1035,54 +1167,111 @@ const lastSituation: number | undefined =
 								<h4 className="basis-1 grow text-lg text-primary text-left">Participações</h4>
 							</AccordionTrigger>
 							<AccordionContent>
-								{participants.map((participant, index) => (
-									<div 
-										key={participant.uid} 
-										className={`py-4 ${index < participants.length - 1 ? 'border-b border-gray-200' : ''}`}
-									>
-										<div className="flex justify-between items-center">
-											<div className="flex flex-col">
-												<span className="text-gray-600 mb-1">
-													Coparticipação: {participant.percentageParticipation}%
-												</span>
-												<span className="text-lg font-medium">
-													{participant.customer.name}
-												</span>
-												<span className="text-gray-600">
-													Valor: {Intl.NumberFormat('pt-BR', {
-														style: 'currency',
-														currency: 'BRL',
-													}).format(participant.financingParticipation || 0)}
-												</span>
-											</div>
-											<div className="flex items-center">
-												{participant.uid !== uid ? (
-													<>
-														<Button variant="ghost" className="mr-2" asChild>
-															<Link href={`/dps/details/${participant.uid}`}>
-																<div className="flex items-center">
+								{participants.map((participant, index) => {
+									const participantStatus = participant.status?.id;
+									const showFillOutLink = participantStatus === 10;
+									const showSignLink = participantStatus === 20 && participant.signatureUrl;
+									
+									return (
+										<div 
+											key={participant.uid} 
+											className={`py-4 ${index < participants.length - 1 ? 'border-b border-gray-200' : ''}`}
+										>
+											<div className="flex justify-between items-start gap-4">
+												<div className="flex flex-col flex-1">
+													<div className="flex items-center gap-2 mb-2">
+														<span className="text-lg font-medium">
+															{participant.customer.name}
+														</span>
+														{participant.status && (
+															<Badge
+																variant={
+																	participantStatus === 21 ? 'success' :
+																	participantStatus === 22 ? 'destructive' :
+																	'warn'
+																}
+																shape="pill"
+																className="text-xs"
+															>
+																MIP: {participant.status.description}
+															</Badge>
+														)}
+														{participant.dfiStatus && (
+															<Badge
+																variant={
+																	participant.dfiStatus.description === 'Laudo DFI aprovado' ? 'success' :
+																	participant.dfiStatus.description === 'Laudo DFI reprovado' ? 'destructive' :
+																	'warn'
+																}
+																shape="pill"
+																className="text-xs"
+															>
+																DFI: {participant.dfiStatus.description}
+															</Badge>
+														)}
+													</div>
+													<span className="text-gray-600 text-sm mb-1">
+														Coparticipação: {participant.percentageParticipation}%
+													</span>
+													<span className="text-gray-600 text-sm">
+														Valor: {Intl.NumberFormat('pt-BR', {
+															style: 'currency',
+															currency: 'BRL',
+														}).format(participant.financingParticipation || 0)}
+													</span>
+												</div>
+												
+											<div className="flex flex-col gap-2 items-end">
+													{participant.uid !== uid ? (
+														<>
+															<Button variant="ghost" size="sm" asChild>
+																<Link href={`/dps/details/${participant.uid}`}>
 																	<SquareArrowUpRightIcon className="mr-2" size={16} />
 																	Ir Detalhe
-																</div>
-															</Link>
-														</Button>
-														<Button 
-															variant="ghost" 
-															onClick={() => handleCopyParticipantLink(participant.uid)}
-														>
-															<div className="flex items-center">
-																<CopyIcon className="mr-2" size={16} />
-																Copiar link
+																</Link>
+															</Button>
+															
+															<div className="flex gap-2">
+																{showFillOutLink && (
+																	<Button 
+																		variant="outline" 
+																		size="sm"
+																		onClick={() => handleCopyParticipantFillOutLink(participant.uid)}
+																	>
+																		<CopyIcon className="mr-2" size={14} />
+																		Link Preenchimento
+																	</Button>
+																)}
+																
+																{showSignLink && participant.signatureUrl && (
+																	<Button 
+																		variant="outline" 
+																		size="sm"
+																		onClick={() => handleCopyParticipantSignLink(participant.signatureUrl!)}
+																	>
+																		<CopyIcon className="mr-2" size={14} />
+																		Link Assinatura
+																	</Button>
+																)}
+																
+																<Button 
+																	variant="ghost" 
+																	size="sm"
+																	onClick={() => handleCopyParticipantLink(participant.uid)}
+																>
+																	<CopyIcon className="mr-2" size={14} />
+																	Copiar Link
+																</Button>
 															</div>
-														</Button>
-													</>
-												) : (
-													<span className="text-gray-400 italic">Detalhes atuais</span>
-												)}
+														</>
+													) : (
+														<span className="text-gray-400 italic text-sm">Detalhes atuais</span>
+													)}
+												</div>
 											</div>
 										</div>
-									</div>
-								))}
+									)
+								})}
 							</AccordionContent>
 						</AccordionItem>
 					</Accordion>
