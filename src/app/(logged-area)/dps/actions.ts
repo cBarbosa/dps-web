@@ -65,6 +65,11 @@ export type ProposalByUid = {
   closed?: string;
   refused?: string;
   signatureUrl?: string;
+  createdBy?: string;
+  createdByUser?: {
+    name?: string;
+    email?: string;
+  };
 };
 
 export type PagedResponse<T> = {
