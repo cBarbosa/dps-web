@@ -64,6 +64,7 @@ export type ProposalByUid = {
   riskStatus?: string;
   closed?: string;
   refused?: string;
+  signatureUrl?: string;
 };
 
 export type PagedResponse<T> = {
@@ -612,6 +613,7 @@ export async function getParticipantsByOperation(
     const response = await axios.get(`v1/Proposal/participants/${operation}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+    
     if (response.data) return response.data
     throw new Error('Unsuccessful request')
   } catch (err) {
