@@ -1,4 +1,5 @@
 import React from "react";
+import { FileTextIcon } from 'lucide-react'
 
 import {
     AlertDialog,
@@ -8,33 +9,50 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Root as VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
-export const createPdfUrlFromBase64 = (base64Data: string): string | undefined => {
+export const createPdfUrlFromBase64 = (base64Data: string | null): string | undefined => {
+	// Trata explicitamente o caso de data null
+	if (!base64Data || base64Data === null) {
+		console.warn('Dados base64 são null ou não fornecidos para criar PDF')
+		return undefined
+	}
 
-    if (!base64Data) return
+	try {
+		// Normaliza base64: remove prefixos e padding/URL-safe
+		const normalized = base64Data
+			.replace(/^data:application\/pdf;base64,/, '')
+			.replace(/\s/g, '')
+			.replace(/-/g, '+')
+			.replace(/_/g, '/')
+		
+		const pad = normalized.length % 4
+		const padded = pad ? normalized + '='.repeat(4 - pad) : normalized
 
-    try {
-          // Normaliza base64: remove prefixos e padding/URL-safe
-          const normalized = base64Data
-            .replace(/^data:application\/pdf;base64,/, '')
-            .replace(/\s/g, '')
-            .replace(/-/g, '+')
-            .replace(/_/g, '/')
-          const pad = normalized.length % 4
-          const padded = pad ? normalized + '='.repeat(4 - pad) : normalized
+		// Valida se é um base64 válido
+		if (padded.length === 0) {
+			console.error('Dados base64 vazios após normalização')
+			return undefined
+		}
 
-          const binaryData = atob(padded);
-          const arrayBuffer = new Uint8Array(binaryData.length);
-          for (let i = 0; i < binaryData.length; i++) {
-            arrayBuffer[i] = binaryData.charCodeAt(i);
-        }
+		const binaryData = atob(padded)
+		const arrayBuffer = new Uint8Array(binaryData.length)
+		
+		for (let i = 0; i < binaryData.length; i++) {
+			arrayBuffer[i] = binaryData.charCodeAt(i)
+		}
 
-        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+		// Valida se o arquivo tem conteúdo
+		if (arrayBuffer.length === 0) {
+			console.error('Arquivo PDF vazio após decodificação')
+			return undefined
+		}
 
-        return URL.createObjectURL(blob);
-    } catch (error) {
-      console.error('Erro ao criar URL do PDF:', error);
-    }
-};
+		const blob = new Blob([arrayBuffer], { type: 'application/pdf' })
+		return URL.createObjectURL(blob)
+	} catch (error) {
+		console.error('Erro ao criar URL do PDF:', error)
+		return undefined
+	}
+}
 
 export const downloadItem = (
     data: string,
@@ -58,8 +76,26 @@ export const DialogShowArchive = ({
     setIsModalOpen: (open: boolean) => void,
     pdfUrl?: string
 }) => {
+    const [isLoadingReport, setIsLoadingReport] = React.useState(false)
+    const [hasError, setHasError] = React.useState(false)
 
-    const [isLoadingReport, setIsLoadingReport] = React.useState(false);
+    // Reset error state when modal opens
+    React.useEffect(() => {
+        if (isModalOpen) {
+            setHasError(false)
+            setIsLoadingReport(true)
+        }
+    }, [isModalOpen])
+
+    const handleIframeError = () => {
+        setHasError(true)
+        setIsLoadingReport(false)
+    }
+
+    const handleIframeLoad = () => {
+        setIsLoadingReport(false)
+        setHasError(false)
+    }
 
     return (
         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -73,14 +109,39 @@ export const DialogShowArchive = ({
                         <div className="flex items-center justify-center h-full w-full">
                             <span>Carregando Arquivo...</span>
                         </div>
+                    ) : hasError ? (
+                        <div className="flex flex-col items-center justify-center h-full w-full text-center p-4">
+                            <div className="text-red-500 mb-2">
+                                <FileTextIcon className="w-12 h-12 mx-auto mb-2" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">Erro ao carregar PDF</h3>
+                            <p className="text-gray-600 mb-4">
+                                Não foi possível exibir o arquivo PDF. O arquivo pode estar corrompido ou em formato inválido.
+                            </p>
+                            <button 
+                                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                                onClick={() => setIsModalOpen(false)}
+                            >
+                                Fechar
+                            </button>
+                        </div>
                     ) : (
-                        <iframe
-                            src={`${pdfUrl}#zoom=90`}
-                            title="Relatório em PDF"
-                            className="w-full max-w-full h-full"
-                            referrerPolicy="no-referrer"
-                            allow="fullscreen"
-                        ></iframe>
+                        <div className="relative w-full h-full">
+                            {isLoadingReport && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+                                    <span>Carregando PDF...</span>
+                                </div>
+                            )}
+                            <iframe
+                                src={`${pdfUrl}#zoom=90`}
+                                title="Relatório em PDF"
+                                className="w-full max-w-full h-full"
+                                referrerPolicy="no-referrer"
+                                allow="fullscreen"
+                                onError={handleIframeError}
+                                onLoad={handleIframeLoad}
+                            />
+                        </div>
                     )}
                 </div>
                 <AlertDialogCancel className="mt-4 text-center">
@@ -88,5 +149,5 @@ export const DialogShowArchive = ({
                 </AlertDialogCancel>
             </AlertDialogContent>
         </AlertDialog>
-    );
-};
+    )
+}
