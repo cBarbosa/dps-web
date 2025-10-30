@@ -32,11 +32,29 @@ export default async function DetailPage({
 
 	if (!proposalData) redirect('/dashboard')
 
-	// Fetch participants data if contract number is available
+	// Fetch participants data with individual status
 	let participantsData = null
+	
 	if (proposalData.contractNumber) {
-		const participantsResponse = await getParticipantsByOperation(token, proposalData.contractNumber)
-		participantsData = participantsResponse?.data || []
+		try {
+			const participantsResponse = await getParticipantsByOperation(token, proposalData.contractNumber)
+			
+			if (participantsResponse?.success && participantsResponse?.data && participantsResponse.data.length > 0) {
+				// Buscar status individual de cada participante
+				participantsData = await Promise.all(
+					participantsResponse.data.map(async (participant: any) => {
+						const participantDetail = await getProposalByUid(token, participant.uid)
+						return {
+							...participant,
+							status: participantDetail?.data?.status,
+							dfiStatus: participantDetail?.data?.dfiStatus
+						}
+					})
+				)
+			}
+		} catch (error) {
+			console.error('Erro ao buscar participantes:', error)
+		}
 	}
 
 	return (

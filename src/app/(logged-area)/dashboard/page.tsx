@@ -79,14 +79,25 @@ export default async function DashboardPage() {
 	}
 
 	const mipChartData: ChartData[] =
-		dashboardData.mipSituation?.map((item, i) => ({
-			label: item.Descricao,
-			value: item.Percentual,
-			count: item.Quantidade,
-			total: item.Total,
-			fill: `hsl(var(--chart-${i + 1}))`,
-			href: `/dashboard/table?status=${item.MipId}`,
-		})) ?? []
+		dashboardData.mipSituation?.map((item, i) => {
+			// Esquema harmônico azul/ciano para SLA MIP
+			const mipColors = [
+				'hsl(200, 85%, 55%)',   // Azul médio vibrante
+				'hsl(185, 75%, 45%)',   // Azul esverdeado (ciano)
+				'hsl(210, 70%, 60%)',   // Azul claro
+				'hsl(195, 80%, 50%)',   // Ciano médio
+				'hsl(220, 65%, 55%)',   // Azul profundo
+			]
+			
+			return {
+				label: item.Descricao,
+				value: item.Percentual,
+				count: item.Quantidade,
+				total: item.Total,
+				fill: mipColors[i] || mipColors[i % mipColors.length],
+				href: `/dashboard/table?status=${item.MipId}`,
+			}
+		}) ?? []
 
 	if (mipChartData && mipChartData.length > 0) {
 		const itemCount = mipChartData.reduce((acc, item) => acc + item.count, 0)
@@ -99,19 +110,30 @@ export default async function DashboardPage() {
 				label: 'Outros',
 				value: 100 - (100 * restCount) / mipTotal,
 				count: restCount,
-				fill: 'hsl(var(--chart-6))',
+				fill: 'hsl(220, 15%, 65%)', // Cinza azulado neutro para "Outros"
 			})
 		}
 	}
 
 	const dfiChartData: ChartData[] =
-		dashboardData.dfiSituation?.map((item, i) => ({
-			label: item.Descricao,
-			value: item.Percentual,
-			count: item.Quantidade,
-			fill: `hsl(var(--chart-${i + 1}))`,
-			href: `/dashboard/table?dfiStatus=${item.DfiId}`,
-		})) ?? []
+		dashboardData.dfiSituation?.map((item, i) => {
+			// Esquema harmônico verde/teal para SLA DFI
+			const dfiColors = [
+				'hsl(165, 70%, 45%)',   // Verde turquesa
+				'hsl(150, 65%, 50%)',   // Verde água
+				'hsl(175, 75%, 42%)',   // Teal profundo
+				'hsl(140, 60%, 55%)',   // Verde claro
+				'hsl(160, 80%, 48%)',   // Teal vibrante
+			]
+			
+			return {
+				label: item.Descricao,
+				value: item.Percentual,
+				count: item.Quantidade,
+				fill: dfiColors[i] || dfiColors[i % dfiColors.length],
+				href: `/dashboard/table?dfiStatus=${item.DfiId}`,
+			}
+		}) ?? []
 
 	if (dfiChartData && dfiChartData.length > 0) {
 		const itemCount = dfiChartData.reduce((acc, item) => acc + item.count, 0)
@@ -124,7 +146,7 @@ export default async function DashboardPage() {
 				label: 'Outros',
 				value: 100 - (100 * restCount) / dfiTotal,
 				count: restCount,
-				fill: `hsl(var(--chart-${dfiChartData.length + 1}))`,
+				fill: 'hsl(150, 15%, 65%)', // Cinza esverdeado neutro para "Outros"
 			})
 		}
 	}
