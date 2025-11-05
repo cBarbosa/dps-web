@@ -290,18 +290,36 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 	} = { variant: null, className: 'font-normal text-black line-clamp-1' }
 
 	switch (status.code) {
-		case 3:
-			badgeProps.variant = 'outline'
-			break
 		case 5:
-			badgeProps.variant = 'success'
+			badgeProps.variant = 'warn'
 			break
 		case 6:
 			badgeProps.variant = 'success'
 			break
+		case 19: // DPS Cadastrada
+			badgeProps.variant = 'success'
+			break
+		case 21: // DPS Assinada
+			badgeProps.variant = 'success'
+			break
+		case 22: // DPS Recusada
+			badgeProps.variant = 'destructive'
+			break
 		case 24:
 			badgeProps.variant = 'destructive';
 			break;
+		case 30: // DPS Avaliada
+			badgeProps.variant = 'success'
+			break
+		case 32: // Complemento enviado
+			badgeProps.variant = 'success'
+			break
+		case 33: // Enviado para subscrição
+			badgeProps.variant = 'success'
+			break
+		case 34: // DFI Avaliada
+			badgeProps.variant = 'success'
+			break
 		case 35:
 			badgeProps.variant = 'success';
 			break;
@@ -310,6 +328,21 @@ export function StatusBadge({ status }: { status: DpsStatus }) {
 			break;
 		case 37:
 			badgeProps.variant = 'destructive'
+			break
+		case 38: // Processo finalizado
+			badgeProps.variant = 'success'
+			break
+		case 41: // Processo reanalisado
+			badgeProps.variant = 'success'
+			break
+		case 42: // MIP Avaliada
+			badgeProps.variant = 'success'
+			break
+		case 53: // Processo revisado
+			badgeProps.variant = 'success'
+			break
+		case 56: // Processo excluído
+			badgeProps.variant = 'success'
 			break
 		default:
 			badgeProps.variant = 'warn'
