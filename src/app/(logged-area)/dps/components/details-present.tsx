@@ -85,12 +85,21 @@ function getStatusBadgeVariant(statusCode: number | undefined): 'success' | 'war
 	if (!statusCode) return 'warn';
 	
 	switch (statusCode) {
-		case 3:
-			return 'outline';
-		case 5:
 		case 6:
+		case 19: // DPS Cadastrada
+		case 21: // DPS Assinada
+		case 30: // DPS Avaliada
+		case 32: // Complemento enviado
+		case 33: // Enviado para subscrição
+		case 34: // DFI Avaliada
 		case 35:
+		case 38: // Processo finalizado
+		case 41: // Processo reanalisado
+		case 42: // MIP Avaliada
+		case 53: // Processo revisado
+		case 56: // Processo excluído
 			return 'success';
+		case 22: // DPS Recusada
 		case 24:
 		case 36:
 		case 37:
