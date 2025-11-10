@@ -1,24 +1,42 @@
-import React from 'react'
+'use client'
+
+import React, { useEffect, useState } from 'react'
 import OfferSearchForm from './components/search-form'
-import getServerSessionAuthorization, {
-	ApiRoles,
-} from '@/hooks/getServerSessionAuthorization'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/app/api/auth/[...nextauth]/auth-options'
-import { getServerSession } from 'next-auth'
+import TermsOfUseModal from './components/terms-of-use-modal'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
-async function OfferPage() {
-	const session = await getServerSession(authOptions)
-	const role = (session as any)?.role?.toLowerCase() as
-		| Lowercase<ApiRoles>
-		| undefined
+function OfferPage() {
+	const { data: session } = useSession()
+	const router = useRouter()
+	const [showTerms, setShowTerms] = useState(true)
+	const [termsAccepted, setTermsAccepted] = useState(false)
 
-	if (role !== 'oferta') {
-		redirect('/dashboard')
+	const role = (session as any)?.role?.toLowerCase()
+
+	useEffect(() => {
+		if (role && role !== 'oferta') {
+			router.push('/dashboard')
+		}
+	}, [role, router])
+
+	const handleAcceptTerms = () => {
+		setTermsAccepted(true)
+		setShowTerms(false)
 	}
+
+	if (role && role !== 'oferta') {
+		return null
+	}
+
 	return (
 		<div>
-			<OfferSearchForm />
+			<TermsOfUseModal 
+				open={showTerms && !termsAccepted} 
+				onAccept={handleAcceptTerms}
+			/>
+			
+			{termsAccepted && <OfferSearchForm />}
 		</div>
 	)
 }
