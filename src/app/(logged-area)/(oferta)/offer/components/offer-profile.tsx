@@ -26,19 +26,11 @@ import {
 import { Male, Female } from '@/components/ui/icons'
 import Link from 'next/link'
 import React, { use, useContext, useEffect, useState } from 'react'
-import { CatalogCardViva } from './cards'
 import { Theme, ThemeContext } from '@/components/theme-provider'
 import { GetOfferDataByUidResponse } from '../../actions'
 import { cn, formatCpf } from '@/lib/utils'
-import {
-	Carousel,
-	CarouselApi,
-	CarouselContent,
-	CarouselItem,
-	CarouselNext,
-	CarouselPrevious,
-} from '@/components/ui/carousel'
 import { formatCurrencyBRL } from '@/lib/formatCurrency'
+import { ScoreGauge } from './score-gauge'
 
 function OfferProfile({
 	uid,
@@ -562,22 +554,6 @@ type PerfilCompra = {
 	listaProdutos: string[]
 }
 function PerfilCompra({ data }: { data: PerfilCompra }) {
-	const [canScrollNext, setCanScrollNext] = useState(false)
-	const [canScrollPrev, setCanScrollPrev] = useState(false)
-
-	function handleSideFade(api?: CarouselApi) {
-		if (api) {
-			setCanScrollNext(api.canScrollNext())
-			setCanScrollPrev(api.canScrollPrev())
-		}
-	}
-
-	function handleCarouselInit(api?: CarouselApi) {
-		if (api) {
-			handleSideFade(api)
-		}
-	}
-
 	return (
 		<div className="relative max-w-full grid grid-cols-[minmax(0,1fr)_auto] gap-1 mx-3 mt-5">
 			<div className="p-5 rounded-2xl border border-muted">
@@ -599,59 +575,17 @@ function PerfilCompra({ data }: { data: PerfilCompra }) {
 					</span>
 				</p>
 				<p className="mt-6 text-2xl font-semibold">
-					{/* <span className="text-nowrap">R$ 10.000,00</span> a{' '}
-					<span className="text-nowrap">R$ 15.000,00</span> */}
 					{data.faixaRenda}
 				</p>
 
-				<div className="max-w-full py-5 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
+				<div className="max-w-full py-10 mt-4 rounded-4xl shadow-[rgba(149,157,165,0.2)_0px_8px_24px]">
 					<div className="px-10 text-center">
 						<span className="text-xl text-muted-foreground">Oferta Ideal</span>
 						<p className="text-3xl font-semibold">
-							{/* <span className="text-nowrap">R$ 100.000,00</span> a{' '}
-								<span className="text-nowrap">R$ 200.000,00</span> */}
 							<span className="text-wrap">
-								{/* {data.ofertaIdeal
-										? `R$ ${data.ofertaIdeal.toLocaleString('pt-BR')},00`
-										: 'NADA CONSTA'} */}
 								{data.ofertaIdeal}
 							</span>
 						</p>
-					</div>
-					<Carousel
-						className="mx-8 mt-5"
-						onEvent={['scroll', handleSideFade]}
-						onInit={handleCarouselInit}
-					>
-						<CarouselContent className="p-1 justify-evenly">
-							{data.listaProdutos.map((produto, index) => (
-								<CarouselItem
-									key={index}
-									className="basis-full lg:basis-2/3 xl:basis-1/2 2xl:basis-2/5"
-								>
-									<div className="flex flex-col items-center gap-2">
-										<CatalogCardViva outlined productName={produto} />
-										<span className="text-muted-foreground text-center">
-											{produto}
-										</span>
-									</div>
-								</CarouselItem>
-							))}
-						</CarouselContent>
-						<CarouselPrevious className="ml-7 z-10" />
-						<CarouselNext className="mr-7 z-10" />
-						<div
-							className="absolute left-0 top-0 bg-gradient-to-r from-white w-[10%] h-full pointer-events-none transition-opacity duration-500"
-							style={{ opacity: canScrollPrev ? '1' : '0' }}
-						></div>
-						<div
-							className="absolute right-0 top-0 bg-gradient-to-l from-white w-[10%] h-full pointer-events-none transition-opacity duration-500"
-							style={{ opacity: canScrollNext ? '1' : '0' }}
-						></div>
-					</Carousel>
-
-					<div className="text-right px-10">
-						<Link href="">+ Info</Link>
 					</div>
 				</div>
 			</div>
@@ -737,48 +671,45 @@ function PerfilFinanceiro({ data }: { data: PerfilFinanceiro }) {
 					<h3 className="text-xl font-medium">Perfil de Risco Financeiro</h3>
 					{isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
 				</div>
-			</CollapsibleTrigger>
-			<CollapsibleContent>
-				<div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<CheckListItem check={true}>
-						Faixa de Renda
-						<span className="ml-4 text-muted-foreground">
-							{data.faixaRenda}
-						</span>
-					</CheckListItem>
-					<CheckListItem check={true}>
-						Score de crédito
-						<span className="ml-4 text-muted-foreground">
-							{data.score}
-						</span>
-					</CheckListItem>
-					<CheckListItem check={true}>
-						Quantidade de dívidas
-						<span className="ml-4 text-muted-foreground">
-							{data.quantidadeDividas ?? `Sem dívidas`}
-						</span>
-					</CheckListItem>
-					<CheckListItem check={true}>
-						Valor das dívidas
-						<span className="ml-4 text-muted-foreground">
-							{formatCurrencyBRL(data.valorDividas) ?? `Sem dívidas`}
-						</span>
-					</CheckListItem>
-					{/* <CheckListItem check={true}>
-						Tipo da dívida
-						<span className="ml-4 text-muted-foreground">
-							{data.tipoDivida}
-						</span>
-					</CheckListItem> */}
-					<CheckListItem check={true}>
-						Capacidade de pagamento
-						<span className="ml-4 text-muted-foreground">
-							{formatResultado(data.resultado)}
-						</span>
-					</CheckListItem>
+		</CollapsibleTrigger>
+		<CollapsibleContent>
+			<div className="mt-5 flex flex-col lg:flex-row gap-8">
+				{/* Coluna à esquerda - Itens em lista vertical */}
+				<div className="flex-1 p-6 rounded-2xl border border-muted bg-white">
+					<div className="flex flex-col gap-5">
+						<CheckListItem check={true}>
+							Faixa de Renda
+							<span className="ml-4 text-muted-foreground font-semibold">
+								{data.faixaRenda}
+							</span>
+						</CheckListItem>
+						<CheckListItem check={true}>
+							Valor das dívidas
+							<span className="ml-4 text-muted-foreground font-semibold">
+								{formatCurrencyBRL(data.valorDividas) ?? `Sem dívidas`}
+							</span>
+						</CheckListItem>
+						<CheckListItem check={true}>
+							Quantidade de dívidas
+							<span className="ml-4 text-muted-foreground font-semibold">
+								{data.quantidadeDividas ?? `Sem dívidas`}
+							</span>
+						</CheckListItem>
+						<CheckListItem check={true}>
+							Capacidade de pagamento
+							<span className="ml-4 text-muted-foreground font-semibold">
+								{formatResultado(data.resultado)}
+							</span>
+						</CheckListItem>
+					</div>
 				</div>
-				{/* <p className="mt-10 text-muted-foreground">*NADA CONSTA: Nada consta</p> */}
-			</CollapsibleContent>
+				
+				{/* Score Gauge à direita - Proporção quadrada */}
+				<div className="w-full lg:w-auto flex justify-center items-stretch">
+					<ScoreGauge scoreLabel={data.score} className="w-full lg:w-[380px]" />
+				</div>
+			</div>
+		</CollapsibleContent>
 		</Collapsible>
 	)
 }
