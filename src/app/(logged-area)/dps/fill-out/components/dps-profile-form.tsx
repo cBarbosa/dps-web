@@ -25,7 +25,7 @@ import validateCpf from 'validar-cpf'
 import { RecursivePartial } from '@/lib/utils'
 import { useState } from 'react'
 import { Loader2Icon } from 'lucide-react'
-import { DPS_AGE_LIMITS, getMaxAgeByProduct, getAgeErrorMessage, getFinalAgeErrorMessage } from '@/constants'
+import { DPS_AGE_LIMITS, getMaxAgeByProduct, getMinAgeByProduct, getAgeErrorMessage, getFinalAgeErrorMessage, validateFinalAgeLimit } from '@/constants'
 
 export const dpsProfileForm = object({
 	cpf: pipe(
@@ -49,6 +49,7 @@ export const dpsProfileForm = object({
 				const dayDiff = today.getDate() - birthDate.getDate();
 				
 				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				// Usar idade mínima padrão de 18 para dpsProfileForm (sem contexto de produto)
 				return actualAge >= 18 && actualAge <= 80;
 			},
 			'Idade deve estar entre 18 e 80 anos.'
@@ -99,8 +100,9 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, 
 				const dayDiff = today.getDate() - birthDate.getDate();
 				
 				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				const minAge = productName ? getMinAgeByProduct(productName) : DPS_AGE_LIMITS.MIN_AGE;
 				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-				return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge;
+				return actualAge >= minAge && actualAge <= maxAge;
 			},
 			productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional')
 		),
@@ -110,18 +112,8 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, 
 				if (deadlineMonths === null || deadlineMonths <= 0) return true;
 				if (!v || !(v instanceof Date)) return false;
 				
-				const today = new Date();
-				const birthDate = new Date(v);
-				const age = today.getFullYear() - birthDate.getFullYear();
-				const monthDiff = today.getMonth() - birthDate.getMonth();
-				const dayDiff = today.getDate() - birthDate.getDate();
-				
-				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-				const prazosInYears = deadlineMonths / 12;
-				const finalAge = actualAge + prazosInYears;
-				
-				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-				return finalAge <= maxAge;
+				const currentProductName = productName || 'Habitacional';
+				return validateFinalAgeLimit(currentProductName, v, deadlineMonths);
 			},
 			productName ? getFinalAgeErrorMessage(productName, 'coparticipante') : getFinalAgeErrorMessage('Habitacional', 'coparticipante')
 		)
@@ -175,8 +167,9 @@ export const createDpsProfileFormWithParticipants = (participantsNumber?: number
 			const actualAge =
 				monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
 
+			const minAge = productName ? getMinAgeByProduct(productName) : DPS_AGE_LIMITS.MIN_AGE;
 			const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-			return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge
+			return actualAge >= minAge && actualAge <= maxAge
 		}, productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional'))
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),

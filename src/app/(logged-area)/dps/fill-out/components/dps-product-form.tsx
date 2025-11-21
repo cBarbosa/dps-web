@@ -11,7 +11,7 @@ import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import useAlertDialog from '@/hooks/use-alert-dialog'
-import { getMaxAgeByProduct, getFinalAgeErrorMessage } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit } from '@/constants'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -30,7 +30,7 @@ export const dpsProductForm = object({
 		string(),
 		nonEmpty('Campo obrigatório.'),
 		custom(
-			v => checkCapitalValue(v as string),
+			v => checkCapitalValue(v as string), // Validação básica, validação completa no schema dinâmico
 			'Capital máximo R$ 10.000.000,00'
 		)
 	),
@@ -38,7 +38,7 @@ export const dpsProductForm = object({
 		string(),
 		nonEmpty('Campo obrigatório.'),
 		custom(
-			v => checkCapitalValue(v as string),
+			v => checkCapitalValue(v as string), // Validação básica, validação completa no schema dinâmico
 			'Capital máximo R$ 10.000.000,00'
 		)
 	),
@@ -98,6 +98,13 @@ const DpsProductForm = ({
 		defaultValue: ""
 	});
 	
+	// Monitora o produto selecionado
+	const currentProduct = useWatch({
+		control,
+		name: "product.product",
+		defaultValue: ""
+	});
+	
 	// Modal de alerta para idade inválida
 	const alertDialog = useAlertDialog({
 		initialContent: {
@@ -130,15 +137,18 @@ const DpsProductForm = ({
 		const dfiNumeric = convertCapitalValue(dfiValue) || 0;
 		const mipNumeric = convertCapitalValue(mipValue) || 0;
 		
-		// Valor máximo permitido (10.000.000,00)
-		const maxValue = 10_000_000;
+		// Obter limite máximo baseado no produto e idade
+		const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
+		const maxValue = productName && proponentAge !== null 
+			? getMaxCapitalByProduct(productName, proponentAge)
+			: 10_000_000; // Fallback
 		
 		// DFI nunca pode ser menor que MIP
 		if (dfiNumeric < mipNumeric) {
 			return 'Capital DFI deve ser maior que o Capital MIP';
 		}
 		
-		// Se MIP está no teto máximo (10.000.000,00), DFI pode ser igual ao MIP
+		// Se MIP está no teto máximo, DFI pode ser igual ao MIP
 		if (mipNumeric === maxValue) {
 			// Neste caso, DFI pode ser igual ou maior que MIP (dentro do limite máximo)
 			return undefined;
@@ -299,6 +309,21 @@ const DpsProductForm = ({
 					defaultValue=""
 					name="product.mip"
 					render={({ field: { onChange, onBlur, value, ref } }) => {
+						// Validação adicional de capital baseada no produto e idade
+						let capitalError: string | undefined = undefined;
+						if (!disabled && value) {
+							const converted = convertCapitalValue(value);
+							if (converted !== null) {
+								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
+								if (productName && proponentAge !== null) {
+									const validation = validateCapitalLimit(productName, converted, proponentAge);
+									if (!validation.valid && validation.message) {
+										capitalError = validation.message;
+									}
+								}
+							}
+						}
+						
 						return (
 							<label>
 								<div className="text-gray-500 flex items-center gap-2">
@@ -322,7 +347,7 @@ const DpsProductForm = ({
 									beforeMaskedStateChange={maskToBrlCurrency}
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
-										!disabled && errors?.mip && 'border-red-500 focus-visible:border-red-500',
+										!disabled && (errors?.mip || capitalError) && 'border-red-500 focus-visible:border-red-500',
 										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
 									autoComplete="mip"
@@ -346,7 +371,7 @@ const DpsProductForm = ({
 								/>
 								{!disabled && (
 									<div className="text-xs text-red-500">
-										{errors?.mip?.message}
+										{capitalError || errors?.mip?.message}
 									</div>
 								)}
 							</label>
@@ -363,6 +388,21 @@ const DpsProductForm = ({
 						const exceedsError = !disabled ? 
 							validateDfiNotExceedMip(value) : 
 							undefined;
+						
+						// Validação adicional de capital baseada no produto e idade
+						let capitalError: string | undefined = undefined;
+						if (!disabled && value) {
+							const converted = convertCapitalValue(value);
+							if (converted !== null) {
+								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
+								if (productName && proponentAge !== null) {
+									const validation = validateCapitalLimit(productName, converted, proponentAge);
+									if (!validation.valid && validation.message) {
+										capitalError = validation.message;
+									}
+								}
+							}
+						}
 						
 						return (
 							<label>
@@ -387,7 +427,7 @@ const DpsProductForm = ({
 									beforeMaskedStateChange={maskToBrlCurrency}
 									className={cn(
 										'w-full px-4 py-6 rounded-lg',
-										!disabled && (errors?.dfi || exceedsError) && 'border-red-500 focus-visible:border-red-500',
+										!disabled && (errors?.dfi || exceedsError || capitalError) && 'border-red-500 focus-visible:border-red-500',
 										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
 									)}
 									autoComplete="dfi"
@@ -404,7 +444,7 @@ const DpsProductForm = ({
 								/>
 								{!disabled && (
 									<div className="text-xs text-red-500">
-										{exceedsError || errors?.dfi?.message}
+										{capitalError || exceedsError || errors?.dfi?.message}
 									</div>
 								)}
 							</label>
@@ -676,9 +716,14 @@ export function convertCapitalValue(value: string) {
 	return null
 }
 
-function checkCapitalValue(value: string) {
+function checkCapitalValue(value: string, productName?: string, age?: number) {
 	const converted = convertCapitalValue(value)
 	if (converted != null) {
+		if (productName) {
+			const maxCapital = getMaxCapitalByProduct(productName, age);
+			return converted <= maxCapital;
+		}
+		// Fallback para compatibilidade
 		return converted <= 10_000_000
 	}
 	return false
@@ -709,7 +754,7 @@ function checkDfiValue(dfiValue: string, mipValue: string) {
 }
 
 // Função para criar schema com validação simplificada
-export const createDpsProductFormWithAge = (proponentAge: number | null, productName?: string) => object({
+export const createDpsProductFormWithAge = (proponentAge: number | null, productName?: string, birthDate?: Date) => object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
 	deadline: pipe(
 		string(), 
@@ -723,17 +768,13 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 		),
 		custom(
 			v => {
-				// Validação da idade final apenas se a idade do proponente estiver disponível
-				if (proponentAge === null) return true;
+				// Validação da idade final apenas se a data de nascimento e produto estiverem disponíveis
+				if (!birthDate || !productName) return true;
 				
 				const numValue = parseInt(v as string, 10);
 				if (isNaN(numValue)) return false;
 				
-				const prazosInYears = numValue / 12; // Converter meses para anos
-				const finalAge = proponentAge + prazosInYears;
-				
-				const maxAge = productName ? getMaxAgeByProduct(productName) : 80;
-				return finalAge <= maxAge;
+				return validateFinalAgeLimit(productName, birthDate, numValue);
 			},
 			productName ? getFinalAgeErrorMessage(productName, 'proponente') : getFinalAgeErrorMessage('Habitacional', 'proponente')
 		)
@@ -742,16 +783,40 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 		string(),
 		nonEmpty('Campo obrigatório.'),
 		custom(
-			v => checkCapitalValue(v as string),
-			'Capital máximo R$ 10.000.000,00'
+			v => {
+				const converted = convertCapitalValue(v as string);
+				if (converted === null) return false;
+				
+				if (productName) {
+					const validation = validateCapitalLimit(productName, converted, proponentAge || undefined);
+					return validation.valid;
+				}
+				// Fallback para compatibilidade
+				return converted <= 10_000_000;
+			},
+			productName && proponentAge !== null 
+				? getCapitalErrorMessage(productName, proponentAge) 
+				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),
 	dfi: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
 		custom(
-			v => checkCapitalValue(v as string),
-			'Capital máximo R$ 10.000.000,00'
+			v => {
+				const converted = convertCapitalValue(v as string);
+				if (converted === null) return false;
+				
+				if (productName) {
+					const validation = validateCapitalLimit(productName, converted, proponentAge || undefined);
+					return validation.valid;
+				}
+				// Fallback para compatibilidade
+				return converted <= 10_000_000;
+			},
+			productName && proponentAge !== null 
+				? getCapitalErrorMessage(productName, proponentAge) 
+				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),
 	propertyType: pipe(string(), nonEmpty('Campo obrigatório.'))
