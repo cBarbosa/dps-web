@@ -54,7 +54,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit } from '@/constants'
 
 // Simple toast implementation
 const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
@@ -129,10 +129,10 @@ const useToast = () => {
 };
 
 // Função para criar schema dinâmico baseado na idade, número de participantes e produto
-const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number, productName?: string) => object({
+const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number, productName?: string, birthDate?: Date) => object({
 	operation: dpsOperationForm,
 	profile: createDpsProfileFormWithParticipants(participantsNumber, productName),
-	product: createDpsProductFormWithAge(proponentAge, productName),
+	product: createDpsProductFormWithAge(proponentAge, productName, birthDate),
 	address: dpsAddressForm,
 })
 
@@ -264,7 +264,7 @@ const DpsInitialForm = ({
 	const [isLastParticipant, setIsLastParticipant] = useState<boolean>(false);
 
 	// Estado para o schema dinâmico baseado na idade e número de participantes
-	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null, undefined));
+	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null, undefined, undefined, undefined));
 
 	// Memoizar o resolver para que seja recriado quando o schema mudar
 	const currentResolver = useMemo(() => {
@@ -367,7 +367,8 @@ const DpsInitialForm = ({
 	useEffect(() => {
 		const participantsNum = parseInt(participantsNumber, 10) || undefined;
 		const currentProductName = getProductName(watchProduct);
-		const newSchema = createDynamicSchema(proponentAge, participantsNum, currentProductName);
+		const birthDate = watchBirthdate instanceof Date ? watchBirthdate : undefined;
+		const newSchema = createDynamicSchema(proponentAge, participantsNum, currentProductName, birthDate);
 		setCurrentSchema(newSchema);
 		
 		// Forçar revalidação do campo prazo quando a idade ou produto mudar
@@ -384,7 +385,7 @@ const DpsInitialForm = ({
 				trigger('profile.participationPercentage');
 			}, 0);
 		}
-	}, [proponentAge, participantsNumber, watchProduct, trigger, memoizedGetValues, getProductName]);
+	}, [proponentAge, participantsNumber, watchProduct, watchBirthdate, trigger, memoizedGetValues, getProductName]);
 
 	// useEffect para atualizar as opções de prazo - agora não filtra por idade
 	useEffect(() => {
@@ -667,21 +668,42 @@ const DpsInitialForm = ({
 
 	// Função utilitária para validar idade + prazo
 	const validateAgeWithDeadline = (birthdate: Date, deadlineMonths: number, participantType: string, productName?: string): { valid: boolean; message?: string } => {
-		const today = new Date();
-		const age = today.getFullYear() - birthdate.getFullYear();
-		const monthDiff = today.getMonth() - birthdate.getMonth();
-		const dayDiff = today.getDate() - birthdate.getDate();
+		if (!productName) {
+			// Fallback para compatibilidade
+			const today = new Date();
+			const age = today.getFullYear() - birthdate.getFullYear();
+			const monthDiff = today.getMonth() - birthdate.getMonth();
+			const dayDiff = today.getDate() - birthdate.getDate();
+			
+			const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+			const prazosInYears = deadlineMonths / 12;
+			const finalAge = actualAge + prazosInYears;
+			
+			if (finalAge > 80) {
+				return {
+					valid: false,
+					message: `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 80 anos ao fim da operação.`
+				};
+			}
+			return { valid: true };
+		}
 		
-		const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-		const prazosInYears = deadlineMonths / 12;
-		const finalAge = actualAge + prazosInYears;
+		// Usar a nova validação com meses e dias
+		const isValid = validateFinalAgeLimit(productName, birthdate, deadlineMonths);
 		
-		const maxAge = productName ? getMaxAgeByProduct(productName) : 80;
-		
-		if (finalAge > maxAge) {
+		if (!isValid) {
+			// Calcular idade final aproximada para mensagem
+			const today = new Date();
+			const age = today.getFullYear() - birthdate.getFullYear();
+			const monthDiff = today.getMonth() - birthdate.getMonth();
+			const dayDiff = today.getDate() - birthdate.getDate();
+			const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+			const prazosInYears = deadlineMonths / 12;
+			const finalAge = actualAge + prazosInYears;
+			
 			return {
 				valid: false,
-				message: productName ? getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge) : `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder ${maxAge} anos ao fim da operação.`
+				message: getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge)
 			};
 		}
 		
