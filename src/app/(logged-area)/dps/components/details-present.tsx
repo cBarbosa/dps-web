@@ -1253,6 +1253,7 @@ const lastSituation: number | undefined =
 					userRole={role}
 					requireUpload={proposalData.uploadDFI || proposalSituation?.id === 10}
 					dfiStatus={proposalData.dfiStatus?.id}
+					proposalHistory={proposalData.history ?? []}
 					onConfirm={refetchProposalData}
 				/>
 			)}
