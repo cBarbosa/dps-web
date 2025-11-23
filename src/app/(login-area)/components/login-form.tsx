@@ -14,6 +14,11 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import DialogAlertComp from '@/components/ui/alert-dialog-comp'
+import { useSession } from 'next-auth/react'
+import { SalesChannelModal } from '@/components/sales-channel-modal'
+import { SalesChannel } from '@/types/sales-channel'
+import { changeSalesChannel } from '../actions'
+import { signOut } from 'next-auth/react'
 
 const loginSchema = object({
 	email: pipe(
@@ -50,13 +55,73 @@ export default function LoginForm() {
 	})
 
 	const [isLoading, setIsLoading] = useState(false)
+	const [showChannelModal, setShowChannelModal] = useState(false)
+	const [channels, setChannels] = useState<SalesChannel[]>([])
+	const [currentChannel, setCurrentChannel] = useState<SalesChannel | null>(null)
+	const [hasProcessedLogin, setHasProcessedLogin] = useState(false)
+	const { data: session, update } = useSession()
 
 	useEffect(() => {
 		router.refresh()
 	}, [router])
 
+	// Verificar canais após login bem-sucedido
+	useEffect(() => {
+		// Evitar processar múltiplas vezes
+		if (hasProcessedLogin) {
+			return
+		}
+
+		const sessionWithToken = session as any
+		if (sessionWithToken?.accessToken) {
+			const sessionChannels = sessionWithToken.channels || []
+			const sessionLastChannel = sessionWithToken.lastChannel || null
+
+			// Lógica: 
+			// - Se channels tem itens → múltiplos canais (lastChannel + channels)
+			// - Se channels está vazio mas lastChannel existe → apenas 1 canal
+			// - Se channels está vazio e lastChannel não existe → sem canais
+			if (sessionChannels.length > 0) {
+				// Múltiplos canais: lastChannel + channels
+				// Combinar lastChannel com channels para mostrar todos
+				const allChannels = sessionLastChannel 
+					? [sessionLastChannel, ...sessionChannels.filter((c: SalesChannel) => c.uid !== sessionLastChannel.uid)]
+					: sessionChannels
+				
+				setChannels(allChannels)
+				setCurrentChannel(sessionLastChannel)
+				setShowChannelModal(true)
+				setHasProcessedLogin(true)
+				setIsLoading(false)
+			} else if (sessionLastChannel) {
+				// Apenas um canal (channels vazio mas lastChannel existe)
+				// Redirecionar direto
+				setHasProcessedLogin(true)
+				setIsLoading(false)
+				const redirectPath = params.get('callbackUrl') || '/dashboard'
+				if (redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('/logout') && redirectPath !== '/') {
+					router.push(redirectPath)
+				} else {
+					router.push('/dashboard')
+				}
+			} else {
+				// Sem canais
+				setHasProcessedLogin(true)
+				setIsLoading(false)
+				setDialogState({
+					open: true,
+					title: 'Nenhum canal disponível',
+					message: 'Você não tem acesso a nenhum canal de venda. Entre em contato com o administrador.',
+				})
+				signOut({ redirect: false })
+			}
+		}
+	}, [session, router, params, hasProcessedLogin])
+
 	async function onSubmit(v: LoginSchema) {
 		setIsLoading(true)
+		setHasProcessedLogin(false) // Resetar flag ao fazer novo login
+		setShowChannelModal(false) // Garantir que modal está fechado
 
 		const cbParam = params.get('callbackUrl') || '/dashboard'
 
@@ -100,27 +165,57 @@ export default function LoginForm() {
 			return
 		}
 
-		// Determina destino final
-		let redirectPath = params.get('callbackUrl') || ''
-		if (!redirectPath) {
-			const url = result.url
-			if (url && url !== 'null' && url !== 'undefined') {
-				try {
-					const u = new URL(url, window.location.origin)
-					redirectPath = u.origin === window.location.origin ? (u.pathname + u.search) : '/dashboard'
-				} catch {
-					redirectPath = '/dashboard'
+		// Não redirecionar aqui - deixar o useEffect processar os canais
+		// O useEffect vai verificar se há múltiplos canais e mostrar o modal ou redirecionar
+	}
+
+	async function handleSelectChannel(channelUid: string) {
+		const sessionWithToken = session as any
+		if (!sessionWithToken?.accessToken) {
+			setDialogState({
+				open: true,
+				title: 'Erro',
+				message: 'Sessão não encontrada. Por favor, faça login novamente.',
+			})
+			return
+		}
+
+		try {
+			const result = await changeSalesChannel(sessionWithToken.accessToken, channelUid)
+
+			if (result?.success && result.data) {
+				// Atualizar sessão com os novos dados retornados pelo backend
+				// Isso inclui o novo accessToken, expires, role, channels e lastChannel
+				await update({
+					accessToken: result.data.accessToken,
+					expires: result.data.expires,
+					role: result.data.role,
+					channels: result.data.userData.channels || [],
+					lastChannel: result.data.userData.lastChannel || null,
+				})
+				
+				// Redirecionar
+				const redirectPath = params.get('callbackUrl') || '/dashboard'
+				if (redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('/logout') && redirectPath !== '/') {
+					router.push(redirectPath)
+				} else {
+					router.push('/dashboard')
 				}
 			} else {
-				redirectPath = '/dashboard'
+				setDialogState({
+					open: true,
+					title: 'Erro ao trocar canal',
+					message: result?.message || 'Não foi possível trocar o canal. Tente novamente.',
+				})
 			}
+		} catch (error) {
+			console.error('Erro ao trocar canal:', error)
+			setDialogState({
+				open: true,
+				title: 'Erro ao trocar canal',
+				message: 'Ocorreu um erro ao trocar o canal. Tente novamente.',
+			})
 		}
-
-		if (!redirectPath.startsWith('/') || redirectPath.startsWith('/logout') || redirectPath === '/') {
-			redirectPath = '/dashboard'
-		}
-
-		router.push(redirectPath)
 	}
 
 	return (
@@ -238,6 +333,18 @@ export default function LoginForm() {
 			>
 				{dialogState.message}
 			</DialogAlertComp>
+
+			<SalesChannelModal
+				open={showChannelModal}
+				onOpenChange={setShowChannelModal}
+				channels={channels}
+				currentChannel={currentChannel}
+				onSelectChannel={handleSelectChannel}
+				isLoading={isLoading}
+				title="Selecione o Canal de Venda"
+				description="Você tem acesso a múltiplos canais. Escolha qual deseja acessar:"
+				required={true}
+			/>
 		</div>
 	)
 }
