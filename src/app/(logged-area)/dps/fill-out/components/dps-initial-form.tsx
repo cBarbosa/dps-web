@@ -55,6 +55,8 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit } from '@/constants'
+import { useProducts } from '@/contexts/products-context'
+import { validateFinalAgeLimitHybrid, getFinalAgeWithYearsErrorMessageConfig } from '@/utils/product-validation'
 
 // Simple toast implementation
 const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
@@ -129,10 +131,10 @@ const useToast = () => {
 };
 
 // Função para criar schema dinâmico baseado na idade, número de participantes e produto
-const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number, productName?: string, birthDate?: Date) => object({
+const createDynamicSchema = (proponentAge: number | null, participantsNumber?: number, productName?: string, birthDate?: Date, products: any[] = []) => object({
 	operation: dpsOperationForm,
-	profile: createDpsProfileFormWithParticipants(participantsNumber, productName),
-	product: createDpsProductFormWithAge(proponentAge, productName, birthDate),
+	profile: createDpsProfileFormWithParticipants(participantsNumber, productName, products),
+	product: createDpsProductFormWithAge(proponentAge, productName, birthDate, products),
 	address: dpsAddressForm,
 })
 
@@ -263,8 +265,11 @@ const DpsInitialForm = ({
 	// Estado para controlar se é o último participante sendo cadastrado
 	const [isLastParticipant, setIsLastParticipant] = useState<boolean>(false);
 
+	// Obter produtos do contexto
+	const { products } = useProducts();
+	
 	// Estado para o schema dinâmico baseado na idade e número de participantes
-	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null, undefined, undefined, undefined));
+	const [currentSchema, setCurrentSchema] = useState(() => createDynamicSchema(null, undefined, undefined, undefined, products));
 
 	// Memoizar o resolver para que seja recriado quando o schema mudar
 	const currentResolver = useMemo(() => {
@@ -368,7 +373,7 @@ const DpsInitialForm = ({
 		const participantsNum = parseInt(participantsNumber, 10) || undefined;
 		const currentProductName = getProductName(watchProduct);
 		const birthDate = watchBirthdate instanceof Date ? watchBirthdate : undefined;
-		const newSchema = createDynamicSchema(proponentAge, participantsNum, currentProductName, birthDate);
+		const newSchema = createDynamicSchema(proponentAge, participantsNum, currentProductName, birthDate, products);
 		setCurrentSchema(newSchema);
 		
 		// Forçar revalidação do campo prazo quando a idade ou produto mudar
@@ -688,8 +693,8 @@ const DpsInitialForm = ({
 			return { valid: true };
 		}
 		
-		// Usar a nova validação com meses e dias
-		const isValid = validateFinalAgeLimit(productName, birthdate, deadlineMonths);
+		// Usar a nova validação com meses e dias (híbrida com fallback)
+		const isValid = validateFinalAgeLimitHybrid(products, productName, birthdate, deadlineMonths);
 		
 		if (!isValid) {
 			// Calcular idade final aproximada para mensagem
@@ -701,9 +706,25 @@ const DpsInitialForm = ({
 			const prazosInYears = deadlineMonths / 12;
 			const finalAge = actualAge + prazosInYears;
 			
+			// Tentar usar mensagem da configuração, senão usa fallback
+			let errorMessage: string;
+			if (products.length > 0) {
+				const config = products.find(p => 
+					p.name === productName || 
+					p.configuration?.names.some(n => n.toLowerCase() === productName.toLowerCase())
+				)?.configuration;
+				if (config) {
+					errorMessage = getFinalAgeWithYearsErrorMessageConfig(products, productName, participantType, finalAge);
+				} else {
+					errorMessage = getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge);
+				}
+			} else {
+				errorMessage = getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge);
+			}
+			
 			return {
 				valid: false,
-				message: getFinalAgeWithYearsErrorMessage(productName, participantType, finalAge)
+				message: errorMessage
 			};
 		}
 		
