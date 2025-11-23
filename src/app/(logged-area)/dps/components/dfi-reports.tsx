@@ -39,6 +39,7 @@ export default function DfiReports({
 	userRole,
 	dfiStatus,
 	requireUpload,
+	proposalHistory,
 	onConfirm: onConfirmProp,
 }: {
 	token: string
@@ -46,6 +47,11 @@ export default function DfiReports({
 	userRole?: string
 	dfiStatus?: number
 	requireUpload?: boolean
+	proposalHistory?: Array<{
+		description: string;
+		statusId: number;
+		created: string;
+	}>
 	onConfirm?: () => void
 }) {
 	const [data, setData] = React.useState<DocumentType[]>([])
@@ -340,12 +346,24 @@ export default function DfiReports({
 		(userRole.toLowerCase() === 'subscritor' ||
 			userRole.toLowerCase() === 'admin')
 
+	// Verifica se a proposta já foi assinada (status 21 no histórico)
+	const hasBeenSigned = proposalHistory?.some(h => h.statusId === 21) ?? false
+
+	const isVendedor = userRole?.toLowerCase() === 'vendedor' || userRole?.toLowerCase() === 'vendedor-sup'
+	const isAdminOrSubscritor = 
+		userRole?.toLowerCase() === 'admin' ||
+		userRole?.toLowerCase() === 'subscritor' ||
+		userRole?.toLowerCase() === 'subscritor-sup'
+
 	const showUploadReport =
 		userRole &&
 		requireUpload &&
 		(userRole.toLowerCase() === 'vendedor' ||
 			userRole.toLowerCase() === 'vendedor-sup' ||
-			userRole.toLowerCase() === 'admin')
+			userRole.toLowerCase() === 'admin') &&
+		// Vendedores só podem incluir laudo DFI se a proposta já foi assinada (status 21 no histórico)
+		// Admin, subscritor e subscritor-sup não precisam dessa verificação
+		(isAdminOrSubscritor || isVendedor)
 
 	return (
 		<div className="p-5 w-full max-w-7xl mx-auto bg-white rounded-3xl">
@@ -387,14 +405,14 @@ export default function DfiReports({
 							onSubmit={reloadReports}
 							type="DFI"
 						/>
-						<Button
+						{hasBeenSigned && (<Button
 							size="sm"
 							onClick={finishReportUpload}
 							disabled={data?.length <= 0 || isFinishing}
 						>
 							<SendIcon size={14} className="mr-2" />
 							Concluir
-						</Button>
+						</Button>)}
 					</div>
 				)}
 			</div>
