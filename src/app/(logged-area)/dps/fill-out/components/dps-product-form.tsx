@@ -12,6 +12,8 @@ import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import useAlertDialog from '@/hooks/use-alert-dialog'
 import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit } from '@/constants'
+import { useProducts } from '@/contexts/products-context'
+import { validateFinalAgeLimitHybrid, validateCapitalLimitHybrid, getFinalAgeErrorMessageHybrid, getCapitalErrorMessageHybrid } from '@/utils/product-validation'
 
 export const dpsProductForm = object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -80,6 +82,9 @@ const DpsProductForm = ({
 	isLastParticipant?: boolean
 	setValue?: (name: string, value: any) => void
 }) => {
+	// Obter produtos do contexto
+	const { products } = useProducts();
+	
 	// Ignoramos erros quando em modo somente leitura
 	const errors = disabled ? {} : formState.errors?.product;
 	const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
@@ -316,7 +321,7 @@ const DpsProductForm = ({
 							if (converted !== null) {
 								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
 								if (productName && proponentAge !== null) {
-									const validation = validateCapitalLimit(productName, converted, proponentAge);
+									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge);
 									if (!validation.valid && validation.message) {
 										capitalError = validation.message;
 									}
@@ -396,7 +401,7 @@ const DpsProductForm = ({
 							if (converted !== null) {
 								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
 								if (productName && proponentAge !== null) {
-									const validation = validateCapitalLimit(productName, converted, proponentAge);
+									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge);
 									if (!validation.valid && validation.message) {
 										capitalError = validation.message;
 									}
@@ -754,7 +759,7 @@ function checkDfiValue(dfiValue: string, mipValue: string) {
 }
 
 // Função para criar schema com validação simplificada
-export const createDpsProductFormWithAge = (proponentAge: number | null, productName?: string, birthDate?: Date) => object({
+export const createDpsProductFormWithAge = (proponentAge: number | null, productName?: string, birthDate?: Date, products: any[] = []) => object({
 	product: pipe(string(), nonEmpty('Campo obrigatório.')),
 	deadline: pipe(
 		string(), 
@@ -766,7 +771,7 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 			},
 			'Prazo deve ser entre 1 e 420 meses.'
 		),
-		custom(
+			custom(
 			v => {
 				// Validação da idade final apenas se a data de nascimento e produto estiverem disponíveis
 				if (!birthDate || !productName) return true;
@@ -774,9 +779,9 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 				const numValue = parseInt(v as string, 10);
 				if (isNaN(numValue)) return false;
 				
-				return validateFinalAgeLimit(productName, birthDate, numValue);
+				return validateFinalAgeLimitHybrid(products, productName, birthDate, numValue);
 			},
-			productName ? getFinalAgeErrorMessage(productName, 'proponente') : getFinalAgeErrorMessage('Habitacional', 'proponente')
+			productName ? getFinalAgeErrorMessageHybrid(products, productName, 'proponente') : getFinalAgeErrorMessageHybrid(products, 'Habitacional', 'proponente')
 		)
 	),
 	mip: pipe(
@@ -788,14 +793,14 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 				if (converted === null) return false;
 				
 				if (productName) {
-					const validation = validateCapitalLimit(productName, converted, proponentAge || undefined);
+					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined);
 					return validation.valid;
 				}
 				// Fallback para compatibilidade
 				return converted <= 10_000_000;
 			},
 			productName && proponentAge !== null 
-				? getCapitalErrorMessage(productName, proponentAge) 
+				? getCapitalErrorMessageHybrid(products, productName, proponentAge) 
 				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),
@@ -808,14 +813,14 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 				if (converted === null) return false;
 				
 				if (productName) {
-					const validation = validateCapitalLimit(productName, converted, proponentAge || undefined);
+					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined);
 					return validation.valid;
 				}
 				// Fallback para compatibilidade
 				return converted <= 10_000_000;
 			},
 			productName && proponentAge !== null 
-				? getCapitalErrorMessage(productName, proponentAge) 
+				? getCapitalErrorMessageHybrid(products, productName, proponentAge) 
 				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),
