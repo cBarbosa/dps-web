@@ -2,6 +2,7 @@
 
 import axios from '../../../lib/axios'
 import { redirect } from 'next/navigation'
+import { Product, ProductListResponse } from '@/types/product'
 
 export type ProposalByUid = {
 	uid: string;
@@ -545,7 +546,7 @@ export async function getTipoImovelOptions(
 
 export async function getProductList(
   token: string
-): Promise<{ success: boolean; message: string; data: Array<{ uid: string; name: string; description?: string }> } | null> {
+): Promise<ProductListResponse | null> {
   try {
     const response = await axios.get('v1/product/all', {
       headers: { Authorization: `Bearer ${token}` },
@@ -558,6 +559,9 @@ export async function getProductList(
   }
   return null
 }
+
+// Exportar tipos para uso em outros arquivos
+export type { Product, ProductConfiguration, ProductListResponse } from '@/types/product'
 
 export async function getProponentDataByCpf(cpf: string): Promise<{
 	detalhes: {
