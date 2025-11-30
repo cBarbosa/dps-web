@@ -4,14 +4,14 @@ import { Input } from '@/components/ui/input'
 import SelectComp from '@/components/ui/select-comp'
 import ShareLine from '@/components/ui/share-line'
 import { cn, maskToBrlCurrency, maskToDigitsAndSuffix } from '@/lib/utils'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Control, Controller, FormState, useWatch, UseFormSetError, UseFormClearErrors, Path } from 'react-hook-form'
 import { custom, InferInput, nonEmpty, object, pipe, string } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import useAlertDialog from '@/hooks/use-alert-dialog'
-import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit, isFhePoupexProduct } from '@/constants'
 import { useProducts } from '@/contexts/products-context'
 import { validateFinalAgeLimitHybrid, validateCapitalLimitHybrid, getFinalAgeErrorMessageHybrid, getCapitalErrorMessageHybrid } from '@/utils/product-validation'
 
@@ -109,6 +109,24 @@ const DpsProductForm = ({
 		name: "product.product",
 		defaultValue: ""
 	});
+
+	// Filtrar opções de tipo de imóvel baseado no produto selecionado
+	const filteredTipoImovelOptions = useMemo(() => {
+		if (!currentProduct) {
+			return tipoImovelOptions;
+		}
+
+		// Obter o nome do produto a partir do UID
+		const productName = productOptions.find(p => p.value === currentProduct)?.label || '';
+		
+		// Se for FHE Poupex, mostrar apenas Imóvel Residencial (filtrado pela descrição)
+		if (isFhePoupexProduct(productName)) {
+			return tipoImovelOptions.filter(option => option.label === 'Imóvel Residencial');
+		}
+
+		// Para outros produtos, mostrar todas as opções
+		return tipoImovelOptions;
+	}, [currentProduct, productOptions, tipoImovelOptions]);
 	
 	// Modal de alerta para idade inválida
 	const alertDialog = useAlertDialog({
@@ -675,7 +693,7 @@ const DpsProductForm = ({
 								</div>
 								<SelectComp
 									placeholder="Tipo de Imóvel"
-									options={tipoImovelOptions}
+									options={filteredTipoImovelOptions}
 									triggerClassName={cn(
 										"p-4 h-12 rounded-lg",
 										!disabled && highlightMissing && !value && 'border-orange-400 bg-orange-50'
