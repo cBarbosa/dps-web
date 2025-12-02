@@ -25,7 +25,9 @@ import validateCpf from 'validar-cpf'
 import { RecursivePartial } from '@/lib/utils'
 import { useState } from 'react'
 import { Loader2Icon } from 'lucide-react'
-import { DPS_AGE_LIMITS, getMaxAgeByProduct, getAgeErrorMessage, getFinalAgeErrorMessage } from '@/constants'
+import { DPS_AGE_LIMITS, getMaxAgeByProduct, getMinAgeByProduct, getAgeErrorMessage, getFinalAgeErrorMessage, validateFinalAgeLimit } from '@/constants'
+import { validateFinalAgeLimitHybrid, getFinalAgeErrorMessageHybrid, getMinAgeByProductConfig, getMaxAgeByProductConfig, getAgeErrorMessageConfig } from '@/utils/product-validation'
+import { Product } from '@/types/product'
 
 export const dpsProfileForm = object({
 	cpf: pipe(
@@ -49,6 +51,7 @@ export const dpsProfileForm = object({
 				const dayDiff = today.getDate() - birthDate.getDate();
 				
 				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+				// Usar idade mínima padrão de 18 para dpsProfileForm (sem contexto de produto)
 				return actualAge >= 18 && actualAge <= 80;
 			},
 			'Idade deve estar entre 18 e 80 anos.'
@@ -77,7 +80,7 @@ export const dpsProfileForm = object({
 })
 
 // Função para criar schema de perfil para coparticipantes com validação de idade + prazo
-export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, productName?: string) => object({
+export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, productName?: string, products: Product[] = []) => object({
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -99,10 +102,22 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, 
 				const dayDiff = today.getDate() - birthDate.getDate();
 				
 				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-				return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge;
+				let minAge: number;
+				let maxAge: number;
+				if (productName && products.length > 0) {
+					const configMinAge = getMinAgeByProductConfig(products, productName);
+					const configMaxAge = getMaxAgeByProductConfig(products, productName);
+					minAge = configMinAge ?? getMinAgeByProduct(productName);
+					maxAge = configMaxAge ?? getMaxAgeByProduct(productName);
+				} else {
+					minAge = productName ? getMinAgeByProduct(productName) : DPS_AGE_LIMITS.MIN_AGE;
+					maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
+				}
+				return actualAge >= minAge && actualAge <= maxAge;
 			},
-			productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional')
+			productName && products.length > 0 
+				? getAgeErrorMessageConfig(products, productName) 
+				: (productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional'))
 		),
 		custom(
 			v => {
@@ -110,20 +125,12 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, 
 				if (deadlineMonths === null || deadlineMonths <= 0) return true;
 				if (!v || !(v instanceof Date)) return false;
 				
-				const today = new Date();
-				const birthDate = new Date(v);
-				const age = today.getFullYear() - birthDate.getFullYear();
-				const monthDiff = today.getMonth() - birthDate.getMonth();
-				const dayDiff = today.getDate() - birthDate.getDate();
-				
-				const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-				const prazosInYears = deadlineMonths / 12;
-				const finalAge = actualAge + prazosInYears;
-				
-				const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-				return finalAge <= maxAge;
+				const currentProductName = productName || 'Habitacional';
+				return validateFinalAgeLimitHybrid(products, currentProductName, v, deadlineMonths);
 			},
-			productName ? getFinalAgeErrorMessage(productName, 'coparticipante') : getFinalAgeErrorMessage('Habitacional', 'coparticipante')
+			productName && products.length > 0
+				? getFinalAgeErrorMessageHybrid(products, productName, 'coparticipante')
+				: (productName ? getFinalAgeErrorMessage(productName, 'coparticipante') : getFinalAgeErrorMessage('Habitacional', 'coparticipante'))
 		)
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
@@ -149,7 +156,7 @@ export const createDpsProfileFormWithDeadline = (deadlineMonths: number | null, 
 });
 
 // Função para criar schema dinâmico baseado no número de participantes
-export const createDpsProfileFormWithParticipants = (participantsNumber?: number, productName?: string) => object({
+export const createDpsProfileFormWithParticipants = (participantsNumber?: number, productName?: string, products: Product[] = []) => object({
 	cpf: pipe(
 		string(),
 		nonEmpty('Campo obrigatório.'),
@@ -175,9 +182,21 @@ export const createDpsProfileFormWithParticipants = (participantsNumber?: number
 			const actualAge =
 				monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
 
-			const maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
-			return actualAge >= DPS_AGE_LIMITS.MIN_AGE && actualAge <= maxAge
-		}, productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional'))
+			let minAge: number;
+			let maxAge: number;
+			if (productName && products.length > 0) {
+				const configMinAge = getMinAgeByProductConfig(products, productName);
+				const configMaxAge = getMaxAgeByProductConfig(products, productName);
+				minAge = configMinAge ?? getMinAgeByProduct(productName);
+				maxAge = configMaxAge ?? getMaxAgeByProduct(productName);
+			} else {
+				minAge = productName ? getMinAgeByProduct(productName) : DPS_AGE_LIMITS.MIN_AGE;
+				maxAge = productName ? getMaxAgeByProduct(productName) : DPS_AGE_LIMITS.HABITACIONAL_MAX_AGE;
+			}
+			return actualAge >= minAge && actualAge <= maxAge
+		}, productName && products.length > 0 
+			? getAgeErrorMessageConfig(products, productName) 
+			: (productName ? getAgeErrorMessage(productName) : getAgeErrorMessage('Habitacional')))
 	),
 	profession: pipe(string(), nonEmpty('Campo obrigatório.')),
 	email: pipe(
