@@ -10,7 +10,7 @@ import MedReports from '../../components/med-reports'
 import { useSession } from 'next-auth/react'
 import { DpsInitialForm } from './dps-initial-form'
 import { ProposalByUid, signProposal } from '../../actions'
-import { isHomeEquityProduct } from '@/constants'
+import { isFhePoupexProduct, isHomeEquityProduct } from '@/constants'
 
 
 export const diseaseNamesHomeEquity = {
@@ -102,10 +102,10 @@ const DpsForm = ({
 	const params = useParams<{ uid: string }>()
 	const uid = params.uid
 
-	console.log('initialProposalData', initialProposalData)
+	const productTypeDiseaseNames = isHomeEquityProduct(initialProposalData.product.name) || isFhePoupexProduct(initialProposalData.product.name);
 
 	const initialHealthData = initialHealthDataProp
-		? Object.keys(isHomeEquityProduct(initialProposalData.product.name) ? diseaseNamesHomeEquity : diseaseNamesHabitacional).reduce((acc, curr, i) => {
+		? Object.keys(productTypeDiseaseNames ? diseaseNamesHomeEquity : diseaseNamesHabitacional).reduce((acc, curr, i) => {
 				if (initialHealthDataProp[i])
 					return {
 						...acc,
@@ -186,6 +186,7 @@ const DpsForm = ({
 					{}
 				)
 		: []
+
 
 		// Omit<HealthForm, '26'>
 		async function handleHealthSubmit(v: HealthForm | HealthFormHdiHomeEquity) {

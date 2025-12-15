@@ -128,7 +128,9 @@ export default function ExternalDpsForm({
       }), {});
     }
 
-    return Object.keys(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
+    const productTypeDiseaseNames = (initialProposalData.product.name === 'HDI Home Equity' || initialProposalData.product.name === 'FHE Poupex');
+
+    return Object.keys(productTypeDiseaseNames ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
       .filter(key => key !== 'telefoneContato') // Exclude telefoneContato
       .reduce((acc, key) => ({
         ...acc,
@@ -163,10 +165,11 @@ export default function ExternalDpsForm({
   };
   
   const validateForm = () => {
+    const productTypeDiseaseNames = (initialProposalData.product.name === 'HDI Home Equity' || initialProposalData.product.name === 'FHE Poupex');
     const newErrors: Record<string, boolean> = {};
     let hasError = false;
     
-    Object.keys(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional).forEach(key => {
+    Object.keys(productTypeDiseaseNames ? diseaseNamesHomeEquity : diseaseNamesHabitacional).forEach(key => {
       if (key === 'telefoneContato') return; // Skip telefoneContato
       
       if (!formData[key]?.has) {
@@ -193,12 +196,13 @@ export default function ExternalDpsForm({
     setSubmitError(null);
     
     try {
+      const productTypeDiseaseNames = (initialProposalData.product.name === 'HDI Home Equity' || initialProposalData.product.name === 'FHE Poupex');
       // Format data for API - exclude telefoneContato
       const postData = Object.entries(formData)
         .filter(([key]) => key !== 'telefoneContato')
         .map(([key, value]) => ({
           code: key,
-          question: initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity] : diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
+          question: productTypeDiseaseNames ? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity] : diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
           exists: value.has === 'yes',
           created: new Date().toISOString(),
           description: value.description
@@ -384,6 +388,7 @@ export default function ExternalDpsForm({
     );
   }
 
+  const productTypeDiseaseNames = (initialProposalData.product.name === 'HDI Home Equity' || initialProposalData.product.name === 'FHE Poupex');
   // Formulário
   return (
     <div className="p-5">
@@ -399,7 +404,7 @@ export default function ExternalDpsForm({
           </div>
 
           <div className="space-y-8 divide-y">
-            {Object.entries(initialProposalData.product.name === 'HDI Home Equity' ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
+            {Object.entries(productTypeDiseaseNames ? diseaseNamesHomeEquity : diseaseNamesHabitacional)
               .filter(([key]) => key !== 'telefoneContato')
               .map(([key, question]) => (
                 <DiseaseField

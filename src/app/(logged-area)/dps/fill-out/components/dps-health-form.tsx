@@ -5,7 +5,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import { valibotResolver } from '@hookform/resolvers/valibot'
-import { isHomeEquityProduct } from '@/constants'
+import { isFhePoupexProduct, isHomeEquityProduct } from '@/constants'
 
 import {
 	Control,
@@ -175,7 +175,7 @@ const DpsHealthForm = ({
 		watch,
 		formState: { isSubmitting, isSubmitted, errors, ...formState },
 	} = useForm<HealthForm | HealthFormHdiHomeEquity>({
-		resolver: valibotResolver(isHomeEquityProduct(productName) ? healthFormHomeEquity : healthForm),
+		resolver: valibotResolver(isHomeEquityProduct(productName) || isFhePoupexProduct(productName) ? healthFormHomeEquity : healthForm),
 		defaultValues: autocomplete ? initialHealthData ?? undefined : undefined,
 		disabled: submittingForm,
 	})
@@ -186,7 +186,7 @@ const DpsHealthForm = ({
 
 		const postData = Object.entries(v).map(([key, value], i) => ({
 			code: key,
-			question: isHomeEquityProduct(productName)
+			question: isHomeEquityProduct(productName) || isFhePoupexProduct(productName)
 				? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
 				: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional],
 			exists: value.has === 'yes',
@@ -220,6 +220,8 @@ const DpsHealthForm = ({
 		}
 	}
 
+	const productTypeDiseaseNames = isHomeEquityProduct(productName) || isFhePoupexProduct(productName);
+
 	return (
 		<form
 			onSubmit={handleSubmit(onSubmit)}
@@ -231,10 +233,10 @@ const DpsHealthForm = ({
 				específicas abaixo? Se sim, descreva nos campos abaixo.
 			</div>
 			<div className="divide-y">
-			{(Object.keys(isHomeEquityProduct(productName) ? healthFormHomeEquity.entries : healthForm.entries) as (keyof HealthForm)[] | (keyof HealthFormHdiHomeEquity)[]).map(key => (
+			{(Object.keys(productTypeDiseaseNames ? healthFormHomeEquity.entries : healthForm.entries) as (keyof HealthForm)[] | (keyof HealthFormHdiHomeEquity)[]).map(key => (
 					<DiseaseField
 						name={key}
-						label={isHomeEquityProduct(productName)
+						label={productTypeDiseaseNames
 							? diseaseNamesHomeEquity[key as keyof typeof diseaseNamesHomeEquity]
 							: diseaseNamesHabitacional[key as keyof typeof diseaseNamesHabitacional]}
 						control={control}
