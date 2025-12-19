@@ -1683,9 +1683,9 @@ const DpsInitialForm = ({
 			existingTotal += cpPercentage;
 		});
 		
-		// Verificar se o novo percentual excederia 100%
+		// Verificar se o novo percentual excederia 100% (com tolerância de 0,01% para arredondamento)
 		const totalWithNew = existingTotal + newPercentage;
-		if (totalWithNew > 100) {
+		if (totalWithNew > 100.01) {
 			return {
 				valid: false, 
 				message: `O percentual excede o limite. Total: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
@@ -1773,9 +1773,9 @@ const DpsInitialForm = ({
 			existingTotal += cpPercentage;
 		});
 		
-		// Verificar se o novo percentual excederia 100%
+		// Verificar se o novo percentual excederia 100% (com tolerância de 0,01% para arredondamento)
 		const totalWithNew = existingTotal + newPercentage;
-		if (totalWithNew > 100) {
+		if (totalWithNew > 100.01) {
 			return {
 				valid: false, 
 				message: `O percentual excede o limite disponível. Total seria: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
@@ -1792,8 +1792,8 @@ const DpsInitialForm = ({
 		
 		// Se este é o último participante (participantsLeft === 0), verificar se o total fecha em 100%
 		if (participantsLeft === 0 && !editingCoparticipantId) {
-			// Para o último participante, deve completar exatamente 100%
-			if (totalWithNew !== 100) {
+			// Para o último participante, deve completar exatamente 100% (com tolerância de 0,01% para arredondamento)
+			if (Math.abs(totalWithNew - 100) > 0.01) {
 				return {
 					valid: false,
 					message: `O último participante deve completar exatamente 100%. Total atual: ${totalWithNew.toFixed(2).replace('.', ',')}%`,
@@ -1816,8 +1816,8 @@ const DpsInitialForm = ({
 				};
 			}
 			
-			// Redundância para garantir que nunca exceda 100%
-			if (totalWithNew >= 100) {
+			// Redundância para garantir que nunca exceda 100% (com tolerância de 0,01% para arredondamento)
+			if (totalWithNew >= 100.01) {
 				return {
 					valid: false,
 					message: `Não há percentual disponível para os outros ${participantsLeft} participante(s)`,
