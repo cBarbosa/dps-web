@@ -919,6 +919,23 @@ export async function postAttachmentFile(
   return null
 }
 
+export async function postMagHabitacionalAutoApproval(
+  token: string,
+  uid: string
+): Promise<{ success: boolean; message: string; data?: any } | null> {
+  try {
+    const response = await axios.post(`v1/Proposal/${uid}/dps/auto-approve`, null, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (response.data) return response.data
+    throw new Error('Unsuccessful request')
+  } catch (err) {
+    console.log(err)
+    if ((err as any)?.status === 401) redirect('/logout')
+  }
+  return null
+}
+
 export async function postProposalDocumentLinkByUid(
   token: string,
   uid: string,

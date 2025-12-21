@@ -54,6 +54,12 @@ export const DPS_PRODUCTS = {
     MIN_AGE: 16,
     NAMES: ['FHE Poupex', 'FHE/Poupex'],
     TYPE: 'FHE_POUPEX' as const
+  },
+  MAG_HABITACIONAL: {
+    MAX_AGE: 80.4375, // 80 anos + 5 meses + 29 dias ≈ 80.4375 anos
+    MIN_AGE: 18,
+    NAMES: ['MAG Habitacional', 'MAG Habitacional BANESE'],
+    TYPE: 'MAG_HABITACIONAL' as const
   }
 } as const;
 
@@ -62,7 +68,8 @@ export const DPS_FINAL_AGE_LIMITS = {
   HABITACIONAL: { years: 79, months: 11, days: 29 }, // Não pode ter 80 completos
   HOME_EQUITY: { years: 74, months: 11, days: 29 }, // Não pode ter 75 completos
   CONSTRUCASA: { years: 79, months: 11, days: 29 }, // Não pode ter 80 completos
-  FHE_POUPEX: { years: 80, months: 5, days: 29 } // Não pode ter mais de 80 anos e 6 meses
+  FHE_POUPEX: { years: 80, months: 5, days: 29 }, // Não pode ter mais de 80 anos e 6 meses
+  MAG_HABITACIONAL: { years: 80, months: 5, days: 29 } // Não pode ter mais de 80 anos, 5 meses e 29 dias
 } as const;
 
 // DPS Age Limits (mantido para compatibilidade)
@@ -71,7 +78,8 @@ export const DPS_AGE_LIMITS = {
   HABITACIONAL_MAX_AGE: DPS_PRODUCTS.HABITACIONAL.MAX_AGE,
   HOME_EQUITY_MAX_AGE: DPS_PRODUCTS.HOME_EQUITY.MAX_AGE,
   CONSTRUCASA_MAX_AGE: DPS_PRODUCTS.CONSTRUCASA.MAX_AGE,
-  FHE_POUPEX_MAX_AGE: DPS_PRODUCTS.FHE_POUPEX.MAX_AGE
+  FHE_POUPEX_MAX_AGE: DPS_PRODUCTS.FHE_POUPEX.MAX_AGE,
+  MAG_HABITACIONAL_MAX_AGE: DPS_PRODUCTS.MAG_HABITACIONAL.MAX_AGE
 } as const;
 
 // DPS Capital Limits - Limites de capital por produto e idade
@@ -84,11 +92,21 @@ export const DPS_CAPITAL_LIMITS = {
     UNDER_60: 3_000_000, // 16 até <60 anos: até R$ 3.000.000
     OVER_60: 500_000, // ≥60 anos: até R$ 500.000
     ABSOLUTE_MAX: 3_000_000 // Teto absoluto: R$ 3.000.000
+  },
+  MAG_HABITACIONAL: {
+    MIP: 5_000_000, // R$ 5.000.000
+    DFI: 8_000_000  // R$ 8.000.000
   }
 } as const;
 
 // Função utilitária para identificar o tipo de produto
-export const getProductType = (productName: string): 'HABITACIONAL' | 'HOME_EQUITY' | 'CONSTRUCASA' | 'FHE_POUPEX' => {
+export const getProductType = (productName: string): 'HABITACIONAL' | 'HOME_EQUITY' | 'CONSTRUCASA' | 'FHE_POUPEX' | 'MAG_HABITACIONAL' => {
+  const isMagHabitacional = DPS_PRODUCTS.MAG_HABITACIONAL.NAMES.some(name => 
+    productName.toLowerCase().includes(name.toLowerCase())
+  );
+  
+  if (isMagHabitacional) return 'MAG_HABITACIONAL';
+  
   const isFhePoupex = DPS_PRODUCTS.FHE_POUPEX.NAMES.some(name => 
     productName.toLowerCase().includes(name.toLowerCase())
   );
@@ -132,6 +150,19 @@ export const isConstrucasaProduct = (productName: string): boolean => {
 // Função utilitária para verificar se é produto FHE Poupex
 export const isFhePoupexProduct = (productName: string): boolean => {
   return getProductType(productName) === 'FHE_POUPEX';
+};
+
+// Função utilitária para verificar se é produto MAG Habitacional
+export const isMagHabitacionalProduct = (productName: string): boolean => {
+  return getProductType(productName) === 'MAG_HABITACIONAL';
+};
+
+// Função utilitária para determinar tipo de DPS baseado no capital
+export const getDpsTypeByCapital = (productName: string, capital: number): 'simplified' | 'complete' => {
+  if (isMagHabitacionalProduct(productName)) {
+    return capital <= 3_000_000 ? 'simplified' : 'complete';
+  }
+  return 'complete'; // Outros produtos sempre usam DPS completa
 };
 
 // Função utilitária para obter idade mínima baseado no nome do produto
@@ -207,6 +238,8 @@ export const getFinalAgeErrorMessage = (productName: string, participantType: st
   // Mensagem específica baseada no limite
   if (productType === 'FHE_POUPEX') {
     return `A idade final do ${participantType} não pode exceder 80 anos e 6 meses até o fim do contrato.`;
+  } else if (productType === 'MAG_HABITACIONAL') {
+    return `A idade final do ${participantType} não pode exceder 80 anos, 5 meses e 29 dias até o fim do contrato.`;
   } else if (productType === 'HOME_EQUITY') {
     return `A idade final do ${participantType} não pode exceder 75 anos até o fim do contrato.`;
   } else {
@@ -226,6 +259,8 @@ export const getFinalAgeWithYearsErrorMessage = (productName: string, participan
   // Mensagem específica baseada no limite
   if (productType === 'FHE_POUPEX') {
     return `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 80 anos e 6 meses ao fim da operação.`;
+  } else if (productType === 'MAG_HABITACIONAL') {
+    return `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 80 anos, 5 meses e 29 dias ao fim da operação.`;
   } else if (productType === 'HOME_EQUITY') {
     return `A idade final do ${participantType} (${Math.round(finalAge)} anos) não pode exceder 75 anos ao fim da operação.`;
   } else {
@@ -234,8 +269,15 @@ export const getFinalAgeWithYearsErrorMessage = (productName: string, participan
 };
 
 // Função utilitária para obter limite máximo de capital baseado no produto e idade
-export const getMaxCapitalByProduct = (productName: string, age?: number): number => {
+export const getMaxCapitalByProduct = (productName: string, age?: number, type?: 'MIP' | 'DFI'): number => {
   const productType = getProductType(productName);
+  
+  if (productType === 'MAG_HABITACIONAL') {
+    if (type === 'DFI') {
+      return DPS_CAPITAL_LIMITS.MAG_HABITACIONAL.DFI;
+    }
+    return DPS_CAPITAL_LIMITS.MAG_HABITACIONAL.MIP;
+  }
   
   if (productType === 'FHE_POUPEX') {
     if (age === undefined || age === null) {
@@ -258,13 +300,14 @@ export const getMaxCapitalByProduct = (productName: string, age?: number): numbe
 export const validateCapitalLimit = (
   productName: string, 
   capitalValue: number, 
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): { valid: boolean, maxAllowed: number, message?: string } => {
-  const maxAllowed = getMaxCapitalByProduct(productName, age);
+  const maxAllowed = getMaxCapitalByProduct(productName, age, type);
   const valid = capitalValue <= maxAllowed;
   
   if (!valid) {
-    const message = getCapitalErrorMessage(productName, age);
+    const message = getCapitalErrorMessage(productName, age, type);
     return { valid: false, maxAllowed, message };
   }
   
@@ -272,9 +315,14 @@ export const validateCapitalLimit = (
 };
 
 // Função utilitária para gerar mensagem de erro de capital
-export const getCapitalErrorMessage = (productName: string, age?: number): string => {
+export const getCapitalErrorMessage = (productName: string, age?: number, type?: 'MIP' | 'DFI'): string => {
   const productType = getProductType(productName);
-  const maxAllowed = getMaxCapitalByProduct(productName, age);
+  const maxAllowed = getMaxCapitalByProduct(productName, age, type);
+  
+  if (productType === 'MAG_HABITACIONAL') {
+    const maxInMillions = maxAllowed / 1_000_000;
+    return `Capital máximo ${type === 'DFI' ? 'DFI' : 'MIP'} R$ ${maxInMillions.toFixed(0)}.000.000,00`;
+  }
   
   if (productType === 'FHE_POUPEX') {
     if (age !== undefined && age !== null && age >= 60) {
