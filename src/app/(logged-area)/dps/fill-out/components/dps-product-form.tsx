@@ -118,14 +118,20 @@ const DpsProductForm = ({
 
 		// Obter o nome do produto a partir do UID
 		const productName = productOptions.find(p => p.value === currentProduct)?.label || '';
-		
-		// Se for FHE Poupex, mostrar apenas Imóvel Residencial (filtrado pela descrição)
+
+		// Se for MAG Habitacional, mostrar: Imóvel Residencial, imóvel Comercial, imóvel Misto, obra
+		if (isMagHabitacionalProduct(productName)) {
+			const allowedTypes = ['Imóvel Residencial', 'Imóvel Comercial', 'Imóvel Misto', 'Obra'];
+			return tipoImovelOptions.filter(option => allowedTypes.includes(option.label));
+		}
+
+		// Se for FHE Poupex, mostrar apenas Imóvel Residencial
 		if (isFhePoupexProduct(productName)) {
 			return tipoImovelOptions.filter(option => option.label === 'Imóvel Residencial');
 		}
 
-		// Para outros produtos, mostrar todas as opções
-		return tipoImovelOptions;
+		// Para outros produtos, mostrar todas as opções exceto "Obra"
+		return tipoImovelOptions.filter(option => option.label !== 'Obra');
 	}, [currentProduct, productOptions, tipoImovelOptions]);
 	
 	// Modal de alerta para idade inválida
