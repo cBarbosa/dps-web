@@ -34,6 +34,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Interactions from './interactions'
 import MedReports from './med-reports'
+import MagHabitacionalExamsList from './mag-habitacional-exams-list'
+import { isMagHabitacionalProduct } from '@/constants'
+import { calculateAge } from '@/lib/utils'
 import {
 	createPdfUrlFromBase64,
 	DialogShowArchive
@@ -1232,14 +1235,31 @@ const lastSituation: number | undefined =
 				role === `admin` ||
 				role === `subscritor-sup` ||
 				role === `vendedor-sup`) && (
-				<MedReports
-					token={token}
-					uid={uid}
-					userRole={role}
-					requireUpload={proposalData.uploadMIP}
-					dpsStatus={proposalData.status?.id}
-					onConfirm={refetchProposalData}
-				/>
+				<>
+					<MedReports
+						token={token}
+						uid={uid}
+						userRole={role}
+						requireUpload={proposalData.uploadMIP}
+						dpsStatus={proposalData.status?.id}
+						onConfirm={refetchProposalData}
+					/>
+					{/* Exibir lista de exames necessários para MAG Habitacional quando DPS está positivada */}
+					{isMagHabitacionalProduct(proposalData.product.name) && 
+					 proposalData.status?.id === 4 && 
+					 proposalData.customer.birthdate && 
+					 proposalData.customer.gender && (() => {
+						const age = calculateAge(new Date(proposalData.customer.birthdate));
+						return age !== null ? (
+							<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl mt-6">
+								<MagHabitacionalExamsList
+									age={age}
+									gender={proposalData.customer.gender as 'M' | 'F'}
+								/>
+							</div>
+						) : null;
+					})()}
+				</>
 			)}
 
 			{(role === `vendedor` ||
