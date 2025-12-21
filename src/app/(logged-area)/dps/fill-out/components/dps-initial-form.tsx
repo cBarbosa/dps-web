@@ -33,6 +33,7 @@ import DpsAddressForm, {
 } from './dps-address-form'
 import ShareLine from '@/components/ui/share-line'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import DatePicker from '@/components/ui/date-picker'
 import SelectComp from '@/components/ui/select-comp'
 import validarCpf from 'validar-cpf'
@@ -47,14 +48,14 @@ import {
 	DialogClose,
 	DialogFooter,
 } from '@/components/ui/dialog'
-import { CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
+import { CheckCircle, XCircle, PencilIcon, TrashIcon, AlertTriangleIcon } from 'lucide-react'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit, isMagHabitacionalProduct } from '@/constants'
 import { useProducts } from '@/contexts/products-context'
 import { validateFinalAgeLimitHybrid, getFinalAgeWithYearsErrorMessageConfig } from '@/utils/product-validation'
 
@@ -105,7 +106,6 @@ const useToast = () => {
 	};
 
 	const success = (message: string) => {
-		console.log('SUCCESS:', message);
 		return addToast(message, 'success');
 	};
 
@@ -242,6 +242,14 @@ const DpsInitialForm = ({
 
 	// Adicionar estado para o modal de erro de percentual
 	const [isPercentageErrorModalOpen, setIsPercentageErrorModalOpen] = useState(false);
+
+	// Adicionar estado para o modal de erro de Alagoas
+	const [isAlagoasErrorModalOpen, setIsAlagoasErrorModalOpen] = useState(false);
+	const [alagoasErrorCity, setAlagoasErrorCity] = useState('');
+
+	// Adicionar estado para o alerta de locais bloqueados
+	const [showBlockedLocationAlert, setShowBlockedLocationAlert] = useState(false);
+	const [blockedLocationCity, setBlockedLocationCity] = useState('');
 	const [percentageErrorMessage, setPercentageErrorMessage] = useState<string>('');
 
 	// Adicionar estado para controlar se o produto deve estar desabilitado
@@ -400,6 +408,20 @@ const DpsInitialForm = ({
 		setPrazosOptions(prazosOptionsProp);
 	}, [prazosOptionsProp, isProductDisabled]);
 
+	// useEffect para verificar locais bloqueados quando produto ou endereço mudam
+	useEffect(() => {
+		checkBlockedLocation();
+	}, [watchProduct]); // Removido watch address para evitar problemas
+
+	// useEffect para verificar locais bloqueados quando endereço muda
+	useEffect(() => {
+		const city = watch('address.city');
+		const state = watch('address.state');
+		if (city || state) {
+			checkBlockedLocation();
+		}
+	}, [watch('address.city'), watch('address.state')]);
+
 	// Confirmação para continuar com menos participantes
 	const handleConfirmSubmit = () => {
 		setIsConfirmDialogOpen(false);
@@ -553,7 +575,7 @@ const DpsInitialForm = ({
 					street: v.address.street || '',
 					number: v.address.number || '',
 					complement: v.address.complement || '',
-					district: v.address.district || '',
+					neighborhood: v.address.district || '',
 					city: v.address.city || '',
 					state: v.address.state || ''
 				},
@@ -608,7 +630,7 @@ const DpsInitialForm = ({
 								street: v.address.street || '',
 								number: v.address.number || '',
 								complement: v.address.complement || '',
-								district: v.address.district || '',
+								neighborhood: v.address.district || '',
 								city: v.address.city || '',
 								state: v.address.state || ''
 							},
@@ -741,7 +763,35 @@ const DpsInitialForm = ({
 			
 			// Obter nome do produto selecionado
 			const currentProductName = getProductName(v.product.product);
-			
+
+			// VALIDAÇÃO ESPECÍFICA PARA MAG HABITACIONAL - ESTADO DE ALAGOAS
+			if (isMagHabitacionalProduct(currentProductName) && v.address.state === 'AL') {
+				// Lista de bairros proibidos no estado de Alagoas para MAG Habitacional
+				const forbiddenDistricts = [
+					'Pinheiro',
+					'Bebedouro',
+					'Bom Parto',
+					'Farot',
+					'Ponta Grossa',
+					'Mutange',
+					'Gruta de Lourdes',
+					'Vergel do Lago'
+				];
+
+				// Verificar se o bairro está na lista de bairros proibidos
+				const districtName = v.address.district?.trim();
+				if (districtName && forbiddenDistricts.some(forbiddenDistrict =>
+					forbiddenDistrict.toLowerCase() === districtName.toLowerCase()
+				)) {
+					// Definir o bairro que causou o erro para exibir no modal
+					setAlagoasErrorCity(districtName);
+					// Abrir o modal de erro
+					setIsAlagoasErrorModalOpen(true);
+					setIsLoading(false);
+					return;
+				}
+			}
+
 			// VALIDAÇÃO DE IDADE + PRAZO
 			const deadlineMonths = parseInt(v.product.deadline, 10);
 			if (!isNaN(deadlineMonths) && deadlineMonths > 0) {
@@ -1351,7 +1401,6 @@ const DpsInitialForm = ({
 				return;
 			}
 			
-			console.log(`Buscando endereço para o CEP: ${cleanCep}`);
 			
 			// Chamada real para a API de CEP usando a função getAddressByZipcode
 			const addressResponse = await getAddressByZipcode(cleanCep);
@@ -1368,7 +1417,15 @@ const DpsInitialForm = ({
 			setterFunction('state', (addressData.uf) as any);
 			setterFunction('district', (addressData.bairro) as any);
 
-			toast.success('Endereço carregado com sucesso!');
+			// Não mostrar toast de sucesso se o endereço for bloqueado - o modal já dará o feedback
+			const cityName = addressData.localidade?.trim();
+			const isBlockedLocation = addressData.uf === 'AL' && cityName && [
+				'Pinheiro', 'Bebedouro', 'Bom Parto', 'Farot', 'Ponta Grossa', 'Mutange', 'Gruta de Lourdes', 'Vergel do Lago'
+			].some(forbiddenCity => forbiddenCity.toLowerCase() === cityName.toLowerCase());
+
+			if (!isBlockedLocation) {
+				toast.success('Endereço carregado com sucesso!');
+			}
 		} catch (error) {
 			console.error('Erro ao buscar endereço:', error);
 			toast.error('Erro ao buscar endereço. Tente novamente.');
@@ -1387,7 +1444,6 @@ const DpsInitialForm = ({
 		});
 			
 			// Após preencher os dados do endereço, validar os campos
-			console.log("Validando campos de endereço após preenchimento automático pelo CEP");
 			
 			// Disparar validação para os campos preenchidos
 			trigger('address.street');
@@ -1397,7 +1453,13 @@ const DpsInitialForm = ({
 			
 			// Validar o formulário de endereço completo
 			trigger('address');
-			
+
+			// Verificar se o endereço preenchido está em local bloqueado para MAG Habitacional
+			// Aguardar um momento para garantir que os valores foram definidos
+			setTimeout(() => {
+				checkBlockedLocation();
+			}, 100);
+
 			// Verificar se há erros após a validação
 			const addressErrors = errors.address;
 			if (addressErrors) {
@@ -1419,6 +1481,49 @@ const DpsInitialForm = ({
 		// Função removida - co-participantes não precisam mais de endereço separado
 		// O endereço do imóvel será o mesmo para toda a operação
 		return Promise.resolve();
+	};
+
+	// Função para verificar se o endereço atual está em local bloqueado
+	const checkBlockedLocation = () => {
+		const currentValues = getValues();
+		const currentProductName = getProductName(currentValues.product?.product);
+
+		// Verificar se o produto é MAG Habitacional E estamos em Alagoas
+		if (isMagHabitacionalProduct(currentProductName) && currentValues.address?.state === 'AL') {
+			const forbiddenDistricts = [
+				'Pinheiro',
+				'Bebedouro',
+				'Bom Parto',
+				'Farot',
+				'Ponta Grossa',
+				'Mutange',
+				'Gruta de Lourdes',
+				'Vergel do Lago'
+			];
+
+			// Verificar apenas o bairro (district)
+			const districtName = currentValues.address?.district?.trim();
+
+			const isDistrictBlocked = districtName && forbiddenDistricts.some(forbiddenDistrict =>
+				forbiddenDistrict.toLowerCase() === districtName.toLowerCase()
+			);
+
+			if (isDistrictBlocked) {
+				setBlockedLocationCity(districtName || 'Bairro bloqueado');
+				setShowBlockedLocationAlert(true);
+				// Abrir modal imediatamente quando detectar endereço bloqueado
+				setIsAlagoasErrorModalOpen(true);
+			} else {
+				setShowBlockedLocationAlert(false);
+				setBlockedLocationCity('');
+				setIsAlagoasErrorModalOpen(false);
+			}
+		} else {
+			// Não é MAG Habitacional ou não está em Alagoas - liberar qualquer endereço
+			setShowBlockedLocationAlert(false);
+			setBlockedLocationCity('');
+			setIsAlagoasErrorModalOpen(false);
+		}
 	};
 
 	// Add a function to calculate total participation percentage
@@ -2035,7 +2140,6 @@ const DpsInitialForm = ({
 			setShowOtherSections(false);
 			
 			setIsLoadingOperationData(true);
-			console.log(`Buscando dados da operação ${operationNumber}`);
 			
 			// Armazenar o número da operação como a última consultada
 			setLastQueriedOperation(operationNumber);
@@ -2434,7 +2538,24 @@ const DpsInitialForm = ({
 							formState={formState}
 							cepDataLoader={loadAddressByCep}
 							disabled={isSubmitting || isLoading}
+							onAddressChange={checkBlockedLocation}
 						/>
+
+						{/* Alerta para locais bloqueados em Alagoas */}
+						{showBlockedLocationAlert && (
+							<div className="mt-4">
+								<Alert variant="destructive">
+									<AlertTriangleIcon className="h-4 w-4" />
+									<AlertDescription>
+										<strong>Localidade Bloqueada:</strong> O município <strong>{blockedLocationCity}</strong> (AL)
+										está localizado em uma área com alto risco de afundamento de solo,
+										causado pela operação de mineração da Brasken.
+										<br />
+										<strong>Operações do produto MAG Habitacional não são permitidas nesta localidade.</strong>
+									</AlertDescription>
+								</Alert>
+							</div>
+						)}
 					</div>
 
 					{/* Lista de participantes (visível quando há proponente ou coparticipantes e Capital MIP preenchido) */}
@@ -2662,6 +2783,33 @@ const DpsInitialForm = ({
 						<Button 
 							type="button"
 							onClick={() => setIsPercentageErrorModalOpen(false)}
+						>
+							Entendi
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de erro para municípios proibidos em Alagoas */}
+			<Dialog
+				open={isAlagoasErrorModalOpen}
+				onOpenChange={setIsAlagoasErrorModalOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Operação Não Permitida</DialogTitle>
+						<DialogDescription>
+							Não é possível submeter a operação para o município <strong>{alagoasErrorCity}</strong> (AL)
+							no produto MAG Habitacional.
+							<br /><br />
+							O bairro informado está localizado em um local com alto risco de afundamento
+							de solo, causado pela operação de mineração da Brasken.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							onClick={() => setIsAlagoasErrorModalOpen(false)}
 						>
 							Entendi
 						</Button>
