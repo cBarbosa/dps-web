@@ -575,7 +575,7 @@ const DpsInitialForm = ({
 					street: v.address.street || '',
 					number: v.address.number || '',
 					complement: v.address.complement || '',
-					district: v.address.district || '',
+					neighborhood: v.address.district || '',
 					city: v.address.city || '',
 					state: v.address.state || ''
 				},
@@ -630,7 +630,7 @@ const DpsInitialForm = ({
 								street: v.address.street || '',
 								number: v.address.number || '',
 								complement: v.address.complement || '',
-								district: v.address.district || '',
+								neighborhood: v.address.district || '',
 								city: v.address.city || '',
 								state: v.address.state || ''
 							},
