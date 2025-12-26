@@ -1,6 +1,6 @@
 import { Product, ProductConfiguration } from '@/types/product';
 import { getProductConfiguration } from './product-config';
-import { calculateFinalAge, validateFinalAgeLimit as validateFinalAgeLimitFallback, getFinalAgeErrorMessage as getFinalAgeErrorMessageFallback, validateCapitalLimit as validateCapitalLimitFallback, getCapitalErrorMessage as getCapitalErrorMessageFallback } from '@/constants';
+import { calculateFinalAge, validateFinalAgeLimit as validateFinalAgeLimitFallback, getFinalAgeErrorMessage as getFinalAgeErrorMessageFallback, validateCapitalLimit as validateCapitalLimitFallback, getCapitalErrorMessage as getCapitalErrorMessageFallback, getMaxCapitalByProduct } from '@/constants';
 
 /**
  * Obtém a idade máxima de um produto a partir da configuração
@@ -35,17 +35,31 @@ export function getMinAgeByProductConfig(
  * @param products Array de produtos
  * @param productUidOrName UID do produto ou nome do produto
  * @param age Idade do segurado (opcional, necessário para limites variáveis)
+ * @param type Tipo de capital ('MIP' ou 'DFI') - necessário para MAG_HABITACIONAL
  * @returns Limite máximo de capital ou null se não encontrado
  */
 export function getMaxCapitalByProductConfig(
   products: Product[],
   productUidOrName: string,
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): number | null {
   const config = getProductConfiguration(products, productUidOrName);
   if (!config) return null;
   
   const capitalConfig = config.capitalConfig;
+  
+  // Para MAG_HABITACIONAL, usar limites específicos por tipo
+  if (config.type === 'MAG_HABITACIONAL') {
+    if (type === 'DFI' && capitalConfig.dfiLimit !== null && capitalConfig.dfiLimit !== undefined) {
+      return capitalConfig.dfiLimit;
+    }
+    if (type === 'MIP' && capitalConfig.mipLimit !== null && capitalConfig.mipLimit !== undefined) {
+      return capitalConfig.mipLimit;
+    }
+    // Fallback para constantes se não tiver na config
+    return getMaxCapitalByProduct(productUidOrName, age, type);
+  }
   
   // Se tem limite fixo, retorna ele
   if (capitalConfig.fixedLimit !== null && capitalConfig.fixedLimit !== undefined) {
@@ -107,15 +121,17 @@ export function validateFinalAgeLimitConfig(
  * @param productUidOrName UID do produto ou nome do produto
  * @param capitalValue Valor do capital a validar
  * @param age Idade do segurado (opcional, necessário para limites variáveis)
+ * @param type Tipo de capital ('MIP' ou 'DFI') - necessário para MAG_HABITACIONAL
  * @returns Objeto com resultado da validação
  */
 export function validateCapitalLimitConfig(
   products: Product[],
   productUidOrName: string,
   capitalValue: number,
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): { valid: boolean; maxAllowed: number | null; message?: string } {
-  const maxAllowed = getMaxCapitalByProductConfig(products, productUidOrName, age);
+  const maxAllowed = getMaxCapitalByProductConfig(products, productUidOrName, age, type);
   
   if (maxAllowed === null) {
     return { valid: true, maxAllowed: null }; // Se não tiver limite configurado, permite
@@ -124,7 +140,7 @@ export function validateCapitalLimitConfig(
   const valid = capitalValue <= maxAllowed;
   
   if (!valid) {
-    const message = getCapitalErrorMessageConfig(products, productUidOrName, age);
+    const message = getCapitalErrorMessageConfig(products, productUidOrName, age, type);
     return { valid: false, maxAllowed, message };
   }
   
@@ -136,20 +152,30 @@ export function validateCapitalLimitConfig(
  * @param products Array de produtos
  * @param productUidOrName UID do produto ou nome do produto
  * @param age Idade do segurado (opcional)
+ * @param type Tipo de capital ('MIP' ou 'DFI') - necessário para MAG_HABITACIONAL
  * @returns Mensagem de erro formatada
  */
 export function getCapitalErrorMessageConfig(
   products: Product[],
   productUidOrName: string,
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): string {
   const config = getProductConfiguration(products, productUidOrName);
-  if (!config) return 'Capital máximo não configurado.';
+  if (!config) {
+    // Fallback para constantes
+    return getCapitalErrorMessageFallback(productUidOrName, age, type);
+  }
   
-  const maxAllowed = getMaxCapitalByProductConfig(products, productUidOrName, age);
+  const maxAllowed = getMaxCapitalByProductConfig(products, productUidOrName, age, type);
   if (maxAllowed === null) return 'Capital máximo não configurado.';
   
   const productType = config.type;
+  
+  if (productType === 'MAG_HABITACIONAL') {
+    const maxInMillions = maxAllowed / 1_000_000;
+    return `Capital máximo ${type === 'DFI' ? 'DFI' : 'MIP'} R$ ${maxInMillions.toFixed(0)}.000.000,00`;
+  }
   
   if (productType === 'FHE_POUPEX') {
     if (age !== undefined && age !== null && age >= 60) {
@@ -294,22 +320,24 @@ export function validateFinalAgeLimitHybrid(
  * @param productUidOrName UID do produto ou nome do produto
  * @param capitalValue Valor do capital a validar
  * @param age Idade do segurado (opcional)
+ * @param type Tipo de capital ('MIP' ou 'DFI') - necessário para MAG_HABITACIONAL
  * @returns Objeto com resultado da validação
  */
 export function validateCapitalLimitHybrid(
   products: Product[],
   productUidOrName: string,
   capitalValue: number,
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): { valid: boolean; maxAllowed: number; message?: string } {
   // Tenta usar configuração do backend
   if (products.length > 0) {
     const config = getProductConfiguration(products, productUidOrName);
     if (config) {
-      const result = validateCapitalLimitConfig(products, productUidOrName, capitalValue, age);
+      const result = validateCapitalLimitConfig(products, productUidOrName, capitalValue, age, type);
       // Se maxAllowed for null, usar fallback
       if (result.maxAllowed === null) {
-        return validateCapitalLimitFallback(productUidOrName, capitalValue, age);
+        return validateCapitalLimitFallback(productUidOrName, capitalValue, age, type);
       }
       // Garantir que maxAllowed seja number
       return {
@@ -321,7 +349,7 @@ export function validateCapitalLimitHybrid(
   }
   
   // Fallback para constantes
-  return validateCapitalLimitFallback(productUidOrName, capitalValue, age);
+  return validateCapitalLimitFallback(productUidOrName, capitalValue, age, type);
 }
 
 /**
@@ -353,22 +381,24 @@ export function getFinalAgeErrorMessageHybrid(
  * @param products Array de produtos (pode ser vazio para usar fallback)
  * @param productUidOrName UID do produto ou nome do produto
  * @param age Idade do segurado (opcional)
+ * @param type Tipo de capital ('MIP' ou 'DFI') - necessário para MAG_HABITACIONAL
  * @returns Mensagem de erro formatada
  */
 export function getCapitalErrorMessageHybrid(
   products: Product[],
   productUidOrName: string,
-  age?: number
+  age?: number,
+  type?: 'MIP' | 'DFI'
 ): string {
   // Tenta usar configuração do backend
   if (products.length > 0) {
     const config = getProductConfiguration(products, productUidOrName);
     if (config) {
-      return getCapitalErrorMessageConfig(products, productUidOrName, age);
+      return getCapitalErrorMessageConfig(products, productUidOrName, age, type);
     }
   }
   
   // Fallback para constantes
-  return getCapitalErrorMessageFallback(productUidOrName, age);
+  return getCapitalErrorMessageFallback(productUidOrName, age, type);
 }
 

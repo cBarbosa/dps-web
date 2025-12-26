@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import ShareLine from '@/components/ui/share-line'
 import { cn } from '@/lib/utils'
 import React from 'react'
-import { Control, Controller, FormState } from 'react-hook-form'
+import { Control, Controller, FormState, useWatch } from 'react-hook-form'
 import { InferInput, nonEmpty, object, pipe, string, optional } from 'valibot'
 import { DpsInitialForm } from './dps-initial-form'
 
@@ -47,6 +47,20 @@ const DpsOperationForm = ({
   // Estado para armazenar o valor anterior do número da operação
   const [previousOperationNumber, setPreviousOperationNumber] = React.useState<string>('');
   const [highlightMissing, setHighlightMissing] = React.useState<boolean>(false);
+
+  // Se o formulário for reiniciado e o número da operação for limpo,
+  // precisamos limpar também o cache interno para permitir nova consulta (mesmo número).
+  const operationNumberValue = useWatch({
+    control,
+    name: 'operation.operationNumber',
+    defaultValue: '',
+  });
+
+  React.useEffect(() => {
+    if (!operationNumberValue && previousOperationNumber) {
+      setPreviousOperationNumber('');
+    }
+  }, [operationNumberValue, previousOperationNumber]);
   
   // Manipulador genérico para quando campos perdem foco
   const handleFieldBlur = () => {

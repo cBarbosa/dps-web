@@ -14,9 +14,10 @@ import { Label } from '@/components/ui/label'
 
 interface SearchFilterProps {
 	filterAction: (formData: FormData) => Promise<void>
+	view?: 'participacoes' | 'operacoes'
 }
 
-export function SearchFilter({ filterAction }: SearchFilterProps) {
+export function SearchFilter({ filterAction, view }: SearchFilterProps) {
 	const [searchType, setSearchType] = useState<'cpf' | 'operation'>('cpf')
 	
 	return (
@@ -33,6 +34,7 @@ export function SearchFilter({ filterAction }: SearchFilterProps) {
 					type={searchType === 'operation' ? 'number' : 'text'}
 				/>
 				<input type="hidden" name="searchType" value={searchType} />
+				{view ? <input type="hidden" name="view" value={view} /> : null}
 				<Popover>
 					<PopoverTrigger asChild>
 						<Button

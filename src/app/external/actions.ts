@@ -147,4 +147,20 @@ export async function signProposal(uid: string) {
   }
 
   return null;
+}
+
+export async function postMagHabitacionalAutoApproval(uid: string) {
+  try {
+    const response = await axios.post(`/v1/Proposal/${uid}/dps/auto-approve`);
+
+    if (response.data) {
+      return response.data
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (err) {
+    console.error('Erro na aprovação automática do MAG Habitacional:', err)
+  }
+
+  return null;
 } 

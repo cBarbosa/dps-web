@@ -42,12 +42,14 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 	data,
 	cepDataLoader,
 	disabled,
+	onAddressChange,
 }: {
 	control: Control<T>
 	formState: FormState<T>
 	data?: AddressData
 	cepDataLoader: (cep: string) => Promise<void>
 	disabled?: boolean
+	onAddressChange?: () => void
 }) => {
 	const errors = formState.errors?.address as any
 	const [loadingCep, setLoadingCep] = useState(false)
@@ -55,12 +57,17 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 
 	const completeCepData = async (cep: string) => {
 		if (!cep || cep.replace(/\D/g, '').length < 8) return;
-		
+
 		try {
 			setLoadingCep(true)
 			// Limpa caracteres não numéricos para garantir formato correto
 			const cleanCep = cep.replace(/\D/g, '')
 			await cepDataLoader(cleanCep)
+
+			// Notificar mudança de endereço para validação externa
+			if (onAddressChange) {
+				onAddressChange()
+			}
 		} catch (error) {
 			console.error('Erro ao buscar CEP:', error)
 		} finally {
@@ -161,6 +168,10 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 									setTimeout(() => {
 										onBlur();
 										handleFieldBlur();
+										// Notificar mudança de endereço para validação externa
+										if (onAddressChange) {
+											onAddressChange();
+										}
 									}, 0);
 								}}
 								value={typeof value === 'string' ? value : ''}
@@ -194,6 +205,10 @@ const DpsAddressForm = <T extends { address: DpsAddressFormType }>({
 								onBlur={() => {
 									onBlur();
 									handleFieldBlur();
+									// Notificar mudança de endereço para validação externa
+									if (onAddressChange) {
+										onAddressChange();
+									}
 								}}
 								value={typeof value === 'string' ? value : ''}
 								ref={ref}

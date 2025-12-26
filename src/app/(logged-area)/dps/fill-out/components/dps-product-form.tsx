@@ -11,7 +11,7 @@ import { DpsInitialForm } from './dps-initial-form'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import useAlertDialog from '@/hooks/use-alert-dialog'
-import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit, isFhePoupexProduct } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeErrorMessage, validateFinalAgeLimit, getMaxCapitalByProduct, getCapitalErrorMessage, validateCapitalLimit, isFhePoupexProduct, isMagHabitacionalProduct } from '@/constants'
 import { useProducts } from '@/contexts/products-context'
 import { validateFinalAgeLimitHybrid, validateCapitalLimitHybrid, getFinalAgeErrorMessageHybrid, getCapitalErrorMessageHybrid } from '@/utils/product-validation'
 
@@ -118,14 +118,20 @@ const DpsProductForm = ({
 
 		// Obter o nome do produto a partir do UID
 		const productName = productOptions.find(p => p.value === currentProduct)?.label || '';
-		
-		// Se for FHE Poupex, mostrar apenas Imóvel Residencial (filtrado pela descrição)
+
+		// Se for MAG Habitacional, mostrar: Imóvel Residencial, imóvel Comercial, imóvel Misto, obra
+		if (isMagHabitacionalProduct(productName)) {
+			const allowedTypes = ['Imóvel Residencial', 'Imóvel Comercial', 'Imóvel Misto', 'Obra'];
+			return tipoImovelOptions.filter(option => allowedTypes.includes(option.label));
+		}
+
+		// Se for FHE Poupex, mostrar apenas Imóvel Residencial
 		if (isFhePoupexProduct(productName)) {
 			return tipoImovelOptions.filter(option => option.label === 'Imóvel Residencial');
 		}
 
-		// Para outros produtos, mostrar todas as opções
-		return tipoImovelOptions;
+		// Para outros produtos, mostrar todas as opções exceto "Obra"
+		return tipoImovelOptions.filter(option => option.label !== 'Obra');
 	}, [currentProduct, productOptions, tipoImovelOptions]);
 	
 	// Modal de alerta para idade inválida
@@ -282,7 +288,7 @@ const DpsProductForm = ({
 												<div className="text-sm space-y-1">
 													<p>Prazo em meses para pagamento do financiamento</p>
 													<p className="text-xs opacity-90">
-														Prazo permitido: 1 a 420 meses
+														Prazo permitido: 1 a {currentProduct && productOptions.find(p => p.value === currentProduct) && isMagHabitacionalProduct(productOptions.find(p => p.value === currentProduct)?.label || '') ? '240' : '420'} meses
 													</p>
 												</div>
 											</TooltipContent>
@@ -302,11 +308,19 @@ const DpsProductForm = ({
 									onChange={(e) => {
 										// Permitir apenas dígitos
 										const numericValue = e.target.value.replace(/\D/g, '');
-										// Limitar a 3 dígitos (máximo 420 meses)
+										// Determinar limite baseado no produto
+										const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
+										const maxMonths = productName && isMagHabitacionalProduct(productName) ? 240 : 420;
+										// Limitar dígitos baseado no máximo (240 = 3 dígitos, 420 = 3 dígitos)
 										const limitedValue = numericValue.slice(0, 3);
 										
-										// Atualizar o valor no formulário
-										onChange(limitedValue);
+										// Validar se não excede o máximo
+										const numValue = parseInt(limitedValue, 10);
+										if (!isNaN(numValue) && numValue > maxMonths) {
+											onChange(maxMonths.toString());
+										} else {
+											onChange(limitedValue);
+										}
 									}}
 									onBlur={() => {
 										// Chamar o onBlur original do react-hook-form
@@ -339,7 +353,7 @@ const DpsProductForm = ({
 							if (converted !== null) {
 								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
 								if (productName && proponentAge !== null) {
-									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge);
+									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge, 'MIP');
 									if (!validation.valid && validation.message) {
 										capitalError = validation.message;
 									}
@@ -419,7 +433,7 @@ const DpsProductForm = ({
 							if (converted !== null) {
 								const productName = currentProduct ? (productOptions.find(p => p.value === currentProduct)?.label || '') : '';
 								if (productName && proponentAge !== null) {
-									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge);
+									const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge, 'DFI');
 									if (!validation.valid && validation.message) {
 										capitalError = validation.message;
 									}
@@ -785,9 +799,14 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 		custom(
 			v => {
 				const numValue = parseInt(v as string, 10);
-				return !isNaN(numValue) && numValue >= 1 && numValue <= 420;
+				if (isNaN(numValue)) return false;
+				// MAG Habitacional tem limite de 240 meses, outros produtos 420 meses
+				const maxMonths = productName && isMagHabitacionalProduct(productName) ? 240 : 420;
+				return numValue >= 1 && numValue <= maxMonths;
 			},
-			'Prazo deve ser entre 1 e 420 meses.'
+			productName && isMagHabitacionalProduct(productName) 
+				? 'Prazo deve ser entre 1 e 240 meses.' 
+				: 'Prazo deve ser entre 1 e 420 meses.'
 		),
 			custom(
 			v => {
@@ -811,14 +830,14 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 				if (converted === null) return false;
 				
 				if (productName) {
-					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined);
+					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined, 'MIP');
 					return validation.valid;
 				}
 				// Fallback para compatibilidade
 				return converted <= 10_000_000;
 			},
 			productName && proponentAge !== null 
-				? getCapitalErrorMessageHybrid(products, productName, proponentAge) 
+				? getCapitalErrorMessageHybrid(products, productName, proponentAge, 'MIP') 
 				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),
@@ -831,14 +850,14 @@ export const createDpsProductFormWithAge = (proponentAge: number | null, product
 				if (converted === null) return false;
 				
 				if (productName) {
-					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined);
+					const validation = validateCapitalLimitHybrid(products, productName, converted, proponentAge || undefined, 'DFI');
 					return validation.valid;
 				}
 				// Fallback para compatibilidade
 				return converted <= 10_000_000;
 			},
 			productName && proponentAge !== null 
-				? getCapitalErrorMessageHybrid(products, productName, proponentAge) 
+				? getCapitalErrorMessageHybrid(products, productName, proponentAge, 'DFI') 
 				: 'Capital máximo R$ 10.000.000,00'
 		)
 	),

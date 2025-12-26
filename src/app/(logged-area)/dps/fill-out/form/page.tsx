@@ -53,10 +53,11 @@ export default async function DpsFormPage({
 		})) ?? []
 
 	const productOptions =
-		productListRaw?.data.map(item => ({
+		productListRaw?.data?.map(item => ({
 			value: item.uid,
 			label: item.name,
-		})) ?? []
+		})) || []
+
 
 	const tipoImovelOptions =
 		tipoImovelOptionsRaw?.data.map(item => ({
