@@ -46,6 +46,7 @@ import { DataCard } from '../../components/data-card'
 import DfiReports from './dfi-reports'
 import AddressProposal from './address-proposal'
 import DialogReanalisys from './dialog-reanalisys'
+import { computeOperationStatus } from '@/utils/operation-aggregation'
 import {
 	Accordion,
 	AccordionContent,
@@ -180,6 +181,33 @@ const DetailsPresent = ({
 
 	const proposalSituation = proposalData?.status
 	const proposalSituationDFI = proposalData?.dfiStatus
+
+	const currentParticipantType = React.useMemo(() => {
+		if (!participants || participants.length === 0) return undefined
+		return participants.find(p => p.uid === uid)?.participantType
+	}, [participants, uid])
+
+	const isDfiNotApplicable = React.useMemo(() => {
+		const desc = proposalSituationDFI?.description ?? ''
+		const isCoparticipant = currentParticipantType != null && currentParticipantType !== 'P'
+		const isConstrucasa = /construcasa/i.test(proposalData?.product?.name ?? '')
+		const byDescription = /nao\s+aplic|não\s+aplic/i.test(desc)
+		return isCoparticipant || isConstrucasa || byDescription
+	}, [currentParticipantType, proposalSituationDFI?.description, proposalData?.product?.name])
+
+	const operationAggStatus = React.useMemo(() => {
+		if (participants && participants.length > 0) {
+			return computeOperationStatus(participants.map(p => (p as any).riskStatus))
+		}
+		return computeOperationStatus([proposalData?.riskStatus])
+	}, [participants, proposalData?.riskStatus])
+
+	const operationStatusUi =
+		operationAggStatus === 'APPROVED'
+			? { label: 'Aprovado', variant: 'success' as const, text: 'text-zinc-600' }
+			: operationAggStatus === 'REJECTED'
+				? { label: 'Reprovado', variant: 'destructive' as const, text: 'text-white' }
+				: { label: 'Em andamento', variant: 'warn' as const, text: 'text-zinc-600' }
 
 	const refetchProposalData = useCallback(
 		async function () {
@@ -796,32 +824,10 @@ const lastSituation: number | undefined =
 								Situação Processo
 								<Badge
 									shape="pill"
-									variant={
-										!proposalData?.riskStatus
-											? `warn`
-											: proposalData?.riskStatus === `APPROVED`
-												? `success`
-												: proposalData?.riskStatus === `REVIEW`
-													? `warn`
-													: `destructive`
-									}
-									className={cn(
-										'ml-4',
-										proposalData?.riskStatus === `APPROVED`
-											? `text-zinc-600`
-											: `text-white`
-									)}
+									variant={operationStatusUi.variant}
+									className={cn('ml-4', operationStatusUi.text, 'text-white')}
 								>
-									{!proposalData?.riskStatus
-										? `Em andamento`
-										: proposalData?.riskStatus === `APPROVED`
-											? `Aprovado`
-											: proposalData?.riskStatus === `REVIEW`
-												? `Em análise pela seguradora`
-												: proposalData?.riskStatus === `CANCELED`
-													? `Cancelado`
-													: `Recusado`
-									}
+									{operationStatusUi.label}
 								</Badge>
 							</h4>
 						</div>
@@ -855,7 +861,9 @@ const lastSituation: number | undefined =
 									<Badge
 										shape="pill"
 										variant={
-											proposalSituationDFI?.description === `Laudo DFI aprovado`
+											isDfiNotApplicable
+												? `outline`
+												: proposalSituationDFI?.description === `Laudo DFI aprovado`
 												? `success`
 												: proposalSituationDFI?.description ===
 												  `Laudo DFI reprovado`
@@ -864,9 +872,11 @@ const lastSituation: number | undefined =
 										}
 										className={cn(
 											'ml-4',
-											proposalSituationDFI?.description === `Laudo DFI aprovado`
-												? `text-zinc-600`
-												: `text-white`
+											isDfiNotApplicable
+												? `text-gray-400 border-gray-200 bg-gray-50`
+												: proposalSituationDFI?.description === `Laudo DFI aprovado`
+													? `text-zinc-600`
+													: `text-white`
 										)}
 									>
 										{proposalSituationDFI?.description ?? 'Estado desconhecido'}
@@ -1076,6 +1086,145 @@ const lastSituation: number | undefined =
 					)}
 				</div>
 			</div>
+
+			{participants && participants.length > 0 && (
+				<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
+					<Accordion type="single" collapsible>
+						<AccordionItem value="item-1" className="border-none">
+							<AccordionTrigger className="flex items-center">
+								<h4 className="basis-1 grow text-lg text-primary text-left">Participações</h4>
+							</AccordionTrigger>
+							<AccordionContent>
+								{[...participants]
+									.sort((a, b) => {
+										// Coloca o participante atual (uid) sempre primeiro
+										if (a.uid === uid) return -1;
+										if (b.uid === uid) return 1;
+										return 0;
+									})
+									.map((participant, index) => {
+									const participantStatus = participant.status?.id;
+									const showFillOutLink = participantStatus === 10;
+									const showSignLink = participantStatus === 20 && participant.signatureUrl;
+									
+									return (
+										<div 
+											key={participant.uid} 
+											className={`py-4 ${index < participants.length - 1 ? 'border-b border-gray-200' : ''}`}
+										>
+											<div className="flex justify-between items-start gap-4">
+												<div className="flex flex-col flex-1">
+													<div className="flex items-center gap-2 mb-2">
+														<span className="text-lg font-medium">
+															{participant.customer.name}
+														</span>
+														{participant.status && (
+															<Badge
+																variant={getStatusBadgeVariant(participantStatus)}
+																shape="pill"
+																className="text-xs"
+															>
+																MIP: {participant.status.description}
+															</Badge>
+														)}
+														{participant.dfiStatus && (
+															(() => {
+																const dfiDescription = participant.dfiStatus?.description as
+																	| string
+																	| undefined
+																const isDfiNotApplicable =
+																	participant.participantType !== 'P' ||
+																	participant.capitalDFI === 0 ||
+																	/nao\s+aplic|não\s+aplic/i.test(dfiDescription ?? '')
+
+																return (
+																	<Badge
+																		variant={
+																			isDfiNotApplicable
+																				? 'outline'
+																				: getStatusBadgeVariant(participant.dfiStatus?.id)
+																		}
+																		shape="pill"
+																		className={cn(
+																			'text-xs',
+																			isDfiNotApplicable
+																				? 'text-gray-400 border-gray-200 bg-gray-50'
+																				: ''
+																		)}
+																	>
+																		DFI: {participant.dfiStatus.description}
+																	</Badge>
+																)
+															})()
+														)}
+													</div>
+													<span className="text-gray-600 text-sm mb-1">
+														Coparticipação: {participant.percentageParticipation}%
+													</span>
+													<span className="text-gray-600 text-sm">
+														Valor: {Intl.NumberFormat('pt-BR', {
+															style: 'currency',
+															currency: 'BRL',
+														}).format(participant.financingParticipation || 0)}
+													</span>
+												</div>
+												
+											<div className="flex flex-col gap-2 items-end">
+													{participant.uid !== uid ? (
+														<>
+															<Button variant="ghost" size="sm" asChild>
+																<Link href={`/dps/details/${participant.uid}`}>
+																	<SquareArrowUpRightIcon className="mr-2" size={16} />
+																	Ir Detalhe
+																</Link>
+															</Button>
+															
+															<div className="flex gap-2">
+																{showFillOutLink && (
+																	<Button 
+																		variant="outline" 
+																		size="sm"
+																		onClick={() => handleCopyParticipantFillOutLink(participant.uid)}
+																	>
+																		<CopyIcon className="mr-2" size={14} />
+																		Link Preenchimento
+																	</Button>
+																)}
+																
+																{showSignLink && participant.signatureUrl && (
+																	<Button 
+																		variant="outline" 
+																		size="sm"
+																		onClick={() => handleCopyParticipantSignLink(participant.signatureUrl!)}
+																	>
+																		<CopyIcon className="mr-2" size={14} />
+																		Link Assinatura
+																	</Button>
+																)}
+																
+																<Button 
+																	variant="ghost" 
+																	size="sm"
+																	onClick={() => handleCopyParticipantLink(participant.uid)}
+																>
+																	<CopyIcon className="mr-2" size={14} />
+																	Copiar Link
+																</Button>
+															</div>
+														</>
+													) : (
+														<span className="text-gray-400 italic text-sm">Detalhes atuais</span>
+													)}
+												</div>
+											</div>
+										</div>
+									)
+								})}
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+				</div>
+			)}
 
 			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
 				<div className="mx-5 mt-2">
@@ -1293,123 +1442,6 @@ const lastSituation: number | undefined =
 				onNewInteraction={refetchProposalData}
 			/>
 
-			{participants && participants.length > 0 && (
-				<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl">
-					<Accordion type="single" collapsible>
-						<AccordionItem value="item-1" className="border-none">
-							<AccordionTrigger className="flex items-center">
-								<h4 className="basis-1 grow text-lg text-primary text-left">Participações</h4>
-							</AccordionTrigger>
-							<AccordionContent>
-								{[...participants]
-									.sort((a, b) => {
-										// Coloca o participante atual (uid) sempre primeiro
-										if (a.uid === uid) return -1;
-										if (b.uid === uid) return 1;
-										return 0;
-									})
-									.map((participant, index) => {
-									const participantStatus = participant.status?.id;
-									const showFillOutLink = participantStatus === 10;
-									const showSignLink = participantStatus === 20 && participant.signatureUrl;
-									
-									return (
-										<div 
-											key={participant.uid} 
-											className={`py-4 ${index < participants.length - 1 ? 'border-b border-gray-200' : ''}`}
-										>
-											<div className="flex justify-between items-start gap-4">
-												<div className="flex flex-col flex-1">
-													<div className="flex items-center gap-2 mb-2">
-														<span className="text-lg font-medium">
-															{participant.customer.name}
-														</span>
-														{participant.status && (
-															<Badge
-																variant={getStatusBadgeVariant(participantStatus)}
-																shape="pill"
-																className="text-xs"
-															>
-																MIP: {participant.status.description}
-															</Badge>
-														)}
-														{participant.dfiStatus && (
-															<Badge
-																variant={getStatusBadgeVariant(participant.dfiStatus?.id)}
-																shape="pill"
-																className="text-xs"
-															>
-																DFI: {participant.dfiStatus.description}
-															</Badge>
-														)}
-													</div>
-													<span className="text-gray-600 text-sm mb-1">
-														Coparticipação: {participant.percentageParticipation}%
-													</span>
-													<span className="text-gray-600 text-sm">
-														Valor: {Intl.NumberFormat('pt-BR', {
-															style: 'currency',
-															currency: 'BRL',
-														}).format(participant.financingParticipation || 0)}
-													</span>
-												</div>
-												
-											<div className="flex flex-col gap-2 items-end">
-													{participant.uid !== uid ? (
-														<>
-															<Button variant="ghost" size="sm" asChild>
-																<Link href={`/dps/details/${participant.uid}`}>
-																	<SquareArrowUpRightIcon className="mr-2" size={16} />
-																	Ir Detalhe
-																</Link>
-															</Button>
-															
-															<div className="flex gap-2">
-																{showFillOutLink && (
-																	<Button 
-																		variant="outline" 
-																		size="sm"
-																		onClick={() => handleCopyParticipantFillOutLink(participant.uid)}
-																	>
-																		<CopyIcon className="mr-2" size={14} />
-																		Link Preenchimento
-																	</Button>
-																)}
-																
-																{showSignLink && participant.signatureUrl && (
-																	<Button 
-																		variant="outline" 
-																		size="sm"
-																		onClick={() => handleCopyParticipantSignLink(participant.signatureUrl!)}
-																	>
-																		<CopyIcon className="mr-2" size={14} />
-																		Link Assinatura
-																	</Button>
-																)}
-																
-																<Button 
-																	variant="ghost" 
-																	size="sm"
-																	onClick={() => handleCopyParticipantLink(participant.uid)}
-																>
-																	<CopyIcon className="mr-2" size={14} />
-																	Copiar Link
-																</Button>
-															</div>
-														</>
-													) : (
-														<span className="text-gray-400 italic text-sm">Detalhes atuais</span>
-													)}
-												</div>
-											</div>
-										</div>
-									)
-								})}
-							</AccordionContent>
-						</AccordionItem>
-					</Accordion>
-				</div>
-			)}
 
 			<DialogShowArchive
 				isModalOpen={isModalOpen}

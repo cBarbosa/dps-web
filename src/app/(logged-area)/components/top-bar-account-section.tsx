@@ -9,7 +9,7 @@ import {
 import { UserData } from './top-bar'
 import { Button } from '@/components/ui/button'
 import { signOut, useSession } from 'next-auth/react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SalesChannelModal } from '@/components/sales-channel-modal'
 import { SalesChannel } from '@/types/sales-channel'
 import { changeSalesChannel } from '@/app/(login-area)/actions'
@@ -24,6 +24,7 @@ export default function AccountSection({ userData }: { userData: UserData }) {
 	const sessionWithToken = session as any
 	const sessionChannels: SalesChannel[] = sessionWithToken?.channels || []
 	const currentChannel: SalesChannel | null = sessionWithToken?.lastChannel || null
+	const isAdmin = (userData?.role ?? '').toLowerCase() === 'admin'
 
 	// Se channels tem itens, significa múltiplos canais (lastChannel + channels)
 	// Se channels está vazio mas lastChannel existe, significa apenas 1 canal
@@ -33,6 +34,17 @@ export default function AccountSection({ userData }: { userData: UserData }) {
 	const allChannels = hasMultipleChannels && currentChannel
 		? [currentChannel, ...sessionChannels.filter(c => c.uid !== currentChannel.uid)]
 		: sessionChannels
+
+	const mustSelectChannel = useMemo(() => {
+		// Para ADMIN, canal deve estar selecionado para evitar consultas “por empresa” sem restrição de canal
+		return isAdmin && !currentChannel && allChannels.length > 0
+	}, [isAdmin, currentChannel, allChannels.length])
+
+	useEffect(() => {
+		if (mustSelectChannel) {
+			setShowChannelModal(true)
+		}
+	}, [mustSelectChannel])
 
 	async function handleSelectChannel(channelUid: string) {
 		if (!sessionWithToken?.accessToken) {
@@ -154,6 +166,7 @@ export default function AccountSection({ userData }: { userData: UserData }) {
 				isLoading={isChangingChannel}
 				title="Trocar Canal de Venda"
 				description="Selecione o canal de venda que deseja acessar:"
+				required={mustSelectChannel}
 			/>
 		</>
 	)
