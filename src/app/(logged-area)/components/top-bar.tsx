@@ -44,12 +44,12 @@ export function TopBar({ session }: { session: Session | null }) {
 			if (cpf && cpf.length < 11) {
 				return
 			}
-			router.push(`/dashboard/table?cpf=${cpf}`)
+			router.push(`/dashboard/table?cpf=${cpf}&view=participacoes`)
 		} else if (searchTypeValue === 'operation') {
 			if (!searchValue) {
 				return
 			}
-			router.push(`/dashboard/table?operation=${searchValue}`)
+			router.push(`/dashboard/table?operation=${encodeURIComponent(searchValue)}&view=operacoes`)
 		}
 	}
 

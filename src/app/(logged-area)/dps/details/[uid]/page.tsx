@@ -47,7 +47,8 @@ export default async function DetailPage({
 						return {
 							...participant,
 							status: participantDetail?.data?.status,
-							dfiStatus: participantDetail?.data?.dfiStatus
+							dfiStatus: participantDetail?.data?.dfiStatus,
+							riskStatus: participantDetail?.data?.riskStatus ?? participant?.riskStatus,
 						}
 					})
 				)

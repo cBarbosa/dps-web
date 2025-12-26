@@ -670,6 +670,70 @@ export async function postProposal(
   return null
 }
 
+export async function postProposalOperation(
+	token: string,
+	operationNumber: string,
+	body: {
+		salesChannelUid?: string
+		totalParticipantsExpected: number
+		productId: string
+		typeId: number
+		deadlineId: number | null
+		deadlineMonths: number
+		propertyTypeId: number
+		operationValue: number
+		participants: Array<{
+			document: string
+			name: string
+			socialName: string | null
+			email: string
+			profession: string
+			gender: string
+			cellphone: string
+			birthdate: string
+			capitalMIP: number
+			capitalDFI: number
+			percentageParticipation: number
+			financingParticipation: number
+			participantType: 'P' | 'C'
+			address: {
+				zipCode: string
+				street: string
+				number: string
+				complement: string
+				neighborhood: string
+				city: string
+				state: string
+			}
+		}>
+	}
+): Promise<{
+	success: boolean
+	message: string
+	data?: {
+		operationNumber: string
+		contractProcessUid: string
+		proposalUids: Array<{
+			proposalUid: string
+			participantType: 'P' | 'C'
+			document: string
+		}>
+	}
+} | null> {
+	try {
+		// Base URL já inclui /api (NEXT_PUBLIC_API_BASE_URL), então v1/... vira /api/v1/...
+		const response = await axios.post(`v1/proposal/${operationNumber}`, body, {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+		if (response.data) return response.data
+		throw new Error('Unsuccessful request')
+	} catch (err) {
+		console.log(err)
+		if ((err as any)?.status === 401) redirect('/logout')
+	}
+	return null
+}
+
 export async function getAddressByZipcode(
 	zipcode: string,
 ): Promise<{
