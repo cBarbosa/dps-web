@@ -1,5 +1,5 @@
 export type ProductConfiguration = {
-  type: 'HABITACIONAL' | 'HOME_EQUITY' | 'CONSTRUCASA' | 'FHE_POUPEX';
+  type: 'HABITACIONAL' | 'HOME_EQUITY' | 'CONSTRUCASA' | 'FHE_POUPEX' | 'MAG_HABITACIONAL';
   names: string[];
   ageConfig: {
     minAge: number;
@@ -18,6 +18,8 @@ export type ProductConfiguration = {
       over60: number | null;
       ageThreshold: number;
     } | null;
+    mipLimit?: number | null;
+    dfiLimit?: number | null;
   };
   examRules: {
     rules: Array<{
@@ -29,6 +31,13 @@ export type ProductConfiguration = {
       productTypes?: string[] | null;
       description?: string | null;
     }>;
+  };
+  dpsConfig?: {
+    simplifiedThreshold?: number | null; // Capital threshold para DPS simplificada
+    questions?: {
+      simplified: Array<{ code: string; question: string; type: 'text' }>;
+      complete: Array<{ code: string; question: string; type: 'yesno' | 'text' }>;
+    };
   };
 };
 

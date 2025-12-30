@@ -12,7 +12,7 @@ import { useSession } from 'next-auth/react'
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { InferInput, object, pipe, string, nonEmpty, optional } from 'valibot'
-import { getProponentDataByCpf, postProposal, getAddressByZipcode, getParticipantsByOperation } from '../../actions'
+import { getProponentDataByCpf, postProposalOperation, getAddressByZipcode, getParticipantsByOperation } from '../../actions'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DpsProfileForm, {
 	DpsProfileFormType,
@@ -33,6 +33,7 @@ import DpsAddressForm, {
 } from './dps-address-form'
 import ShareLine from '@/components/ui/share-line'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import DatePicker from '@/components/ui/date-picker'
 import SelectComp from '@/components/ui/select-comp'
 import validarCpf from 'validar-cpf'
@@ -47,14 +48,14 @@ import {
 	DialogClose,
 	DialogFooter,
 } from '@/components/ui/dialog'
-import { CheckCircle, XCircle, PencilIcon, TrashIcon } from 'lucide-react'
+import { CheckCircle, XCircle, PencilIcon, TrashIcon, AlertTriangleIcon } from 'lucide-react'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit } from '@/constants'
+import { getMaxAgeByProduct, getFinalAgeWithYearsErrorMessage, validateFinalAgeLimit, isMagHabitacionalProduct } from '@/constants'
 import { useProducts } from '@/contexts/products-context'
 import { validateFinalAgeLimitHybrid, getFinalAgeWithYearsErrorMessageConfig } from '@/utils/product-validation'
 
@@ -105,7 +106,6 @@ const useToast = () => {
 	};
 
 	const success = (message: string) => {
-		console.log('SUCCESS:', message);
 		return addToast(message, 'success');
 	};
 
@@ -242,6 +242,14 @@ const DpsInitialForm = ({
 
 	// Adicionar estado para o modal de erro de percentual
 	const [isPercentageErrorModalOpen, setIsPercentageErrorModalOpen] = useState(false);
+
+	// Adicionar estado para o modal de erro de Alagoas
+	const [isAlagoasErrorModalOpen, setIsAlagoasErrorModalOpen] = useState(false);
+	const [alagoasErrorCity, setAlagoasErrorCity] = useState('');
+
+	// Adicionar estado para o alerta de locais bloqueados
+	const [showBlockedLocationAlert, setShowBlockedLocationAlert] = useState(false);
+	const [blockedLocationCity, setBlockedLocationCity] = useState('');
 	const [percentageErrorMessage, setPercentageErrorMessage] = useState<string>('');
 
 	// Adicionar estado para controlar se o produto deve estar desabilitado
@@ -400,6 +408,20 @@ const DpsInitialForm = ({
 		setPrazosOptions(prazosOptionsProp);
 	}, [prazosOptionsProp, isProductDisabled]);
 
+	// useEffect para verificar locais bloqueados quando produto ou endereço mudam
+	useEffect(() => {
+		checkBlockedLocation();
+	}, [watchProduct]); // Removido watch address para evitar problemas
+
+	// useEffect para verificar locais bloqueados quando endereço muda
+	useEffect(() => {
+		const city = watch('address.city');
+		const state = watch('address.state');
+		if (city || state) {
+			checkBlockedLocation();
+		}
+	}, [watch('address.city'), watch('address.state')]);
+
 	// Confirmação para continuar com menos participantes
 	const handleConfirmSubmit = () => {
 		setIsConfirmDialogOpen(false);
@@ -424,7 +446,7 @@ const DpsInitialForm = ({
 	};
 
 	// Função para confirmar o cancelamento e resetar o formulário
-	const handleConfirmCancelForm = () => {
+	const restartForm = (opts?: { redirect?: boolean; toastMessage?: string }) => {
 		// Resetar o formulário para valores iniciais
 		reset({
 			operation: {
@@ -486,11 +508,95 @@ const DpsInitialForm = ({
 		// Limpar erros do formulário
 		clearErrors();
 
-		// Mostrar mensagem de sucesso
-		toast.success('Formulário cancelado com sucesso!');
+		if (opts?.toastMessage) {
+			toast.success(opts.toastMessage);
+		}
 
-		// Redirecionar para a página de preenchimento inicial
-		router.push('/dps/fill-out');
+		if (opts?.redirect) {
+			router.push('/dps/fill-out');
+		}
+	};
+
+	// Estado para manter um alerta fixo quando o número da operação já estiver em uso
+	const [blockedOperation, setBlockedOperation] = useState<{
+		operationNumber: string
+		participantsCount: number
+	} | null>(null);
+
+	// Se existe pendência de operação bloqueada, garantir que as demais seções fiquem ocultas
+	useEffect(() => {
+		if (blockedOperation) {
+			setShowOtherSections(false);
+		}
+	}, [blockedOperation]);
+
+	const blockOperationAndReset = useCallback((operationNumber: string, participantsCount: number) => {
+		setBlockedOperation({ operationNumber, participantsCount });
+
+		// Reiniciar tudo, mas manter o número digitado para o usuário corrigir.
+		// Também força participantsNumber vazio para impedir liberação das demais seções.
+		reset({
+			operation: {
+				operationNumber,
+				participantsNumber: '',
+				isParticipantsNumberReadOnly: undefined,
+			},
+			profile: {
+				cpf: '',
+				name: '',
+				birthdate: undefined,
+				profession: '',
+				email: '',
+				phone: '',
+				socialName: '',
+				gender: '',
+				participationPercentage: '',
+			},
+			product: {
+				product: '',
+				deadline: '',
+				mip: '',
+				dfi: '',
+				propertyType: '',
+			},
+			address: {
+				zipcode: '',
+				street: '',
+				number: '',
+				complement: '',
+				district: '',
+				city: '',
+				state: '',
+			},
+		});
+
+		setCoparticipants([]);
+		setExistingMainProponent(null);
+		setParticipantsNumber('');
+		setParticipationPercentage('');
+		setParticipationValue('');
+		setCoparticipantParticipationValue('');
+		setCoparticipantSuggestedPercentage('');
+		setLastQueriedCpf('');
+		setLastQueriedCoparticipantCpf('');
+		setLastQueriedOperation('');
+		setOperationDataLoaded(false);
+		setIsProductDisabled(false);
+		setShowOtherSections(false);
+		setShowOperationGuidance(false);
+		setIsOperationFull(false);
+		setIsLastParticipant(false);
+		setCpfParamPending(null);
+		clearErrors();
+	}, [reset, clearErrors]);
+
+	// Função para confirmar o cancelamento e resetar o formulário
+	const handleConfirmCancelForm = () => {
+		// Fechar o diálogo de confirmação
+		setIsCancelConfirmDialogOpen(false);
+
+		setBlockedOperation(null);
+		restartForm({ redirect: true, toastMessage: 'Formulário cancelado com sucesso!' });
 	};
 
 	// Função para cancelar o cancelamento (não fazer nada)
@@ -521,152 +627,135 @@ const DpsInitialForm = ({
 		setIsLoading(true);
 
 		try {
-			// Extrair valores necessários para a participação
-			const totalValue = convertCapitalValue(v.product.mip) ?? 0;
-			const totalParticipants = parseInt(v.operation.participantsNumber, 10) || 0;
+			// Envio em lote por operação (1 chamada)
+			const operationNumber = v.operation.operationNumber;
 
-			// APENAS NOVO PREENCHIMENTO - deve cadastrar como proponente principal (tipo "P")
-			
-			// Calcular percentual do proponente principal
-			const mainPercentage = parseFloat(v.profile.participationPercentage?.replace('%', '').replace(',', '.') || '0');
-			const mainFinancingParticipation = (totalValue * mainPercentage) / 100;
-
-			// Dados do proponente principal
-			const mainProponentData = {
-				document: data?.profile?.cpf ?? v.profile.cpf,
-				name: v.profile.name,
-				socialName: v.profile.socialName ?? '',
-				gender: v.profile.gender,
-				cellphone: v.profile.phone,
-				email: v.profile.email,
-				contractNumber: v.operation.operationNumber,
-				birthDate: v.profile.birthdate.toISOString(),
-				productId: v.product.product,
-				profession: v.profile.profession ?? '',
-				typeId: 2,
-				deadlineMonths: Number(v.product.deadline),
-				propertyTypeId: Number(v.product.propertyType),
-				capitalMip: convertCapitalValue(v.product.mip) ?? 0,
-				capitalDfi: convertCapitalValue(v.product.dfi) ?? 0,
-				address: {
-					zipcode: v.address.zipcode || '',
-					street: v.address.street || '',
-					number: v.address.number || '',
-					complement: v.address.complement || '',
-					district: v.address.district || '',
-					city: v.address.city || '',
-					state: v.address.state || ''
-				},
-				participantsNumber: v.operation.participantsNumber,
-				totalValue: totalValue,
-				// Campos para tratamento do proponente principal
-				totalParticipants: totalParticipants,
-				operationValue: totalValue,
-				percentageParticipation: mainPercentage,
-				financingParticipation: mainFinancingParticipation,
-				participantType: 'P', // Sempre "P" para novo preenchimento
-			};
-
-			console.log('Enviando dados do proponente principal para API:', mainProponentData);
-			const mainResponse = await postProposal(token, mainProponentData);
-
-			if (!mainResponse || !mainResponse.success) {
-				console.error(mainResponse?.message || 'Erro ao salvar o proponente principal');
-				toast.error('Erro ao salvar proponente principal: ' + (mainResponse?.message || 'Erro desconhecido'));
-				setIsLoading(false);
+			// Double-check: não permitir cadastrar operação já existente
+			const existsCheck = await getParticipantsByOperation(token, operationNumber);
+			if (existsCheck?.success && existsCheck?.data && existsCheck.data.length > 0) {
+				blockOperationAndReset(operationNumber, existsCheck.data.length);
 				return;
 			}
 
-			// ID da proposta principal criada
-			const mainProposalId = mainResponse.data;
-			let allProposalsSaved = true;
-			let lastError = '';
+			const operationValue = convertCapitalValue(v.product.mip) ?? 0;
+			const totalParticipantsExpected = parseInt(v.operation.participantsNumber, 10) || 0;
 
-			// Array para armazenar todas as propostas criadas (principal + coparticipantes)
-			const createdProposals = [mainProposalId];
+			// Canal só é necessário para ADMIN sem canal no token; aqui enviamos apenas se existir na sessão
+			const role = ((session.data as any)?.role as string | undefined)?.toLowerCase();
+			const salesChannelUid =
+				role === 'admin' ? ((session.data as any)?.lastChannel?.uid as string | undefined) : undefined;
 
-			// Enviar cada coparticipante como uma proposta separada
-			if (coparticipants.length > 0) {
-				for (const cp of coparticipants) {
-					try {
-						// Calcular o valor de participação do coparticipante
-						const cpPercentage = parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
-						const cpFinancingParticipation = (totalValue * cpPercentage) / 100;
+			const mainPercentage = parseFloat(
+				v.profile.participationPercentage?.replace('%', '').replace(',', '.') || '0'
+			);
 
-						// Dados do coparticipante
-						const coparticipantData = {
-							document: cp.cpf,
-							name: cp.profile.name || cp.name,
-							socialName: cp.profile.socialName ?? '',
-							gender: cp.profile.gender || '',
-							cellphone: cp.profile.phone || '',
-							email: cp.profile.email || '',
-							birthDate: cp.profile.birthdate ? new Date(cp.profile.birthdate).toISOString() : new Date().toISOString(),
-							profession: cp.profile.profession ?? '',
-							address: {
-								zipcode: v.address.zipcode || '', // Usar endereço da operação principal
-								street: v.address.street || '',
-								number: v.address.number || '',
-								complement: v.address.complement || '',
-								district: v.address.district || '',
-								city: v.address.city || '',
-								state: v.address.state || ''
-							},
-							productId: v.product.product,
-							deadlineMonths: Number(v.product.deadline),
-							propertyTypeId: Number(v.product.propertyType),
-							capitalMip: convertCapitalValue(v.product.mip) ?? 0,
-							capitalDfi: convertCapitalValue(v.product.dfi) ?? 0,
-							contractNumber: v.operation.operationNumber,
-							participantsNumber: v.operation.participantsNumber,
-							totalValue: totalValue,
-							// Campos para tratamento do coparticipante
-							totalParticipants: totalParticipants,
-							operationValue: totalValue,
-							percentageParticipation: cpPercentage,
-							financingParticipation: cpFinancingParticipation,
-							participantType: 'C', // Sempre "C" para coparticipantes adicionais
-							typeId: 2, // Mesmo tipo do proponente principal
-						};
+			const mainParticipant = {
+				document: data?.profile?.cpf ?? v.profile.cpf,
+				name: v.profile.name,
+				socialName: v.profile.socialName ?? null,
+				email: v.profile.email,
+				profession: v.profile.profession ?? '',
+				gender: v.profile.gender,
+				cellphone: v.profile.phone,
+				birthdate: v.profile.birthdate.toISOString(),
+				capitalMIP: convertCapitalValue(v.product.mip) ?? 0,
+				capitalDFI: convertCapitalValue(v.product.dfi) ?? 0,
+				percentageParticipation: mainPercentage,
+				financingParticipation: mainPercentage,
+				participantType: 'P' as const,
+				address: {
+					zipCode: v.address.zipcode || '',
+					street: v.address.street || '',
+					number: v.address.number || '',
+					complement: v.address.complement || '',
+					neighborhood: v.address.district || '',
+					city: v.address.city || '',
+					state: v.address.state || '',
+				},
+			};
 
-						console.log('Enviando dados do coparticipante para API:', coparticipantData);
-						const cpResponse = await postProposal(token, coparticipantData);
-						
-						if (!cpResponse || !cpResponse.success) {
-							console.error(`Erro ao salvar coparticipante ${cp.name}:`, cpResponse?.message || 'Erro desconhecido');
-							lastError = `Erro ao salvar coparticipante ${cp.name}: ${cpResponse?.message || 'Erro desconhecido'}`;
-							allProposalsSaved = false;
-						} else {
-							// Adicionar ID da proposta de coparticipante criada
-							createdProposals.push(cpResponse.data);
-						}
-					} catch (cpError) {
-						console.error(`Erro ao processar coparticipante ${cp.name}:`, cpError);
-						lastError = `Erro ao processar coparticipante ${cp.name}`;
-						allProposalsSaved = false;
-					}
+			const coparticipantsPayload = coparticipants.map(cp => {
+				const cpPercentage =
+					parseFloat(cp.participationPercentage.replace('%', '').replace(',', '.')) || 0;
+
+				return {
+					document: cp.cpf,
+					name: cp.profile.name || cp.name,
+					socialName: cp.profile.socialName ?? null,
+					email: cp.profile.email || '',
+					profession: cp.profile.profession ?? '',
+					gender: cp.profile.gender || '',
+					cellphone: cp.profile.phone || '',
+					birthdate: cp.profile.birthdate
+						? new Date(cp.profile.birthdate).toISOString()
+						: new Date().toISOString(),
+					capitalMIP: convertCapitalValue(v.product.mip) ?? 0,
+					// Mesmo quando DFI não é avaliado para coparticipantes, o capital DFI deve ser salvo
+					capitalDFI: convertCapitalValue(v.product.dfi) ?? 0,
+					percentageParticipation: cpPercentage,
+					financingParticipation: cpPercentage,
+					participantType: 'C' as const,
+					address: {
+						zipCode: v.address.zipcode || '',
+						street: v.address.street || '',
+						number: v.address.number || '',
+						complement: v.address.complement || '',
+						neighborhood: v.address.district || '',
+						city: v.address.city || '',
+						state: v.address.state || '',
+					},
+				};
+			});
+
+			const body = {
+				...(salesChannelUid ? { salesChannelUid } : {}),
+				totalParticipantsExpected,
+				productId: v.product.product,
+				typeId: 2,
+				deadlineId: null,
+				deadlineMonths: Number(v.product.deadline),
+				propertyTypeId: Number(v.product.propertyType),
+				operationValue,
+				participants: [mainParticipant, ...coparticipantsPayload],
+			};
+
+			console.log('Enviando operação em lote para API:', { operationNumber, body });
+			const response = await postProposalOperation(token, operationNumber, body);
+
+			if (!response || !response.success || !response.data) {
+				console.error(response?.message || 'Erro ao cadastrar operação');
+				toast.error('Erro ao cadastrar operação: ' + (response?.message || 'Erro desconhecido'));
+
+				// Se o backend indicou que a operação já existe, reiniciar o formulário
+				const msg = (response?.message || '').toString().toLowerCase();
+				if (msg.includes('opera') && (msg.includes('já') || msg.includes('ja')) && (msg.includes('existe') || msg.includes('possui'))) {
+					const recheck = await getParticipantsByOperation(token, operationNumber);
+					const count = recheck?.success && recheck?.data ? recheck.data.length : 0;
+					blockOperationAndReset(operationNumber, count);
 				}
+				return;
+			}
+
+			const principal = response.data.proposalUids?.find(p => p.participantType === 'P');
+			const principalUid = principal?.proposalUid;
+
+			if (!principalUid) {
+				toast.error('Operação cadastrada, mas não foi possível identificar o proponente principal.');
+				return;
 			}
 
 			// Reset do formulário e feedback
 			reset();
 			setCoparticipants([]);
 			setExistingMainProponent(null);
-			// Limpar o último CPF consultado para permitir novas consultas
 			setLastQueriedCpf('');
-			
-			if (allProposalsSaved) {
-				toast.success('Proposta e coparticipantes salvos com sucesso!');
-				// Redirecionar para a primeira proposta criada (proponente principal)
-				router.push('/dps/details/' + mainProposalId);
-			} else {
-				// Mesmo com erros em alguns coparticipantes, redireciona para a proposta principal
-				toast.error(`Proposta principal salva, mas alguns coparticipantes não foram salvos. Último erro: ${lastError}`);
-				router.push('/dps/details/' + mainProposalId);
-			}
+
+			toast.success('Operação cadastrada com sucesso!');
+			router.push('/dps/details/' + principalUid);
 		} catch (error) {
 			console.error('Erro ao processar submissão:', error);
 			toast.error('Erro ao processar a submissão. Verifique os dados e tente novamente.');
+		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -741,7 +830,35 @@ const DpsInitialForm = ({
 			
 			// Obter nome do produto selecionado
 			const currentProductName = getProductName(v.product.product);
-			
+
+			// VALIDAÇÃO ESPECÍFICA PARA MAG HABITACIONAL - ESTADO DE ALAGOAS
+			if (isMagHabitacionalProduct(currentProductName) && v.address.state === 'AL') {
+				// Lista de bairros proibidos no estado de Alagoas para MAG Habitacional
+				const forbiddenDistricts = [
+					'Pinheiro',
+					'Bebedouro',
+					'Bom Parto',
+					'Farot',
+					'Ponta Grossa',
+					'Mutange',
+					'Gruta de Lourdes',
+					'Vergel do Lago'
+				];
+
+				// Verificar se o bairro está na lista de bairros proibidos
+				const districtName = v.address.district?.trim();
+				if (districtName && forbiddenDistricts.some(forbiddenDistrict =>
+					forbiddenDistrict.toLowerCase() === districtName.toLowerCase()
+				)) {
+					// Definir o bairro que causou o erro para exibir no modal
+					setAlagoasErrorCity(districtName);
+					// Abrir o modal de erro
+					setIsAlagoasErrorModalOpen(true);
+					setIsLoading(false);
+					return;
+				}
+			}
+
 			// VALIDAÇÃO DE IDADE + PRAZO
 			const deadlineMonths = parseInt(v.product.deadline, 10);
 			if (!isNaN(deadlineMonths) && deadlineMonths > 0) {
@@ -1351,7 +1468,6 @@ const DpsInitialForm = ({
 				return;
 			}
 			
-			console.log(`Buscando endereço para o CEP: ${cleanCep}`);
 			
 			// Chamada real para a API de CEP usando a função getAddressByZipcode
 			const addressResponse = await getAddressByZipcode(cleanCep);
@@ -1368,7 +1484,15 @@ const DpsInitialForm = ({
 			setterFunction('state', (addressData.uf) as any);
 			setterFunction('district', (addressData.bairro) as any);
 
-			toast.success('Endereço carregado com sucesso!');
+			// Não mostrar toast de sucesso se o endereço for bloqueado - o modal já dará o feedback
+			const cityName = addressData.localidade?.trim();
+			const isBlockedLocation = addressData.uf === 'AL' && cityName && [
+				'Pinheiro', 'Bebedouro', 'Bom Parto', 'Farot', 'Ponta Grossa', 'Mutange', 'Gruta de Lourdes', 'Vergel do Lago'
+			].some(forbiddenCity => forbiddenCity.toLowerCase() === cityName.toLowerCase());
+
+			if (!isBlockedLocation) {
+				toast.success('Endereço carregado com sucesso!');
+			}
 		} catch (error) {
 			console.error('Erro ao buscar endereço:', error);
 			toast.error('Erro ao buscar endereço. Tente novamente.');
@@ -1387,7 +1511,6 @@ const DpsInitialForm = ({
 		});
 			
 			// Após preencher os dados do endereço, validar os campos
-			console.log("Validando campos de endereço após preenchimento automático pelo CEP");
 			
 			// Disparar validação para os campos preenchidos
 			trigger('address.street');
@@ -1397,7 +1520,13 @@ const DpsInitialForm = ({
 			
 			// Validar o formulário de endereço completo
 			trigger('address');
-			
+
+			// Verificar se o endereço preenchido está em local bloqueado para MAG Habitacional
+			// Aguardar um momento para garantir que os valores foram definidos
+			setTimeout(() => {
+				checkBlockedLocation();
+			}, 100);
+
 			// Verificar se há erros após a validação
 			const addressErrors = errors.address;
 			if (addressErrors) {
@@ -1419,6 +1548,49 @@ const DpsInitialForm = ({
 		// Função removida - co-participantes não precisam mais de endereço separado
 		// O endereço do imóvel será o mesmo para toda a operação
 		return Promise.resolve();
+	};
+
+	// Função para verificar se o endereço atual está em local bloqueado
+	const checkBlockedLocation = () => {
+		const currentValues = getValues();
+		const currentProductName = getProductName(currentValues.product?.product);
+
+		// Verificar se o produto é MAG Habitacional E estamos em Alagoas
+		if (isMagHabitacionalProduct(currentProductName) && currentValues.address?.state === 'AL') {
+			const forbiddenDistricts = [
+				'Pinheiro',
+				'Bebedouro',
+				'Bom Parto',
+				'Farot',
+				'Ponta Grossa',
+				'Mutange',
+				'Gruta de Lourdes',
+				'Vergel do Lago'
+			];
+
+			// Verificar apenas o bairro (district)
+			const districtName = currentValues.address?.district?.trim();
+
+			const isDistrictBlocked = districtName && forbiddenDistricts.some(forbiddenDistrict =>
+				forbiddenDistrict.toLowerCase() === districtName.toLowerCase()
+			);
+
+			if (isDistrictBlocked) {
+				setBlockedLocationCity(districtName || 'Bairro bloqueado');
+				setShowBlockedLocationAlert(true);
+				// Abrir modal imediatamente quando detectar endereço bloqueado
+				setIsAlagoasErrorModalOpen(true);
+			} else {
+				setShowBlockedLocationAlert(false);
+				setBlockedLocationCity('');
+				setIsAlagoasErrorModalOpen(false);
+			}
+		} else {
+			// Não é MAG Habitacional ou não está em Alagoas - liberar qualquer endereço
+			setShowBlockedLocationAlert(false);
+			setBlockedLocationCity('');
+			setIsAlagoasErrorModalOpen(false);
+		}
 	};
 
 	// Add a function to calculate total participation percentage
@@ -2035,7 +2207,6 @@ const DpsInitialForm = ({
 			setShowOtherSections(false);
 			
 			setIsLoadingOperationData(true);
-			console.log(`Buscando dados da operação ${operationNumber}`);
 			
 			// Armazenar o número da operação como a última consultada
 			setLastQueriedOperation(operationNumber);
@@ -2053,15 +2224,8 @@ const DpsInitialForm = ({
 
 			if (response && response.success && response.data && response.data.length > 0) {
 				// OPERAÇÃO EXISTENTE ENCONTRADA - Não permitir continuidade
-				toast.error(`A operação ${operationNumber} já possui participantes cadastrados. Por favor, utilize um novo número de operação.`);
-				
-				// Limpar o campo do número da operação
-				setValue('operation.operationNumber', '');
-				setLastQueriedOperation('');
-				
-				// Mostrar orientação para nova operação
-				setShowOperationGuidance(true);
-				setShowOtherSections(false);
+				// Remover toast e manter alerta fixo
+				blockOperationAndReset(operationNumber, response.data.length);
 			} else {
 				// NOVA OPERAÇÃO - Operação não encontrada ou sem participantes
 				setExistingMainProponent(null);
@@ -2109,6 +2273,17 @@ const DpsInitialForm = ({
 			setIsLoadingOperationData(false);
 		}
 	};
+
+	// Se o usuário alterar o número da operação, remover o alerta fixo (pendência resolvida).
+	useEffect(() => {
+		const currentOp = watch('operation.operationNumber');
+		if (blockedOperation && currentOp && currentOp !== blockedOperation.operationNumber) {
+			setBlockedOperation(null);
+		}
+		if (blockedOperation && !currentOp) {
+			setBlockedOperation(null);
+		}
+	}, [watch('operation.operationNumber'), blockedOperation]);
 
 	// Estado para controlar se o CPF foi definido via parâmetro mas ainda não foi consultado
 	const [cpfParamPending, setCpfParamPending] = useState<string | null>(null);
@@ -2265,6 +2440,8 @@ const DpsInitialForm = ({
 
 	// Criar uma função para validar se todos os campos da operação estão preenchidos
 	const areOperationFieldsComplete = () => {
+		// Enquanto houver pendência de operação existente, não permitir liberar o restante do formulário
+		if (blockedOperation) return false;
 		const formData = getValues();
 		return !!(
 			formData.operation.operationNumber && 
@@ -2288,8 +2465,9 @@ const DpsInitialForm = ({
 	// Adicionar useEffect para liberar seções quando o número de participantes for preenchido
 	useEffect(() => {
 		const participantsNum = watch('operation.participantsNumber');
-		// Se o número de participantes estiver preenchido e não há CPF via parâmetro, liberar seções
-		if (participantsNum && !cpfParam && !showOtherSections) {
+		// Só liberar o restante quando os dados da operação estiverem completos
+		// (número da operação + quantidade de participantes)
+		if (participantsNum && areOperationFieldsComplete() && !cpfParam && !showOtherSections) {
 			setShowOtherSections(true);
 		}
 	}, [watch('operation.participantsNumber'), cpfParam, showOtherSections]);
@@ -2373,10 +2551,14 @@ const DpsInitialForm = ({
 					disabled={isSubmitting || isLoading}
 				/>
 				
-				{!showOperationGuidance && !showOtherSections && participantsNumber && (
+				{blockedOperation && (
 					<div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
 						<p className="text-red-700 font-medium">
-							Esta operação já possui {participantsNumber} participante(s) cadastrado(s).
+							A operação <strong>{blockedOperation.operationNumber}</strong> já possui{' '}
+							<strong>{blockedOperation.participantsCount}</strong> participante(s) cadastrado(s).
+						</p>
+						<p className="text-red-700 text-sm mt-1">
+							Para criar uma nova operação, informe um <strong>novo número de operação</strong>.
 						</p>
 					</div>
 				)}
@@ -2394,8 +2576,8 @@ const DpsInitialForm = ({
 				)}
 			</div>
 
-			{/* Restante do formulário só aparece após consultar a operação ou quando temos CPF via param */}
-			{showOtherSections && (
+			{/* Restante do formulário só aparece quando os dados da operação estiverem completos e não há pendência */}
+			{!blockedOperation && showOtherSections && areOperationFieldsComplete() && (
 				<>
 					{/* Seção de dados do proponente */}
 					<div className="w-full max-w-7xl mx-auto bg-white rounded-3xl p-9 relative dps-profile-section">
@@ -2434,7 +2616,24 @@ const DpsInitialForm = ({
 							formState={formState}
 							cepDataLoader={loadAddressByCep}
 							disabled={isSubmitting || isLoading}
+							onAddressChange={checkBlockedLocation}
 						/>
+
+						{/* Alerta para locais bloqueados em Alagoas */}
+						{showBlockedLocationAlert && (
+							<div className="mt-4">
+								<Alert variant="destructive">
+									<AlertTriangleIcon className="h-4 w-4" />
+									<AlertDescription>
+										<strong>Localidade Bloqueada:</strong> O município <strong>{blockedLocationCity}</strong> (AL)
+										está localizado em uma área com alto risco de afundamento de solo,
+										causado pela operação de mineração da Brasken.
+										<br />
+										<strong>Operações do produto MAG Habitacional não são permitidas nesta localidade.</strong>
+									</AlertDescription>
+								</Alert>
+							</div>
+						)}
 					</div>
 
 					{/* Lista de participantes (visível quando há proponente ou coparticipantes e Capital MIP preenchido) */}
@@ -2662,6 +2861,33 @@ const DpsInitialForm = ({
 						<Button 
 							type="button"
 							onClick={() => setIsPercentageErrorModalOpen(false)}
+						>
+							Entendi
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Modal de erro para municípios proibidos em Alagoas */}
+			<Dialog
+				open={isAlagoasErrorModalOpen}
+				onOpenChange={setIsAlagoasErrorModalOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Operação Não Permitida</DialogTitle>
+						<DialogDescription>
+							Não é possível submeter a operação para o município <strong>{alagoasErrorCity}</strong> (AL)
+							no produto MAG Habitacional.
+							<br /><br />
+							O bairro informado está localizado em um local com alto risco de afundamento
+							de solo, causado pela operação de mineração da Brasken.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							onClick={() => setIsAlagoasErrorModalOpen(false)}
 						>
 							Entendi
 						</Button>
