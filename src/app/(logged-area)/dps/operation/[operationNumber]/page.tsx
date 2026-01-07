@@ -38,6 +38,13 @@ function formatMoneyBRL(value?: number | null): string {
 	return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
 }
 
+function computeFinancingValueBRL(participant: any): string {
+	const capitalMIP = Number(participant?.capitalMIP)
+	const financingPct = Number(participant?.financingParticipation)
+	if (!Number.isFinite(capitalMIP) || !Number.isFinite(financingPct)) return '-'
+	return formatMoneyBRL((capitalMIP * financingPct) / 100)
+}
+
 function participantTypeLabel(participantType?: string | null): string {
 	if (participantType === 'P') return 'Principal'
 	if (participantType) return 'Coparticipante'
@@ -197,7 +204,7 @@ export default async function OperationParticipantsPage({
 										<div className="text-xs text-muted-foreground">Participação</div>
 										<div className="font-medium">{formatPercent(p.percentageParticipation)}</div>
 										<div className="text-xs text-muted-foreground mt-1">
-											Financiamento: {formatPercent(p.financingParticipation)}
+											Financiamento: {computeFinancingValueBRL(p)}
 										</div>
 									</div>
 									<div className="rounded-lg bg-gray-50 p-3">
