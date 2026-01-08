@@ -1165,11 +1165,7 @@ const lastSituation: number | undefined =
 														Valor: {Intl.NumberFormat('pt-BR', {
 															style: 'currency',
 															currency: 'BRL',
-														}).format(
-															((Number(participant.capitalMIP) || 0) *
-																(Number(participant.financingParticipation) || 0)) /
-																100
-														)}
+														}).format(Number(participant.financingParticipation) || 0)}
 													</span>
 												</div>
 												

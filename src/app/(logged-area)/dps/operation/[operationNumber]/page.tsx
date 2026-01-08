@@ -39,10 +39,10 @@ function formatMoneyBRL(value?: number | null): string {
 }
 
 function computeFinancingValueBRL(participant: any): string {
-	const capitalMIP = Number(participant?.capitalMIP)
-	const financingPct = Number(participant?.financingParticipation)
-	if (!Number.isFinite(capitalMIP) || !Number.isFinite(financingPct)) return '-'
-	return formatMoneyBRL((capitalMIP * financingPct) / 100)
+	// `financingParticipation` já vem calculado em R$ pelo backend
+	const financingValue = Number(participant?.financingParticipation)
+	if (!Number.isFinite(financingValue)) return '-'
+	return formatMoneyBRL(financingValue)
 }
 
 function participantTypeLabel(participantType?: string | null): string {
