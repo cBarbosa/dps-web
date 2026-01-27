@@ -35,7 +35,7 @@ import { useRouter } from 'next/navigation'
 import Interactions from './interactions'
 import MedReports from './med-reports'
 import MagHabitacionalExamsList from './mag-habitacional-exams-list'
-import { isMagHabitacionalProduct } from '@/constants'
+import { getTeleInterviewThresholdByProduct, isMagHabitacionalProduct } from '@/constants'
 import { calculateAge } from '@/lib/utils'
 import {
 	createPdfUrlFromBase64,
@@ -73,6 +73,7 @@ export const statusDescriptionDict: Record<number, string> = {
 	33: 'Enviado para subscrição',
 	34: 'DFI Avaliada',
 	38: 'Processo finalizado',
+	39: 'Processo aprovada tacitamente',
 	40: 'Processo em reanálise',
 	41: 'Processo reanalisado',
 	42: 'MIP Avaliada',
@@ -189,10 +190,11 @@ const DetailsPresent = ({
 
 	const isDfiNotApplicable = React.useMemo(() => {
 		const desc = proposalSituationDFI?.description ?? ''
+		const isAwaitingAnalysis = /aguardando\s+análise\s+do\s+laudo\s+dfi/i.test(desc)
 		const isCoparticipant = currentParticipantType != null && currentParticipantType !== 'P'
 		const isConstrucasa = /construcasa/i.test(proposalData?.product?.name ?? '')
 		const byDescription = /nao\s+aplic|não\s+aplic/i.test(desc)
-		return isCoparticipant || isConstrucasa || byDescription
+		return !isAwaitingAnalysis && (isCoparticipant || isConstrucasa || byDescription)
 	}, [currentParticipantType, proposalSituationDFI?.description, proposalData?.product?.name])
 
 	const operationAggStatus = React.useMemo(() => {
@@ -201,6 +203,14 @@ const DetailsPresent = ({
 		}
 		return computeOperationStatus([proposalData?.riskStatus])
 	}, [participants, proposalData?.riskStatus])
+
+	const teleInterviewThreshold = proposalData?.product?.name
+		? getTeleInterviewThresholdByProduct(proposalData.product.name)
+		: undefined
+	const requiresTeleInterviewByCapital =
+		typeof teleInterviewThreshold === 'number' &&
+		(proposalData.capitalMIP > teleInterviewThreshold ||
+			proposalData.capitalDFI > teleInterviewThreshold)
 
 	const operationStatusUi =
 		operationAggStatus === 'APPROVED'
@@ -779,6 +789,10 @@ const lastSituation: number | undefined =
 		proposalData.capitalMIP > 5000000
 	const showDfiAlertToSubscriber: boolean | undefined =
 		role === 'subscritor' && proposalData.dfiStatus?.id === 29
+	const showTeleInterviewAlert: boolean =
+		(role === 'subscritor' || role === 'subscritor-sup') &&
+		operationAggStatus === 'IN_PROGRESS' &&
+		requiresTeleInterviewByCapital
 	const showReanalisys: boolean =
 		role === 'vendedor-sup' &&
 		proposalData.riskStatus === 'REFUSED' &&
@@ -803,6 +817,18 @@ const lastSituation: number | undefined =
 
 	const showCancelButton = (proposalSituation.id === 10 || proposalSituation.id === 20) && !proposalData?.riskStatus;
 	const showConfirmCancelButton = role === 'vendedor-sup' && proposalData?.riskStatus === 'CANCELED' && !proposalData.closed;
+
+	const hasAnySigned =
+		proposalSituation?.id === 21 ||
+		(proposalData?.history?.some(h => h.statusId === 21) ?? false) ||
+		(participants?.some(p => p.status?.id === 21) ?? false)
+
+	const canEditOperation =
+		(role === 'vendedor' || role === 'vendedor-sup') &&
+		!hasAnySigned &&
+		!proposalData?.riskStatus &&
+		!proposalData?.closed &&
+		!!proposalData?.contractNumber
 
 	return (
 		<div className="flex flex-col gap-5 p-5">
@@ -957,6 +983,11 @@ const lastSituation: number | undefined =
 							>
 								Visualizar DPS
 							</Button>
+							{canEditOperation && (
+								<Button variant="secondary" asChild>
+									<Link href={`/dps/operation/${proposalData.contractNumber}/edit`}>Editar operação</Link>
+								</Button>
+							)}
 							{showSignLink && (
 								<Button
 									variant="outline"
@@ -1122,9 +1153,12 @@ const lastSituation: number | undefined =
 															<Badge
 																variant={getStatusBadgeVariant(participantStatus)}
 																shape="pill"
-																className="text-xs"
+																className="text-xs max-w-[220px] min-w-0 whitespace-nowrap"
+																title={`MIP: ${participant.status.description}`}
 															>
-																MIP: {participant.status.description}
+																<span className="truncate">
+																	MIP: {participant.status.description}
+																</span>
 															</Badge>
 														)}
 														{participant.dfiStatus && (
@@ -1132,10 +1166,15 @@ const lastSituation: number | undefined =
 																const dfiDescription = participant.dfiStatus?.description as
 																	| string
 																	| undefined
+																const isDfiAwaitingAnalysis =
+																	/aguardando\s+análise\s+do\s+laudo\s+dfi/i.test(
+																		dfiDescription ?? ''
+																	)
 																const isDfiNotApplicable =
-																	participant.participantType !== 'P' ||
-																	participant.capitalDFI === 0 ||
-																	/nao\s+aplic|não\s+aplic/i.test(dfiDescription ?? '')
+																	!isDfiAwaitingAnalysis &&
+																	(participant.participantType !== 'P' ||
+																		participant.capitalDFI === 0 ||
+																		/nao\s+aplic|não\s+aplic/i.test(dfiDescription ?? ''))
 
 																return (
 																	<Badge
@@ -1146,13 +1185,16 @@ const lastSituation: number | undefined =
 																		}
 																		shape="pill"
 																		className={cn(
-																			'text-xs',
+																			'text-xs max-w-[220px] min-w-0 whitespace-nowrap',
 																			isDfiNotApplicable
 																				? 'text-gray-400 border-gray-200 bg-gray-50'
 																				: ''
 																		)}
+																		title={`DFI: ${participant.dfiStatus.description}`}
 																	>
-																		DFI: {participant.dfiStatus.description}
+																		<span className="truncate">
+																			DFI: {participant.dfiStatus.description}
+																		</span>
 																	</Badge>
 																)
 															})()
@@ -1374,6 +1416,22 @@ const lastSituation: number | undefined =
 						</h4>
 						<ul className="ml-5 text-base text-orange-400 list-disc">
 							<li>Necessário validar o laudo DFI inserido.</li>
+						</ul>
+					</div>
+				</div>
+			)}
+
+			{showTeleInterviewAlert && (
+				<div className="px-3 py-2 flex flex-row justify-between items-center gap-5 w-full max-w-7xl mx-auto bg-orange-300/40 border border-orange-300/80 rounded-xl">
+					<div>
+						<h4 className="text-base font-semibold text-orange-600">
+							Ações pendentes
+						</h4>
+						<ul className="ml-5 text-base text-orange-400 list-disc">
+							<li>
+								Este cliente deve obrigatoriamente passar por um atendimento de
+								tele-entrevista como etapa necessária do processo.
+							</li>
 						</ul>
 					</div>
 				</div>

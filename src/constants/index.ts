@@ -126,6 +126,20 @@ export const getProductType = (productName: string): 'HABITACIONAL' | 'HOME_EQUI
   return isHomeEquity ? 'HOME_EQUITY' : 'HABITACIONAL';
 };
 
+// Tele interview thresholds by product type (capital above threshold triggers requirement)
+export const TELE_INTERVIEW_THRESHOLDS_BY_PRODUCT_TYPE = {
+  HABITACIONAL: 3_000_000,
+  HOME_EQUITY: 3_000_000,
+  CONSTRUCASA: 3_000_000,
+} as const;
+
+export const getTeleInterviewThresholdByProduct = (productName: string): number | undefined => {
+  const productType = getProductType(productName);
+  return TELE_INTERVIEW_THRESHOLDS_BY_PRODUCT_TYPE[
+    productType as keyof typeof TELE_INTERVIEW_THRESHOLDS_BY_PRODUCT_TYPE
+  ];
+};
+
 // Função utilitária para obter limite de idade baseado no nome do produto
 export const getMaxAgeByProduct = (productName: string): number => {
   const productType = getProductType(productName);

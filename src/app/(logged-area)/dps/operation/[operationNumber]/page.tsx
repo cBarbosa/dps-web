@@ -96,6 +96,7 @@ export default async function OperationParticipantsPage({
 	const session = await getServerSession(authOptions)
 	const token = (session as any)?.accessToken as string | undefined
 	if (!token) redirect('/logout')
+	const role = ((session as any)?.role as string | undefined)?.toLowerCase()
 
 	const operationNumber = decodeURIComponent(params.operationNumber)
 
@@ -124,6 +125,10 @@ export default async function OperationParticipantsPage({
 	const operationStatusUi = operationStatusProps(operationStatus)
 	const operationStatusHint = operationStatusHelpText(operationStatusUi.label)
 
+	const hasAnySigned = participantsEnriched.some((p: any) => p?.status?.id === 21)
+	const canEditOperation =
+		(role === 'vendedor' || role === 'vendedor-sup') && !hasAnySigned
+
 	return (
 		<div className="flex flex-col gap-5 p-5">
 			<div className="px-5 py-7 w-full max-w-7xl mx-auto bg-white rounded-3xl shadow-sm">
@@ -132,7 +137,13 @@ export default async function OperationParticipantsPage({
 						<Undo2Icon className="mr-2" size={18} />
 						Voltar
 					</GoBackButton>
-					<div />
+					<div className="flex gap-2">
+						{canEditOperation && (
+							<Button variant="secondary" asChild>
+								<Link href={`/dps/operation/${encodeURIComponent(operationNumber)}/edit`}>Editar operação</Link>
+							</Button>
+						)}
+					</div>
 				</div>
 
 				<div className="mx-5 mt-6">

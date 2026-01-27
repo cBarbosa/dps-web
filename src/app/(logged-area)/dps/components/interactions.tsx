@@ -10,6 +10,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 export type Interaction = {
 	description: string
 	statusId: number
+	user?: {
+		uid?: string
+		name?: string
+		email?: string
+	}
 	created: Date | string
 }
 
@@ -123,23 +128,44 @@ function InteractionItem({
 	index: number
 	interaction: Interaction
 }) {
+	const statusLabel = statusDescriptionDict[interaction?.statusId]
+	const isSigned = interaction?.statusId === 21 || statusLabel === 'DPS Assinada'
+	const displayUser = isSigned ? 'SISTEMA' : interaction?.user?.name
+
 	return (
-		<li className="w-full flex mt-2 p-4 justify-between items-center border rounded-xl bg-[#F4F7F7]">
+		<li
+			className={`w-full flex mt-2 p-4 justify-between items-center border rounded-xl ${
+				isSigned
+					? 'bg-green-50 border-green-200'
+					: 'bg-[#F4F7F7]'
+			}`}
+		>
 			<div className="grow-0 basis-10">
 				<Badge variant="outline" className="text-muted-foreground bg-white">
 					{index + 1}
 				</Badge>
 			</div>
-			<div className="pl-5 grow basis-1 text-left">
-				{interaction?.description}
+			<div className="pl-5 grow basis-1 text-left space-y-1">
+				<div className="text-base font-semibold text-foreground">
+					{interaction?.description}
+				</div>
+				{displayUser ? (
+					<div className="text-sm font-medium text-foreground/80">
+						{displayUser}
+					</div>
+				) : null}
 			</div>
 
-			<div className="grow-0 px-3">
-				<Badge variant="warn" shape="pill">
-					{statusDescriptionDict[interaction?.statusId]}
-				</Badge>
+			<div className="flex flex-col items-end gap-2">
+				<div className="grow-0">
+					<Badge variant="warn" shape="pill">
+						{statusLabel}
+					</Badge>
+				</div>
+				<div className="text-xs text-muted-foreground">
+					{formatDate(interaction?.created)}
+				</div>
 			</div>
-			<div className="grow-0 px-3">{formatDate(interaction?.created)}</div>
 		</li>
 	)
 }

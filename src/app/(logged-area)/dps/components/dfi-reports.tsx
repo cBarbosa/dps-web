@@ -11,6 +11,7 @@ import {
 import {
 	DeleteIcon,
 	FileTextIcon,
+	MailIcon,
 	SendIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
@@ -23,12 +24,23 @@ import DialogAlertComp from '@/components/ui/alert-dialog-comp'
 import LoadingScreen from '@/components/loading-creen'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { formatDate } from './interactions'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export type DocumentType = {
 	uid: string
 	documentName: string
 	documentUrl: string
 	description: string
+	createdByUser?: {
+		name?: string
+		email?: string
+	}
 	created: Date | string
 	updated?: Date | string
 }
@@ -58,6 +70,7 @@ export default function DfiReports({
 	const [isModalOpen, setIsModalOpen] = React.useState(false)
 	const [pdfUrl, setPdfUrl] = React.useState<string | undefined>(undefined)
 	const [isFinishing, setIsFinishing] = React.useState(false)
+	const [origin, setOrigin] = React.useState('')
 
 	const [isLoadingReports, setIsLoadingReports] = React.useState(false)
 	const [rejectJustification, setRejectJustification] = React.useState('')
@@ -152,6 +165,12 @@ export default function DfiReports({
 		reloadReports()
 	}, [reloadReports])
 
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			setOrigin(window.location.origin)
+		}
+	}, [])
+
 	async function finishReportUpload() {
 		setAlertDialog({
 			open: true,
@@ -166,11 +185,16 @@ export default function DfiReports({
 			})
 			setIsFinishing(true)
 
+				const justification = rejectJustification?.trim()
+				const description = `Aguardando análise DFI${
+					justification ? `: ${justification}` : ''
+				}`
+
 			const response = await postStatus(
 				token,
 				uid,
 				29,
-				'Aguardando análise DFI',
+					description,
 				'DFI'
 			)
 
@@ -233,18 +257,28 @@ export default function DfiReports({
 				setIsFinishing(true)
 
 				const newStatus = isApproved ? 35 : 36
+				const statusText = isApproved ? 'APROVADA' : 'NEGADA'
+				const justification = !isApproved ? rejectJustification?.trim() : ''
+				const description = `Análise de DFI concluída: ${statusText}${
+					justification ? ` - ${justification}` : ''
+				}`
 
 				const response = await postStatus(
 					token,
 					uid,
 					newStatus,
-					'Análise de DFI concluída',
+					description,
 					'DFI'
 				)
 
 				if (response) {
 					if (response.success) {
 						onConfirmProp?.()
+						if (isApproved) {
+							setTimeout(() => {
+								onConfirmProp?.()
+							}, 1500)
+						}
 						reloadReports()
 						setRejectJustification('')
 					} else {
@@ -419,65 +453,116 @@ export default function DfiReports({
 			<div className="relative">
 				{data?.length > 0 ? (
 					<>
-						<ul>
+						<ul className="space-y-2">
 							{data.map((document, index) => {
 								if (!document.description) return null
 
 								return (
 									<li
 										key={index}
-										className="w-full flex mt-2 p-3 justify-between items-center border rounded-xl bg-[#F4F7F7]"
+										className="w-full rounded-2xl border bg-white/80 p-4 shadow-sm transition hover:shadow-md"
 									>
-										<div className="grow-0 basis-10">
-											<Badge
-												variant="outline"
-												className="text-muted-foreground bg-white"
-											>
-												{index + 1}
-											</Badge>
-										</div>
-
-										<div className="pl-5 grow basis-1 text-left">
-											{document?.description}
-										</div>
-
-										{document.documentName && (
-											<div className="grow-0 px-3">
-												<Badge variant="warn" shape="pill">
-													{document.documentName}
-												</Badge>
-											</div>
-										)}
-
-										{/* <div className="grow-0 px-3">{formatDate(document?.created)}</div> */}
-
-										{document.documentName && (
-											<>
-											<Button
-												className="grow-0 basis-10 text-teal-900 hover:text-teal-600"
-												variant={`ghost`}
-												onClick={() => handleViewArchive(document.uid)}
-											>
-												<FileTextIcon className="mr-2" />
-												Abrir Arquivo
-											</Button>
-											{showReportApproval && (
-												<Button
-													type="button"
-													variant="destructive"
-													size="iconSm"
-													className="rounded-full text-zinc-200"
-													disabled={isFinishing}
-													onClick={() => reportDeleteArchive(document.uid)}
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+											<div className="flex items-start gap-3">
+												<Badge
+													variant="outline"
+													className="text-muted-foreground bg-white"
 												>
-													<Trash2Icon
-														size={20}
-														className="text-foreground p-0.5 hover:text-teal-600"
-													/>
-												</Button>
-											)}
-											</>
-										)}
+													{index + 1}
+												</Badge>
+												<div className="space-y-1">
+													<div className="text-sm font-medium text-foreground">
+														{document?.description}
+													</div>
+													{(document?.createdByUser?.name || document?.created) && (
+														<div className="text-xs text-muted-foreground">
+															{document?.createdByUser?.name ? (
+																<TooltipProvider delayDuration={0}>
+																	<Tooltip>
+																		<TooltipTrigger asChild>
+																			<span className="cursor-help underline-offset-2 hover:underline">
+																				{document.createdByUser.name}
+																			</span>
+																		</TooltipTrigger>
+																		<TooltipContent className="rounded-lg border border-border/60 bg-white/95 px-3 py-2 text-xs shadow-md">
+																			<div className="flex flex-col gap-1.5">
+																				<span className="text-foreground font-medium">
+																					{document.createdByUser.name}
+																				</span>
+																				{document.createdByUser.email ? (
+																					<a
+																						className="inline-flex items-center gap-1 text-primary underline underline-offset-2"
+																						href={`mailto:${document.createdByUser.email}?subject=${encodeURIComponent(
+																							'Subscrição Inteligente: Laudos DFI'
+																						)}&body=${encodeURIComponent(
+																							`Segue o link do formulário DPS: ${
+																								origin
+																									? `${origin}/dps/fill-out/form/${uid}`
+																									: `/dps/fill-out/form/${uid}`
+																							}`
+																						)}`}
+																					>
+																						<MailIcon className="h-3.5 w-3.5" />
+																						{document.createdByUser.email}
+																					</a>
+																				) : (
+																					<span className="text-muted-foreground">
+																						Email indisponível
+																					</span>
+																				)}
+																			</div>
+																		</TooltipContent>
+																	</Tooltip>
+																</TooltipProvider>
+															) : null}
+															{document?.createdByUser?.name && document?.created
+																? ' • '
+																: null}
+															{document?.created ? formatDate(document.created) : null}
+														</div>
+													)}
+												</div>
+											</div>
+
+											<div className="flex flex-wrap items-center gap-2">
+												{document.documentName && (
+													<Badge
+														variant="warn"
+														shape="pill"
+														role="button"
+														tabIndex={0}
+														title={document.documentName}
+														className="max-w-[320px] cursor-pointer select-none gap-2 rounded-md px-3 py-2 text-xs font-normal text-[#556B2F] bg-[#FFF6D6] border border-[#F2E4B6]"
+														onClick={() => handleViewArchive(document.uid)}
+														onKeyDown={event => {
+															if (event.key === 'Enter' || event.key === ' ') {
+																event.preventDefault()
+																handleViewArchive(document.uid)
+															}
+														}}
+													>
+														<FileTextIcon className="h-5 w-5" />
+														<span className="truncate">{document.documentName}</span>
+													</Badge>
+												)}
+
+												{document.documentName && showReportApproval && (
+													<Button
+														type="button"
+														variant="destructive"
+														size="iconSm"
+														className="rounded-full text-zinc-200"
+														disabled={isFinishing}
+														onClick={() => reportDeleteArchive(document.uid)}
+													>
+														<Trash2Icon
+															size={20}
+															className="text-foreground p-0.5 hover:text-teal-600"
+														/>
+													</Button>
+												)}
+											</div>
+										</div>
 									</li>
 								)
 							})}
@@ -520,14 +605,6 @@ export function JustificationTextarea({
 	rejectJustification: string
 	setRejectJustification: (value: string) => void
 }) {
-	const [justification, setJustification] = React.useState(
-		rejectJustificationProp
-	)
-
-	useEffect(() => {
-		setRejectJustificationProp(justification)
-	}, [justification, setRejectJustificationProp])
-
 	return (
 		<div className="mt-2">
 			<Label htmlFor="reject-justification-input" className="text-foreground">
@@ -537,9 +614,9 @@ export function JustificationTextarea({
 			<Textarea
 				id="reject-justification-input"
 				className="text-foreground"
-				value={justification}
+				value={rejectJustificationProp}
 				onChange={e => {
-					setJustification(e.target.value)
+					setRejectJustificationProp(e.target.value)
 				}}
 			></Textarea>
 		</div>
